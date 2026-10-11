@@ -3,6 +3,11 @@ import { sampleOrders as fallbackOrders } from '../db/seedData';
 import { readLocalDb, writeLocalDb } from '../db/localStore';
 import { CreateOrderInput } from '../schemas/order.schema';
 import { findProductByIdOrSlug, deductStockInMemory } from './product.service';
+import {
+  resolveBranchInMemory,
+  getBranchStockForProductInMemory,
+  deductBranchStockForOrderInMemory,
+} from './inventory.service';
 
 // Persistent local store for orders when running without PostgreSQL
 const persistedOrders = readLocalDb().orders;
@@ -24,6 +29,11 @@ export const createOrder = async (input: CreateOrderInput) => {
     // In-memory / Local DB fallback
     let totalAmount = 0;
     const itemsWithDetails: any[] = [];
+    const requestedBranch = input.branchId ? resolveBranchInMemory(input.branchId) : null;
+
+    if (input.branchId && !requestedBranch) {
+      throw new Error(`Chi nhánh xuất kho "${input.branchId}" không tồn tại.`);
+    }
 
     // Step 1: Validate stock for all items first
     for (const item of input.items) {
@@ -37,6 +47,16 @@ export const createOrder = async (input: CreateOrderInput) => {
           `Sản phẩm "${prod.name}" chỉ còn ${availableStock} máy trong kho, không đủ số lượng bạn đặt (${item.quantity} máy).`
         );
       }
+
+      if (requestedBranch) {
+        const branchStock = getBranchStockForProductInMemory(prod.id, requestedBranch.id);
+        if (item.quantity > branchStock) {
+          throw new Error(
+            `Kho "${requestedBranch.name}" chỉ còn ${branchStock} máy "${prod.name}", không đủ số lượng bạn đặt (${item.quantity} máy). Vui lòng chọn chi nhánh khác!`
+          );
+        }
+      }
+
       const itemTotal = prod.price * item.quantity;
       totalAmount += itemTotal;
       itemsWithDetails.push({
@@ -49,10 +69,24 @@ export const createOrder = async (input: CreateOrderInput) => {
       });
     }
 
-    // Step 2: Deduct in-memory stock
-    for (const item of input.items) {
+    // Step 2: Deduct in-memory product total stock + branch warehouse stock
+    let fulfilledBranch = requestedBranch
+      ? { branchId: requestedBranch.id, branchName: requestedBranch.name, city: requestedBranch.city }
+      : null;
+
+    for (const item of itemsWithDetails) {
       deductStockInMemory(item.productId, item.quantity);
+      const deductedBranch = deductBranchStockForOrderInMemory(
+        item.productId,
+        item.quantity,
+        requestedBranch?.id
+      );
+      if (!fulfilledBranch) {
+        fulfilledBranch = deductedBranch;
+      }
     }
+
+    const branchLabel = fulfilledBranch?.branchName || 'Kho trung tâm BK-Store';
 
     const newOrder = {
       id: `order-${Date.now()}`,
@@ -61,10 +95,12 @@ export const createOrder = async (input: CreateOrderInput) => {
       phone: input.phone,
       address: input.address,
       note: input.note || '',
+      branchId: fulfilledBranch?.branchId,
+      branchName: branchLabel,
       totalAmount,
       paymentMethod: input.paymentMethod,
       status: 'pending',
-      trackingInfo: 'Đơn hàng mới tạo, đang chờ quản trị viên duyệt kho.',
+      trackingInfo: `Đơn hàng mới tạo — Xuất kho từ chi nhánh ${branchLabel}, đang chờ quản trị viên duyệt kho.`,
       createdAt: new Date().toISOString(),
       items: itemsWithDetails,
     };
@@ -81,6 +117,19 @@ export const createOrder = async (input: CreateOrderInput) => {
 
     let calculatedTotal = 0;
     const itemsToInsert: { productId: string; productSlug: string; productName: string; quantity: number; unitPrice: number; price: number }[] = [];
+    let selectedBranchName = 'Kho trung tâm BK-Store';
+    let resolvedBranchId: string | null = null;
+
+    if (input.branchId) {
+      const bRes = await client.query(
+        'SELECT id, name FROM branches WHERE id::text = $1 OR LOWER(city) LIKE LOWER($2) OR LOWER(name) LIKE LOWER($2) LIMIT 1',
+        [input.branchId, `%${input.branchId}%`]
+      );
+      if (bRes.rows.length > 0) {
+        resolvedBranchId = bRes.rows[0].id;
+        selectedBranchName = bRes.rows[0].name;
+      }
+    }
 
     for (const item of input.items) {
       // Find product by id or slug with row lock
@@ -98,6 +147,19 @@ export const createOrder = async (input: CreateOrderInput) => {
         throw new Error(
           `Sản phẩm "${product.name}" chỉ còn ${availableStock} máy trong kho, không đủ số lượng bạn đặt (${item.quantity} máy).`
         );
+      }
+
+      if (resolvedBranchId) {
+        const invRes = await client.query(
+          'SELECT quantity FROM inventories WHERE product_id = $1 AND branch_id = $2 FOR UPDATE',
+          [product.id, resolvedBranchId]
+        );
+        const branchQty = parseInt(invRes.rows[0]?.quantity ?? 0, 10);
+        if (item.quantity > branchQty) {
+          throw new Error(
+            `Kho "${selectedBranchName}" chỉ còn ${branchQty} máy "${product.name}", không đủ số lượng bạn đặt (${item.quantity} máy). Vui lòng chọn chi nhánh khác!`
+          );
+        }
       }
 
       const unitPrice = parseFloat(product.price);
@@ -119,14 +181,22 @@ export const createOrder = async (input: CreateOrderInput) => {
         'UPDATE products SET stock_quantity = stock_quantity - $1 WHERE id = $2',
         [item.quantity, item.productId]
       );
+      if (resolvedBranchId) {
+        await client.query(
+          'UPDATE inventories SET quantity = quantity - $1, updated_at = CURRENT_TIMESTAMP WHERE product_id = $2 AND branch_id = $3',
+          [item.quantity, item.productId, resolvedBranchId]
+        );
+      }
     }
+
+    const trackingText = `Đơn hàng mới tạo — Xuất kho từ chi nhánh ${selectedBranchName}, đang chờ quản trị viên duyệt kho.`;
 
     const orderRes = await client.query(
       `INSERT INTO orders (
         order_code, customer_name, phone, address, note,
         total_amount, payment_method, status, tracking_info
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', 'Đơn hàng mới tạo, đang chờ duyệt kho.')
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', $8)
       RETURNING *`,
       [
         orderCode,
@@ -136,6 +206,7 @@ export const createOrder = async (input: CreateOrderInput) => {
         input.note || null,
         calculatedTotal,
         input.paymentMethod,
+        trackingText,
       ]
     );
 
@@ -153,6 +224,8 @@ export const createOrder = async (input: CreateOrderInput) => {
 
     return {
       ...createdOrder,
+      branchId: resolvedBranchId,
+      branchName: selectedBranchName,
       items: itemsToInsert,
     };
   } catch (error) {

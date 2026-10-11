@@ -198,6 +198,7 @@ export interface OrderTrackResult {
   status?: string;
   statusLabel?: string;
   trackingInfo?: string;
+  branchName?: string;
   items?: Array<{
     productName: string;
     quantity: number;
@@ -235,7 +236,7 @@ export const trackOrder = async (params: TrackOrderParams): Promise<OrderTrackRe
   if ((!orderCode || !orderCode.trim()) && (!phone || !phone.trim())) {
     return {
       found: false,
-      message: 'Vui lòng cung cấp mã đơn hàng (ví dụ: #BK-1024 hoặc 1024) hoặc số điện thoại dùng khi đặt hàng để em kiểm tra tiến trình giao hàng giúp mình nhé.',
+      message: 'Vui lòng cung cấp mã đơn hàng (ví dụ: #BK-1024 hoặc 1024) hoặc số điện thoại dùng khi đặt hàng để em kiểm tra kho xuất hàng và tiến trình giao hàng giúp mình nhé.',
     };
   }
 
@@ -316,12 +317,32 @@ export const trackOrder = async (params: TrackOrderParams): Promise<OrderTrackRe
   const statusKey = (orderData.status || 'pending').toLowerCase();
   const statusLabel = ORDER_STATUS_LABELS[statusKey] || 'Đang xử lý';
 
+  let branchName = orderData.branchName;
+  if (!branchName) {
+    const combinedContext = normalizeText(`${orderData.trackingInfo || ''} ${orderData.address || ''}`);
+    if (combinedContext.includes('da nang') || combinedContext.includes('hai chau')) {
+      branchName = 'BK-Store Hải Châu (Đà Nẵng)';
+    } else if (
+      combinedContext.includes('ho chi minh') ||
+      combinedContext.includes('hcm') ||
+      combinedContext.includes('sai gon') ||
+      combinedContext.includes('binh thanh') ||
+      combinedContext.includes('tan binh') ||
+      combinedContext.includes('quan 1')
+    ) {
+      branchName = 'BK-Store Quận 1 (TP. Hồ Chí Minh)';
+    } else {
+      branchName = 'BK-Store Cầu Giấy (Hà Nội)';
+    }
+  }
+
   return {
     found: true,
     orderCode: orderData.orderCode,
     customerName: maskName(orderData.customerName),
     maskedPhone: maskPhone(orderData.phone),
     deliveryAddress: orderData.address || 'Giao hàng tận nơi',
+    branchName,
     totalAmount: total,
     formattedTotal: formatVND(total),
     paymentMethod:
@@ -334,14 +355,14 @@ export const trackOrder = async (params: TrackOrderParams): Promise<OrderTrackRe
     statusLabel,
     trackingInfo:
       orderData.trackingInfo ||
-      `Đơn hàng đang ở trạng thái "${statusLabel}". BK-Store đang xử lý đơn hàng theo đúng lộ trình.`,
+      `Đơn hàng đang ở trạng thái "${statusLabel}". Xuất kho từ chi nhánh ${branchName}.`,
     items: formattedItems,
     canReview: statusKey === 'delivered',
     reviewEligibilityNote:
       statusKey === 'delivered'
         ? 'Đơn hàng này đã giao thành công! Quý khách có thể gửi đánh giá cho sản phẩm bằng cách bấm vào nút "⭐ Đánh giá" trên Header/Footer hoặc trong mục Tra cứu vận đơn.'
         : `Đơn hàng đang ở trạng thái "${statusLabel}". Theo chính sách của BK-Store, chỉ những đơn hàng đã giao thành công (delivered) mới có thể viết đánh giá sản phẩm.`,
-    message: `Đơn hàng ${orderData.orderCode} hiện đang ở trạng thái: "${statusLabel}". ${orderData.trackingInfo || ''}`,
+    message: `Đơn hàng ${orderData.orderCode} được xuất từ kho **${branchName}**, hiện đang ở trạng thái: "${statusLabel}". ${orderData.trackingInfo || ''}`,
   };
 };
 
@@ -355,6 +376,7 @@ export interface FilterProductsParams {
   maxPrice?: number;
   brand?: string;
   keyword?: string;
+  useCase?: 'sinh_vien' | 'lap_trinh' | 'gaming_dohoa' | 'van_phong' | string;
   limit?: number;
 }
 
@@ -382,12 +404,13 @@ export interface ProductFilterResult {
     minPrice?: number;
     maxPrice?: number;
     keyword?: string;
+    useCase?: string;
   };
   advice?: string;
 }
 
 export const filterProducts = async (params: FilterProductsParams): Promise<ProductFilterResult> => {
-  const { category, minPrice, maxPrice, brand, keyword, limit = 4 } = params;
+  const { category, minPrice, maxPrice, brand, keyword, useCase, limit = 4 } = params;
 
   // Chuẩn hóa category
   let mappedCategory = category;
@@ -400,6 +423,8 @@ export const filterProducts = async (params: FilterProductsParams): Promise<Prod
     } else if (cNorm.includes('phu kien') || cNorm.includes('tai nghe') || cNorm.includes('chuot') || cNorm.includes('sac')) {
       mappedCategory = 'accessory';
     }
+  } else if (useCase) {
+    mappedCategory = 'laptop';
   }
 
   // Gọi getProducts từ service
@@ -409,10 +434,45 @@ export const filterProducts = async (params: FilterProductsParams): Promise<Prod
     minPrice,
     maxPrice,
     search: keyword,
-    limit: Math.min(10, limit),
+    limit: 15,
   });
 
-  const productsList: ProductSummaryItem[] = (res.products || []).map((p: any) => {
+  let rawProducts = [...(res.products || [])];
+
+  // Sắp xếp ưu tiên theo nhu cầu sử dụng (useCase)
+  if (useCase === 'sinh_vien' || useCase === 'van_phong') {
+    const priorityOrder = ['zenbook', 'macbook-air', 'predator', 'xps', 'thinkpad'];
+    rawProducts.sort((a: any, b: any) => {
+      const idxA = priorityOrder.findIndex((k) => (a.slug || '').includes(k));
+      const idxB = priorityOrder.findIndex((k) => (b.slug || '').includes(k));
+      const scoreA = idxA === -1 ? 99 : idxA;
+      const scoreB = idxB === -1 ? 99 : idxB;
+      if (scoreA !== scoreB) return scoreA - scoreB;
+      return Number(a.price) - Number(b.price);
+    });
+  } else if (useCase === 'lap_trinh') {
+    const priorityOrder = ['macbook-pro', 'zephyrus', 'thinkpad', 'macbook-air', 'legion', 'predator'];
+    rawProducts.sort((a: any, b: any) => {
+      const idxA = priorityOrder.findIndex((k) => (a.slug || '').includes(k));
+      const idxB = priorityOrder.findIndex((k) => (b.slug || '').includes(k));
+      const scoreA = idxA === -1 ? 99 : idxA;
+      const scoreB = idxB === -1 ? 99 : idxB;
+      return scoreA - scoreB;
+    });
+  } else if (useCase === 'gaming_dohoa') {
+    const priorityOrder = ['predator', 'zephyrus', 'legion', 'macbook-pro'];
+    rawProducts.sort((a: any, b: any) => {
+      const idxA = priorityOrder.findIndex((k) => (a.slug || '').includes(k));
+      const idxB = priorityOrder.findIndex((k) => (b.slug || '').includes(k));
+      const scoreA = idxA === -1 ? 99 : idxA;
+      const scoreB = idxB === -1 ? 99 : idxB;
+      return scoreA - scoreB;
+    });
+  }
+
+  const slicedProducts = rawProducts.slice(0, Math.min(10, limit));
+
+  const productsList: ProductSummaryItem[] = slicedProducts.map((p: any) => {
     const price = Number(p.price);
     const origPrice = p.originalPrice || p.original_price ? Number(p.originalPrice || p.original_price) : undefined;
     const discount = origPrice && origPrice > price ? Math.round(((origPrice - price) / origPrice) * 100) : undefined;
@@ -450,7 +510,13 @@ export const filterProducts = async (params: FilterProductsParams): Promise<Prod
   });
 
   let advice = '';
-  if (productsList.length > 0) {
+  if (useCase === 'sinh_vien' || useCase === 'van_phong') {
+    advice = `Đối với nhu cầu **Sinh viên & Dân văn phòng**, BK-Store khuyến nghị ưu tiên máy có **tối thiểu 16GB RAM**, ổ cứng **512GB SSD**, trọng lượng mỏng nhẹ (**1.1kg – 1.4kg**) và pin bền bỉ (8–18 tiếng) để tiện mang lên giảng đường (hoặc chọn dòng có card rời RTX nếu học Kỹ thuật/Đồ họa). Đặc biệt, BK-Store hỗ trợ **trả góp 0% lãi suất cho sinh viên chỉ cần CCCD** (duyệt trong 15 phút)!`;
+  } else if (useCase === 'lap_trinh') {
+    advice = `Đối với **Sinh viên CNTT, Kỹ sư Phần mềm & Lập trình viên (Web/Mobile/AI)**, BK-Store khuyến nghị chọn CPU đa nhân hiệu năng cao (**Apple M3 / M3 Pro, Ryzen 9 hoặc Intel Core Ultra 7**), **RAM từ 16GB – 18GB trở lên** và SSD PCIe 4.0 tốc độ cao để biên dịch code, chạy Docker và máy ảo mượt mà.`;
+  } else if (useCase === 'gaming_dohoa') {
+    advice = `Đối với nhu cầu **Chơi Game (Gaming), Thiết kế Đồ họa 2D/3D, Kiến trúc & Dựng Video**, BK-Store khuyến nghị chọn máy trang bị card đồ họa rời **NVIDIA GeForce RTX 4050 / RTX 4060**, màn hình chuẩn màu **100% sRGB / OLED 120Hz–165Hz** và tản nhiệt kép công suất lớn.`;
+  } else if (productsList.length > 0) {
     advice = `Tìm thấy ${res.pagination?.total || productsList.length} sản phẩm phù hợp tại BK-Store. Tất cả đều là hàng chính hãng 100%, bảo hành 1 đổi 1 trong 30 ngày.`;
   } else {
     advice = `Chưa tìm thấy sản phẩm nào khớp hoàn toàn với khoảng giá hoặc tiêu chí này. Bạn có thể mở rộng khoảng ngân sách hoặc liên hệ hotline 1800 6868 để được nhân viên tư vấn dòng máy khác.`;
@@ -465,6 +531,7 @@ export const filterProducts = async (params: FilterProductsParams): Promise<Prod
       minPrice,
       maxPrice,
       keyword,
+      useCase,
     },
     advice,
   };

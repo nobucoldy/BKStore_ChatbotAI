@@ -125,6 +125,19 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
         content: m.content,
       }));
 
+      // If user is viewing a product detail page (/products/[slug]), inject page context so questions like "máy này bảo hành thế nào" know which product is being viewed
+      if (typeof window !== 'undefined' && window.location.pathname.startsWith('/products/')) {
+        const currentSlug = decodeURIComponent(
+          window.location.pathname.replace(/^\/products\//, '').split('/')[0]
+        );
+        if (currentSlug) {
+          historyPayload.unshift({
+            role: 'user',
+            content: `[Ngữ cảnh trang hiện tại: Khách hàng đang xem sản phẩm ${currentSlug}]`,
+          });
+        }
+      }
+
       try {
         const responseData = await sendChatMessage({
           message: text.trim(),
@@ -138,6 +151,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
           cards: responseData.cards,
           citations: responseData.citations,
           toolUsed: responseData.toolUsed,
+          metrics: responseData.metrics,
           timestamp: new Date().toISOString(),
         };
 
@@ -443,6 +457,12 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                           <span>Khách hàng:</span>
                           <span className="font-semibold text-slate-800">{msg.cards.data.customerName || 'Quý khách'}</span>
                         </div>
+                        {msg.cards.data.branchName && (
+                          <div className="flex justify-between">
+                            <span>Kho xuất hàng:</span>
+                            <span className="font-bold text-blue-700">{msg.cards.data.branchName}</span>
+                          </div>
+                        )}
                         {msg.cards.data.formattedTotal && (
                           <div className="flex justify-between">
                             <span>Tổng tiền:</span>
@@ -579,6 +599,30 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                     </div>
                   )}
 
+                  {/* 5. REAL-TIME PERFORMANCE TELEMETRY BADGE */}
+                  {msg.role === 'assistant' && msg.metrics && (
+                    <div
+                      className="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 pt-0.5 select-none"
+                      title={`Chi tiết hiệu năng (Stage Latency):\n• Phân tích Intent (NLU): ${msg.metrics.intentDetectionMs} ms\n• Thực thi AI Tool (DB): ${msg.metrics.toolExecutionMs} ms\n• Truy vấn Vector RAG (${msg.metrics.ragChunksEvaluated} chunks): ${msg.metrics.ragRetrievalMs} ms\n• Sinh phản hồi (NLG/LLM): ${msg.metrics.llmGenerationMs} ms\n• Tổng thời gian phản hồi: ${msg.metrics.totalResponseTimeMs} ms`}
+                    >
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-mono font-semibold">
+                        ⚡ {msg.metrics.totalResponseTimeMs} ms
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200/80 font-mono">
+                        Intent: {msg.metrics.detectedIntent}
+                      </span>
+                      {msg.toolUsed && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80 font-mono">
+                          Tool: {msg.toolUsed} ({msg.metrics.toolExecutionMs}ms)
+                        </span>
+                      )}
+                      {msg.metrics.topRagScore > 0 && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/80 font-mono">
+                          RAG Score: {msg.metrics.topRagScore} ({msg.metrics.ragRetrievalMs}ms)
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                 </div>
 

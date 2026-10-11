@@ -86,6 +86,101 @@ function initInMemoryInventory(): void {
 
 initInMemoryInventory();
 
+export function resolveBranchInMemory(branchIdOrCode?: string) {
+  if (!branchIdOrCode) return null;
+  const norm = normalizeText(branchIdOrCode);
+  return (
+    fallbackBranches.find(
+      (b) =>
+        b.id === branchIdOrCode ||
+        normalizeText(b.name).includes(norm) ||
+        normalizeText(b.city).includes(norm) ||
+        (norm === 'b1' && b.id.endsWith('001')) ||
+        (norm === 'b2' && b.id.endsWith('002')) ||
+        (norm === 'b3' && b.id.endsWith('003'))
+    ) || null
+  );
+}
+
+export function getProductBranchInventoriesInMemory(productId: string) {
+  initInMemoryInventory();
+  return fallbackBranches.map((b, bIdx) => {
+    const key = `${productId}:${b.id}`;
+    const rec = inMemoryInventoryMap.get(key);
+    const qty = rec ? rec.quantity : ((bIdx + 2) * 3) % 8 + 2;
+    return {
+      branchId: b.id,
+      branchName: b.name,
+      city: b.city,
+      address: b.address,
+      phone: b.phone,
+      quantity: qty,
+    };
+  });
+}
+
+export function getBranchStockForProductInMemory(productId: string, branchIdOrCode: string): number {
+  initInMemoryInventory();
+  const branch = resolveBranchInMemory(branchIdOrCode);
+  if (!branch) return 0;
+  const key = `${productId}:${branch.id}`;
+  return inMemoryInventoryMap.get(key)?.quantity ?? 0;
+}
+
+export function deductBranchStockForOrderInMemory(
+  productId: string,
+  quantity: number,
+  preferredBranchId?: string
+): { branchId: string; branchName: string; city: string } {
+  initInMemoryInventory();
+  const now = new Date().toISOString();
+
+  if (preferredBranchId) {
+    const branch = resolveBranchInMemory(preferredBranchId);
+    if (branch) {
+      const key = `${productId}:${branch.id}`;
+      const currentQty = inMemoryInventoryMap.get(key)?.quantity ?? 0;
+      inMemoryInventoryMap.set(key, {
+        quantity: Math.max(0, currentQty - quantity),
+        updatedAt: now,
+      });
+      saveInventoryToLocalDb();
+      return { branchId: branch.id, branchName: branch.name, city: branch.city };
+    }
+  }
+
+  // Fallback when branchId is not provided: pick branch with highest stock and deduct across branches if needed
+  const sortedBranches = [...fallbackBranches].sort((a, b) => {
+    const qtyA = inMemoryInventoryMap.get(`${productId}:${a.id}`)?.quantity ?? 0;
+    const qtyB = inMemoryInventoryMap.get(`${productId}:${b.id}`)?.quantity ?? 0;
+    return qtyB - qtyA;
+  });
+
+  let remainingToDeduct = quantity;
+  const primaryBranch = sortedBranches[0] || fallbackBranches[0];
+
+  for (const b of sortedBranches) {
+    if (remainingToDeduct <= 0) break;
+    const key = `${productId}:${b.id}`;
+    const currentQty = inMemoryInventoryMap.get(key)?.quantity ?? 0;
+    if (currentQty > 0) {
+      const deductHere = Math.min(currentQty, remainingToDeduct);
+      inMemoryInventoryMap.set(key, {
+        quantity: currentQty - deductHere,
+        updatedAt: now,
+      });
+      remainingToDeduct -= deductHere;
+    }
+  }
+
+  saveInventoryToLocalDb();
+  return {
+    branchId: primaryBranch.id,
+    branchName: primaryBranch.name,
+    city: primaryBranch.city,
+  };
+}
+
 export const getInventoryOverview = async (filters: InventoryFilters = {}) => {
   const isDbConnected = await checkDbConnection();
 

@@ -5,6 +5,7 @@ export const createOrderSchema = z.object({
   phone: z.string().regex(/^0\d{9}$/, 'Số điện thoại không hợp lệ (cần 10 số bắt đầu bằng 0)'),
   address: z.string().min(5, 'Địa chỉ nhận hàng tối thiểu 5 ký tự'),
   note: z.string().optional(),
+  branchId: z.string().optional(),
   paymentMethod: z.enum(['COD', 'QR_PAY'], {
     errorMap: () => ({ message: 'Phương thức thanh toán phải là COD hoặc QR_PAY' }),
   }),

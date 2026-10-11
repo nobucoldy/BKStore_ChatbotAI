@@ -76,6 +76,8 @@ export interface Order {
   phone: string;
   address: string;
   note?: string;
+  branchId?: string;
+  branchName?: string;
   totalAmount: number;
   paymentMethod: 'COD' | 'QR_PAY';
   status: OrderStatus;
@@ -89,6 +91,7 @@ export interface CreateOrderPayload {
   phone: string;
   address: string;
   note?: string;
+  branchId?: string;
   paymentMethod: 'COD' | 'QR_PAY';
   items: {
     productId: string;
@@ -114,6 +117,17 @@ export interface ChatMessageCard {
   data: any;
 }
 
+export interface ChatPerformanceMetrics {
+  totalResponseTimeMs: number;
+  intentDetectionMs: number;
+  toolExecutionMs: number;
+  ragRetrievalMs: number;
+  llmGenerationMs: number;
+  detectedIntent: string;
+  topRagScore: number;
+  ragChunksEvaluated: number;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
@@ -122,6 +136,7 @@ export interface ChatMessage {
   cards?: ChatMessageCard;
   citations?: string[];
   toolUsed?: string;
+  metrics?: ChatPerformanceMetrics;
   timestamp: string;
 }
 

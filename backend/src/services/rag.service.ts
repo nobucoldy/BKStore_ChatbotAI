@@ -138,7 +138,7 @@ class RagService {
     category: string
   ): KnowledgeChunk[] {
     const chunks: KnowledgeChunk[] = [];
-    const sections = markdown.split(/(?=^##\s+)/m);
+    const sections = markdown.split(/(?=^#{2,3}\s+)/m);
     let chunkIndex = 0;
 
     for (const section of sections) {
@@ -146,14 +146,14 @@ class RagService {
       if (!trimmed) continue;
 
       // Extract section header if present
-      const headerMatch = trimmed.match(/^##\s+(.+)$/m);
+      const headerMatch = trimmed.match(/^#{2,3}\s+(.+)$/m);
       const sectionTitle = headerMatch ? headerMatch[1].trim() : undefined;
-      const sectionContent = trimmed.replace(/^##\s+.+$/m, '').trim();
+      const sectionContent = trimmed.replace(/^#{2,3}\s+.+$/m, '').replace(/^---\s*$/gm, '').trim();
 
       if (!sectionContent) continue;
 
-      // If section is short enough (< 750 chars), make it a single chunk
-      if (sectionContent.length <= 750) {
+      // If section is short enough (<= 1000 chars), make it a single complete chunk
+      if (sectionContent.length <= 1000) {
         chunks.push({
           id: `${docId}-chunk-${chunkIndex}`,
           documentId: docId,
@@ -164,7 +164,7 @@ class RagService {
           content: `[Tài liệu: ${docTitle}]${sectionTitle ? ` [Mục: ${sectionTitle}]` : ''}\n${sectionContent}`,
         });
       } else {
-        // Split sectionContent into sub-paragraphs with overlap
+        // Split sectionContent into sub-paragraphs cleanly without cutting sentences in half
         const paragraphs = sectionContent.split(/\n\n+/);
         let currentChunk = '';
 
@@ -172,7 +172,7 @@ class RagService {
           const para = p.trim();
           if (!para) continue;
 
-          if ((currentChunk + '\n\n' + para).length > 650 && currentChunk.length > 200) {
+          if ((currentChunk + '\n\n' + para).length > 850 && currentChunk.length > 200) {
             chunks.push({
               id: `${docId}-chunk-${chunkIndex}`,
               documentId: docId,
@@ -182,16 +182,13 @@ class RagService {
               chunkIndex: chunkIndex++,
               content: `[Tài liệu: ${docTitle}]${sectionTitle ? ` [Mục: ${sectionTitle}]` : ''}\n${currentChunk.trim()}`,
             });
-            // Overlap with end of current chunk
-            const words = currentChunk.split(/\s+/);
-            const overlapText = words.slice(-20).join(' ');
-            currentChunk = overlapText + '\n\n' + para;
+            currentChunk = para;
           } else {
             currentChunk = currentChunk ? currentChunk + '\n\n' + para : para;
           }
         }
 
-        if (currentChunk.trim().length > 50) {
+        if (currentChunk.trim().length > 30) {
           chunks.push({
             id: `${docId}-chunk-${chunkIndex}`,
             documentId: docId,

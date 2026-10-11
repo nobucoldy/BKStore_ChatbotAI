@@ -247,9 +247,12 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
             )}
 
             {/* Recipient info */}
-            <div className="bg-slate-50 p-3.5 rounded-xl text-xs space-y-1 text-slate-600">
+            <div className="bg-slate-50 p-3.5 rounded-xl text-xs space-y-1.5 text-slate-600">
               <div><strong className="text-slate-800">Người nhận:</strong> {orderData.customerName} - {orderData.phone}</div>
               <div><strong className="text-slate-800">Địa chỉ giao:</strong> {orderData.address}</div>
+              {orderData.branchName && (
+                <div><strong className="text-slate-800">Kho xuất hàng:</strong> <span className="text-blue-700 font-semibold">{orderData.branchName}</span></div>
+              )}
               <div><strong className="text-slate-800">Hình thức thanh toán:</strong> {orderData.paymentMethod === 'COD' ? 'Thanh toán tiền mặt khi nhận hàng (COD)' : 'Chuyển khoản VietQR'}</div>
             </div>
 

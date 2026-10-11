@@ -3,6 +3,7 @@ import { pool, checkDbConnection } from '../config/db';
 import { readLocalDb, writeLocalDb } from '../db/localStore';
 import { products as fallbackProducts, branches as fallbackBranches, categories as fallbackCategories } from '../db/seedData';
 import { CreateProductInput, UpdateProductInput } from '../schemas/product.schema';
+import { getProductBranchInventoriesInMemory } from './inventory.service';
 
 export interface ProductFilterOptions {
   category?: string;
@@ -114,7 +115,10 @@ export const getProducts = async (options: ProductFilterOptions) => {
     }
 
     const total = filtered.length;
-    const paginated = filtered.slice(offset, offset + limit);
+    const paginated = filtered.slice(offset, offset + limit).map((p) => ({
+      ...p,
+      inventories: getProductBranchInventoriesInMemory(p.id),
+    }));
 
     return {
       products: paginated,
@@ -211,14 +215,8 @@ export const getProductBySlug = async (slug: string) => {
     const prod = inMemoryProducts.find((p) => p.slug === slug || p.id === slug);
     if (!prod) return null;
 
-    // Attach mock branch inventories
-    const inventories = fallbackBranches.map((b, idx) => ({
-      branchId: b.id,
-      branchName: b.name,
-      city: b.city,
-      address: b.address,
-      quantity: ((idx + 2) * 3) % 10 + 2,
-    }));
+    // Attach real-time branch inventories from inventory.service
+    const inventories = getProductBranchInventoriesInMemory(prod.id);
 
     return {
       ...prod,

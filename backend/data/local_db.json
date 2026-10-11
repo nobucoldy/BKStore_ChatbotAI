@@ -57,8 +57,8 @@
       "warrantyMonths": 12,
       "categoryName": "Laptop & Máy tính xách tay",
       "category_name": "Laptop & Máy tính xách tay",
-      "stockQuantity": 15,
-      "stock": 15
+      "stockQuantity": 14,
+      "stock": 14
     },
     {
       "id": "p1000000-0000-0000-0000-000000000003",
@@ -424,8 +424,31 @@
       "stock": 15
     }
   ],
-  "updatedAt": "2026-10-11T08:55:51.395Z",
+  "updatedAt": "2026-10-11T09:35:55.584Z",
   "orders": [
+    {
+      "id": "order-1791710149407",
+      "orderCode": "#BK-9316",
+      "customerName": "qtwywuwi",
+      "phone": "0123456789",
+      "address": "adaga",
+      "note": "",
+      "totalAmount": 49990000,
+      "paymentMethod": "COD",
+      "status": "confirmed",
+      "trackingInfo": "Đã duyệt đơn: Nhân viên BK-Store đã xác nhận và chuẩn bị xuất kho.",
+      "createdAt": "2026-10-11T09:15:49.407Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000002",
+          "productSlug": "macbook-pro-14-m3-pro-18gb-512gb",
+          "productName": "Apple MacBook Pro 14 M3 Pro (18GB RAM, 512GB SSD)",
+          "quantity": 1,
+          "unitPrice": 49990000,
+          "price": 49990000
+        }
+      ]
+    },
     {
       "id": "order-1791708897424",
       "orderCode": "#BK-3117",

@@ -929,6 +929,16 @@ export async function createOrderApi(payload: CreateOrderPayload): Promise<ApiRe
       0
     );
 
+    const branchMap: Record<string, string> = {
+      'b1000000-0000-0000-0000-000000000001': 'BK-Store Cầu Giấy (Hà Nội)',
+      'b1000000-0000-0000-0000-000000000002': 'BK-Store Quận 1 (TP. Hồ Chí Minh)',
+      'b1000000-0000-0000-0000-000000000003': 'BK-Store Hải Châu (Đà Nẵng)',
+      b1: 'BK-Store Cầu Giấy (Hà Nội)',
+      b2: 'BK-Store Quận 1 (TP. Hồ Chí Minh)',
+      b3: 'BK-Store Hải Châu (Đà Nẵng)',
+    };
+    const branchLabel = (payload.branchId && branchMap[payload.branchId]) || 'BK-Store Cầu Giấy (Hà Nội)';
+
     const mockOrder: Order = {
       id: `ord-${Date.now()}`,
       orderCode: randomCode,
@@ -936,10 +946,12 @@ export async function createOrderApi(payload: CreateOrderPayload): Promise<ApiRe
       phone: payload.phone,
       address: payload.address,
       note: payload.note,
+      branchId: payload.branchId,
+      branchName: branchLabel,
       totalAmount: calculatedTotal || 35990000,
       paymentMethod: payload.paymentMethod,
       status: 'pending',
-      trackingInfo: 'Đơn hàng đang chờ nhân viên kiểm tra kho và xác nhận.',
+      trackingInfo: `Đơn hàng mới tạo — Xuất kho từ chi nhánh ${branchLabel}, đang chờ quản trị viên duyệt kho.`,
       createdAt: new Date().toISOString(),
       items: mappedItems,
     };
@@ -1295,6 +1307,16 @@ export interface ChatApiResponseData {
   };
   toolUsed?: string;
   model: string;
+  metrics?: {
+    totalResponseTimeMs: number;
+    intentDetectionMs: number;
+    toolExecutionMs: number;
+    ragRetrievalMs: number;
+    llmGenerationMs: number;
+    detectedIntent: string;
+    topRagScore: number;
+    ragChunksEvaluated: number;
+  };
 }
 
 export async function sendChatMessage(payload: ChatApiPayload): Promise<ChatApiResponseData> {
