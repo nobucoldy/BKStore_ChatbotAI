@@ -1,4 +1,5 @@
 import { pool, checkDbConnection } from '../config/db';
+import { readLocalDb, writeLocalDb } from '../db/localStore';
 import { CreateReviewInput } from '../schemas/review.schema';
 import { getOrderByCodeAndPhone } from './order.service';
 import { findProductByIdOrSlug } from './product.service';
@@ -17,7 +18,7 @@ export interface ReviewRecord {
 }
 
 // Initial sample reviews for rich UX
-export const inMemoryReviews: ReviewRecord[] = [
+const defaultReviews: ReviewRecord[] = [
   {
     id: 'rev-init-1',
     productId: 'p1000000-0000-0000-0000-000000000001',
@@ -75,6 +76,12 @@ export const inMemoryReviews: ReviewRecord[] = [
   },
 ];
 
+const persistedReviews = readLocalDb().reviews;
+export const inMemoryReviews: ReviewRecord[] =
+  Array.isArray(persistedReviews) && persistedReviews.length > 0
+    ? persistedReviews
+    : [...defaultReviews];
+
 export const createReview = async (input: CreateReviewInput) => {
   const normalizedCode = input.orderCode.trim().startsWith('#')
     ? input.orderCode.trim()
@@ -108,18 +115,28 @@ export const createReview = async (input: CreateReviewInput) => {
   }
 
   // 3. Resolve product ID and Slug
-  const product = findProductByIdOrSlug(input.productId);
+  const isDbConnected = await checkDbConnection();
+  let product = findProductByIdOrSlug(input.productId);
+  if (!product && isDbConnected) {
+    const pRes = await pool.query(
+      'SELECT id, slug, name FROM products WHERE id::text = $1 OR LOWER(slug) = LOWER($1) OR LOWER(name) = LOWER($1) LIMIT 1',
+      [input.productId]
+    );
+    if (pRes.rows.length > 0) {
+      product = pRes.rows[0];
+    }
+  }
   const targetSlug = product ? product.slug : input.productId;
-  const targetId = product ? product.id : input.productId;
+  const targetId = product ? String(product.id) : input.productId;
 
   // 4. Verify product belongs to this order
   const orderItems = order.items || [];
   const hasProductInOrder = orderItems.some((it: any) => {
     return (
-      it.productSlug === targetSlug ||
-      it.productSlug === input.productId ||
-      it.productId === targetId ||
-      it.productId === input.productId
+      (Boolean(it.productSlug) && (it.productSlug === targetSlug || it.productSlug === input.productId)) ||
+      (Boolean(it.productId) && (String(it.productId) === String(targetId) || String(it.productId) === input.productId)) ||
+      (Boolean(it.productName) && product?.name && it.productName.toLowerCase() === product.name.toLowerCase()) ||
+      (Boolean(it.productName) && it.productName.toLowerCase() === input.productId.toLowerCase())
     );
   });
 
@@ -131,14 +148,13 @@ export const createReview = async (input: CreateReviewInput) => {
     throw error;
   }
 
-  const isDbConnected = await checkDbConnection();
-
   // 5. Check if review already exists for this order & product
   if (!isDbConnected) {
     const existing = inMemoryReviews.find(
       (r) =>
         r.orderCode.toLowerCase() === normalizedCode.toLowerCase() &&
-        (r.productSlug === targetSlug || r.productId === targetId)
+        ((Boolean(r.productSlug) && Boolean(targetSlug) && r.productSlug === targetSlug) ||
+          (Boolean(r.productId) && Boolean(targetId) && String(r.productId) === String(targetId)))
     );
     if (existing) {
       const error: any = new Error(
@@ -162,12 +178,13 @@ export const createReview = async (input: CreateReviewInput) => {
     };
 
     inMemoryReviews.unshift(newReview);
+    writeLocalDb({ reviews: inMemoryReviews });
     return newReview;
   }
 
   // Database mode
   const checkRes = await pool.query(
-    'SELECT id FROM reviews WHERE LOWER(order_code) = LOWER($1) AND (product_slug = $2 OR product_id = $3)',
+    'SELECT id FROM reviews WHERE LOWER(order_code) = LOWER($1) AND (product_slug = $2 OR product_id::text = $3)',
     [normalizedCode, targetSlug, targetId]
   );
   if (checkRes.rows.length > 0) {

@@ -1,0 +1,639 @@
+{
+  "products": [
+    {
+      "id": "p1000000-0000-0000-0000-000000000001",
+      "categorySlug": "laptop",
+      "name": "Apple MacBook Air 13 M3 (16GB RAM, 512GB SSD)",
+      "slug": "macbook-air-m3-13-16gb-512gb",
+      "brand": "Apple",
+      "price": 31990000,
+      "originalPrice": 34990000,
+      "thumbnail": "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&q=80",
+        "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=800&q=80"
+      ],
+      "specs": {
+        "cpu": "Apple M3 8-core CPU",
+        "gpu": "10-core GPU, 16-core Neural Engine",
+        "ram": "16GB Unified Memory",
+        "storage": "512GB SSD Siêu tốc",
+        "screen": "13.6 inch Liquid Retina (2560 x 1664), 500 nits, True Tone",
+        "battery": "Pin 52.6Wh, thời lượng lên đến 18 giờ",
+        "weight": "1.24 kg",
+        "os": "macOS Sonoma"
+      },
+      "description": "MacBook Air M3 mỏng nhẹ đỉnh cao với hiệu năng vượt trội, thời lượng pin cả ngày, phù hợp cho học tập, văn phòng và thiết kế đồ họa 2D chuyên sâu.",
+      "warrantyMonths": 12,
+      "categoryName": "Laptop & Máy tính xách tay",
+      "category_name": "Laptop & Máy tính xách tay",
+      "stockQuantity": 15,
+      "stock": 15
+    },
+    {
+      "id": "p1000000-0000-0000-0000-000000000002",
+      "categorySlug": "laptop",
+      "name": "Apple MacBook Pro 14 M3 Pro (18GB RAM, 512GB SSD)",
+      "slug": "macbook-pro-14-m3-pro-18gb-512gb",
+      "brand": "Apple",
+      "price": 49990000,
+      "originalPrice": 53990000,
+      "thumbnail": "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&q=80",
+        "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=800&q=80"
+      ],
+      "specs": {
+        "cpu": "Apple M3 Pro 11-core CPU",
+        "gpu": "14-core GPU, Ray Tracing phần cứng",
+        "ram": "18GB Unified Memory",
+        "storage": "512GB SSD NVMe",
+        "screen": "14.2 inch Liquid Retina XDR (3024 x 1964), 120Hz ProMotion, 1600 nits Peak",
+        "battery": "Pin 70Wh, sạc nhanh 96W MagSafe 3",
+        "weight": "1.61 kg",
+        "os": "macOS Sonoma"
+      },
+      "description": "Quái thú đồ họa và lập trình với màn hình Liquid Retina XDR 120Hz siêu nét, tản nhiệt quạt chủ động và chip M3 Pro cân mượt các project nặng.",
+      "warrantyMonths": 12,
+      "categoryName": "Laptop & Máy tính xách tay",
+      "category_name": "Laptop & Máy tính xách tay",
+      "stockQuantity": 15,
+      "stock": 15
+    },
+    {
+      "id": "p1000000-0000-0000-0000-000000000003",
+      "categorySlug": "laptop",
+      "name": "ASUS ROG Zephyrus G14 OLED (Ryzen 9 8945HS, RTX 4060 8GB, 16GB)",
+      "slug": "asus-rog-zephyrus-g14-2024",
+      "brand": "ASUS",
+      "price": 46990000,
+      "originalPrice": 49990000,
+      "thumbnail": "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80"
+      ],
+      "specs": {
+        "cpu": "AMD Ryzen 9 8945HS (8 nhân 16 luồng, up to 5.2GHz, NPU 16 TOPS)",
+        "gpu": "NVIDIA GeForce RTX 4060 8GB GDDR6 (TGP 90W)",
+        "ram": "16GB LPDDR5X 6400MHz",
+        "storage": "1TB PCIe 4.0 NVMe M.2 SSD",
+        "screen": "14 inch 3K OLED (2880 x 1800) 120Hz, 0.2ms, 100% DCI-P3, G-Sync",
+        "battery": "Pin 73Wh, sạc nhanh Type-C PD 100W",
+        "weight": "1.5 kg",
+        "os": "Windows 11 Home bản quyền"
+      },
+      "description": "Laptop gaming cao cấp siêu mỏng nhẹ chỉ 1.5kg, trang bị màn hình OLED 3K 120Hz tuyệt mỹ cùng GPU RTX 4060 mạnh mẽ.",
+      "warrantyMonths": 24,
+      "categoryName": "Laptop & Máy tính xách tay",
+      "category_name": "Laptop & Máy tính xách tay",
+      "stockQuantity": 14,
+      "stock": 14
+    },
+    {
+      "id": "p1000000-0000-0000-0000-000000000004",
+      "categorySlug": "laptop",
+      "name": "Dell XPS 13 9340 (Intel Core Ultra 7 155H, 16GB RAM, 512GB SSD)",
+      "slug": "dell-xps-13-9340-intel-core-ultra-7",
+      "brand": "Dell",
+      "price": 42490000,
+      "originalPrice": 45990000,
+      "thumbnail": "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=800&q=80"
+      ],
+      "specs": {
+        "cpu": "Intel Core Ultra 7 155H (16 nhân 22 luồng, Intel AI Boost NPU)",
+        "gpu": "Intel Arc Graphics",
+        "ram": "16GB LPDDR5x 7467MHz Dual Channel",
+        "storage": "512GB PCIe 4.0 NVMe SSD",
+        "screen": "13.4 inch FHD+ (1920 x 1200) InfinityEdge, 120Hz, 500 nits",
+        "battery": "Pin 55Wh, sạc Type-C 60W",
+        "weight": "1.19 kg",
+        "os": "Windows 11 Pro"
+      },
+      "description": "Tuyệt phẩm doanh nhân với thiết kế nhôm nguyên khối CNC sang trọng, hàng phím cảm ứng vô hình và vi xử lý Intel Core Ultra tích hợp AI.",
+      "warrantyMonths": 12,
+      "categoryName": "Laptop & Máy tính xách tay",
+      "category_name": "Laptop & Máy tính xách tay",
+      "stockQuantity": 14,
+      "stock": 14
+    },
+    {
+      "id": "p1000000-0000-0000-0000-000000000005",
+      "categorySlug": "laptop",
+      "name": "Lenovo Legion Pro 5 16IRX9 (Core i7 14650HX, RTX 4060 8GB, 16GB, 1TB)",
+      "slug": "lenovo-legion-pro-5-16irx9",
+      "brand": "Lenovo",
+      "price": 38990000,
+      "originalPrice": 41990000,
+      "thumbnail": "https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=800&q=80"
+      ],
+      "specs": {
+        "cpu": "Intel Core i7-14650HX (16 nhân 24 luồng, max 5.2GHz)",
+        "gpu": "NVIDIA GeForce RTX 4060 8GB GDDR6 (TGP tối đa 140W)",
+        "ram": "16GB DDR5 5600MHz (nâng cấp tối đa 64GB)",
+        "storage": "1TB SSD M.2 2280 PCIe 4.0 NVMe",
+        "screen": "16 inch WQXGA (2560x1600) IPS 240Hz, 500 nits, 100% sRGB, G-SYNC",
+        "battery": "Pin 80Wh, củ sạc 300W",
+        "weight": "2.5 kg",
+        "os": "Windows 11 Home"
+      },
+      "description": "Cỗ máy cày game và render 3D chuyên nghiệp với tản nhiệt Legion ColdFront 5.0 và màn hình 240Hz sắc nét.",
+      "warrantyMonths": 24,
+      "categoryName": "Laptop & Máy tính xách tay",
+      "category_name": "Laptop & Máy tính xách tay",
+      "stockQuantity": 14,
+      "stock": 14
+    },
+    {
+      "id": "p1000000-0000-0000-0000-000000000006",
+      "categorySlug": "laptop",
+      "name": "Acer Predator Helios Neo 16 (Core i5 14500HX, RTX 4050 6GB, 16GB)",
+      "slug": "acer-predator-helios-neo-16",
+      "brand": "Acer",
+      "price": 28990000,
+      "originalPrice": 31990000,
+      "thumbnail": "https://images.unsplash.com/photo-1544652478-6653e09f18a2?w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1544652478-6653e09f18a2?w=800&q=80"
+      ],
+      "specs": {
+        "cpu": "Intel Core i5-14500HX (14 nhân 20 luồng)",
+        "gpu": "NVIDIA GeForce RTX 4050 6GB (140W MGP)",
+        "ram": "16GB DDR5 5600MHz",
+        "storage": "512GB PCIe NVMe SSD",
+        "screen": "16 inch WQXGA (2560 x 1600) IPS 165Hz, 100% sRGB",
+        "battery": "Pin 90Wh, sạc 330W",
+        "weight": "2.6 kg",
+        "os": "Windows 11 Home"
+      },
+      "description": "Mẫu laptop gaming phân khúc tầm trung quốc dân với bàn phím LED RGB 4 vùng và tản nhiệt quạt kim loại AeroBlade 3D thế hệ 5.",
+      "warrantyMonths": 12,
+      "categoryName": "Laptop & Máy tính xách tay",
+      "category_name": "Laptop & Máy tính xách tay",
+      "stockQuantity": 15,
+      "stock": 15
+    },
+    {
+      "id": "p1000000-0000-0000-0000-000000000007",
+      "categorySlug": "smartphone",
+      "name": "Apple iPhone 16 Pro Max 256GB (Titan Sa Mạc)",
+      "slug": "iphone-16-pro-max-256gb",
+      "brand": "Apple",
+      "price": 34490000,
+      "originalPrice": 36990000,
+      "thumbnail": "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&q=80",
+        "https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=800&q=80"
+      ],
+      "specs": {
+        "chipset": "Apple A18 Pro 3nm thế hệ 2, 6-core GPU, Camera Control nút chụp",
+        "ram": "8GB RAM",
+        "storage": "256GB NVMe",
+        "screen": "6.9 inch Super Retina XDR OLED, 120Hz ProMotion, Dynamic Island",
+        "camera": "Chính 48MP Fusion + Tele 5x 12MP + Siêu rộng 48MP",
+        "battery": "Thời lượng xem video lên đến 33 giờ, sạc nhanh MagSafe 25W",
+        "weight": "227 g",
+        "os": "iOS 18 hỗ trợ Apple Intelligence"
+      },
+      "description": "Flagship đỉnh cao nhất của Apple với khung viền Titan Cấp 5, màn hình lớn nhất từ trước đến nay 6.9 inch và nút Camera Control chuyên nghiệp.",
+      "warrantyMonths": 12,
+      "categoryName": "Điện thoại thông minh",
+      "category_name": "Điện thoại thông minh",
+      "stockQuantity": 15,
+      "stock": 15
+    },
+    {
+      "id": "p1000000-0000-0000-0000-000000000008",
+      "categorySlug": "smartphone",
+      "name": "Apple iPhone 15 128GB (Hồng Pastel)",
+      "slug": "iphone-15-128gb",
+      "brand": "Apple",
+      "price": 18990000,
+      "originalPrice": 21990000,
+      "thumbnail": "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&q=80"
+      ],
+      "specs": {
+        "chipset": "Apple A16 Bionic (4nm)",
+        "ram": "6GB RAM",
+        "storage": "128GB",
+        "screen": "6.1 inch Super Retina XDR OLED, Dynamic Island, độ sáng đỉnh 2000 nits",
+        "camera": "Chính 48MP + Siêu rộng 12MP, chụp ảnh chân dung thế hệ mới",
+        "battery": "Xem video đến 20 giờ, cổng sạc USB-C",
+        "weight": "171 g",
+        "os": "iOS 17"
+      },
+      "description": "Chiếc iPhone tiêu chuẩn xuất sắc với cổng sạc USB-C tiện lợi, thiết kế mặt lưng kính pha màu mịn màng và cụm Dynamic Island thông minh.",
+      "warrantyMonths": 12,
+      "categoryName": "Điện thoại thông minh",
+      "category_name": "Điện thoại thông minh",
+      "stockQuantity": 15,
+      "stock": 15
+    },
+    {
+      "id": "p1000000-0000-0000-0000-000000000009",
+      "categorySlug": "smartphone",
+      "name": "Samsung Galaxy S24 Ultra 256GB (Xám Titan - Galaxy AI)",
+      "slug": "samsung-galaxy-s24-ultra-256gb",
+      "brand": "Samsung",
+      "price": 26990000,
+      "originalPrice": 31990000,
+      "thumbnail": "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=800&q=80"
+      ],
+      "specs": {
+        "chipset": "Qualcomm Snapdragon 8 Gen 3 for Galaxy (4nm)",
+        "ram": "12GB LPDDR5X",
+        "storage": "256GB UFS 4.0",
+        "screen": "6.8 inch Dynamic AMOLED 2X, QHD+, 1-120Hz, kính chống lóa Corning Gorilla Armor",
+        "camera": "200MP Chính + 50MP Zoom quang 5x + 10MP Zoom quang 3x + 12MP Ultra-wide",
+        "battery": "5000 mAh, sạc nhanh có dây 45W, sạc không dây 15W",
+        "weight": "232 g",
+        "features": "Tích hợp bút S-Pen, bộ tính năng thông minh toàn diện Galaxy AI",
+        "os": "Android 14 với One UI 6.1 (cam kết cập nhật 7 năm)"
+      },
+      "description": "Siêu phẩm công nghệ Android toàn diện nhất trang bị bút S-Pen, hệ thống camera zoom 100x và trí tuệ nhân tạo Galaxy AI phục vụ công việc và dịch thuật.",
+      "warrantyMonths": 12,
+      "categoryName": "Điện thoại thông minh",
+      "category_name": "Điện thoại thông minh",
+      "stockQuantity": 15,
+      "stock": 15
+    },
+    {
+      "id": "p1000000-0000-0000-0000-000000000010",
+      "categorySlug": "smartphone",
+      "name": "Xiaomi 14 Ultra 512GB (Ống kính nhiếp ảnh Leica)",
+      "slug": "xiaomi-14-ultra-512gb",
+      "brand": "Xiaomi",
+      "price": 27990000,
+      "originalPrice": 32990000,
+      "thumbnail": "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=800&q=80"
+      ],
+      "specs": {
+        "chipset": "Qualcomm Snapdragon 8 Gen 3 (4nm)",
+        "ram": "16GB LPDDR5X",
+        "storage": "512GB UFS 4.0",
+        "screen": "6.73 inch LTPO AMOLED, WQHD+ (3200 x 1440), 120Hz, 3000 nits Peak",
+        "camera": "Hệ thống 4 camera Leica 50MP, cảm biến chính Sony LYT-900 1-inch khẩu độ biến thiên f/1.63 - f/4.0",
+        "battery": "5000 mAh, sạc siêu tốc 90W HyperCharge, sạc không dây 80W",
+        "weight": "219.8 g",
+        "os": "Xiaomi HyperOS trên nền Android 14"
+      },
+      "description": "Chiếc máy ảnh chuyên nghiệp thu nhỏ vào thân hình smartphone với cụm camera tròn Leica 1 inch khẩu độ cơ học biến thiên.",
+      "warrantyMonths": 18,
+      "categoryName": "Điện thoại thông minh",
+      "category_name": "Điện thoại thông minh",
+      "stockQuantity": 15,
+      "stock": 15
+    },
+    {
+      "id": "p1000000-0000-0000-0000-000000000011",
+      "categorySlug": "accessory",
+      "name": "Tai nghe chụp tai chống ồn Sony WH-1000XM5 (Đen)",
+      "slug": "sony-wh-1000xm5-black",
+      "brand": "Sony",
+      "price": 6790000,
+      "originalPrice": 8490000,
+      "thumbnail": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80"
+      ],
+      "specs": {
+        "driver": "30mm carbon fiber nhẹ và cứng cáp",
+        "connection": "Bluetooth 5.2, hỗ trợ âm thanh Hi-Res LDAC, jack 3.5mm",
+        "batteryLife": "30 giờ (khi bật chống ồn ANC), 40 giờ (tắt ANC), sạc 3 phút dùng 3 giờ",
+        "weight": "250 g",
+        "features": "Chip xử lý V1 + QN1, 8 micro khử ồn môi trường, Speak-to-Chat"
+      },
+      "description": "Vua chống ồn tai nghe chụp tai với thiết kế êm ái cả ngày, chất âm Hi-Res chi tiết và khả năng đàm thoại trong trẻo.",
+      "warrantyMonths": 12,
+      "categoryName": "Phụ kiện & Thiết bị ngoại vi",
+      "category_name": "Phụ kiện & Thiết bị ngoại vi",
+      "stockQuantity": 15,
+      "stock": 15
+    },
+    {
+      "id": "p1000000-0000-0000-0000-000000000012",
+      "categorySlug": "accessory",
+      "name": "Tai nghe không dây Apple AirPods Pro 2 (Hộp sạc MagSafe USB-C)",
+      "slug": "apple-airpods-pro-2-usb-c",
+      "brand": "Apple",
+      "price": 5190000,
+      "originalPrice": 6190000,
+      "thumbnail": "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=800&q=80"
+      ],
+      "specs": {
+        "chipset": "Apple H2 headphone chip, chip U1/U2 định vị trong hộp sạc",
+        "connection": "Bluetooth 5.3, cổng USB-C",
+        "batteryLife": "6 giờ nghe liên tục (30 giờ kèm hộp sạc)",
+        "features": "Chống ồn chủ động ANC gấp đôi, Âm thanh thích ứng (Adaptive Audio), Âm thanh không gian cá nhân hóa",
+        "waterproof": "Chuẩn kháng bụi & nước IP54 cho cả tai nghe và hộp sạc"
+      },
+      "description": "Mẫu tai nghe true-wireless hoàn hảo cho người dùng iPhone/Mac với khả năng chuyển đổi thiết bị tức thì và chế độ xuyên âm tự nhiên nhất.",
+      "warrantyMonths": 12,
+      "categoryName": "Phụ kiện & Thiết bị ngoại vi",
+      "category_name": "Phụ kiện & Thiết bị ngoại vi",
+      "stockQuantity": 15,
+      "stock": 15
+    },
+    {
+      "id": "p1000000-0000-0000-0000-000000000013",
+      "categorySlug": "accessory",
+      "name": "Chuột không dây công thái học Logitech MX Master 3S (Xám Graphite)",
+      "slug": "logitech-mx-master-3s",
+      "brand": "Logitech",
+      "price": 2090000,
+      "originalPrice": 2490000,
+      "thumbnail": "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800&q=80"
+      ],
+      "specs": {
+        "sensor": "Darkfield công nghệ 8000 DPI (hoạt động mượt mà trên mặt kính)",
+        "clicks": "Quiet Clicks giảm 90% tiếng ồn click chuột",
+        "scroll": "Cuộn siêu tốc MagSpeed điện từ cuộn 1000 dòng/giây",
+        "connection": "Bluetooth Low Energy hoặc đầu thu Logi Bolt USB",
+        "battery": "Pin sạc 500mAh, sử dụng đến 70 ngày một lần sạc"
+      },
+      "description": "Chuột máy tính công thái học tốt nhất thế giới cho dân lập trình viên và thiết kế đồ họa, cuộn vô cực và kết nối cùng lúc 3 thiết bị.",
+      "warrantyMonths": 12,
+      "categoryName": "Phụ kiện & Thiết bị ngoại vi",
+      "category_name": "Phụ kiện & Thiết bị ngoại vi",
+      "stockQuantity": 15,
+      "stock": 15
+    },
+    {
+      "id": "p1000000-0000-0000-0000-000000000014",
+      "categorySlug": "accessory",
+      "name": "Bàn phím cơ không dây Logitech MX Mechanical Mini (Tactile Quiet)",
+      "slug": "logitech-mx-mechanical-mini",
+      "brand": "Logitech",
+      "price": 2790000,
+      "originalPrice": 3290000,
+      "thumbnail": "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=800&q=80"
+      ],
+      "specs": {
+        "layout": "Mini 75% gọn gàng tiết kiệm diện tích bàn làm việc",
+        "switch": "Low-profile Mechanical Tactile Quiet êm ái, đầm tay",
+        "backlight": "Đèn nền thông minh tự phát sáng khi tay đến gần",
+        "connection": "Bluetooth & Logi Bolt, tương thích đồng thời macOS và Windows",
+        "battery": "15 ngày có đèn nền hoặc đến 10 tháng khi tắt đèn nền"
+      },
+      "description": "Bàn phím cơ low-profile êm ái, gõ phím tốc độ cao không gây tiếng ồn nơi công sở, thiết kế kim loại sang trọng.",
+      "warrantyMonths": 12,
+      "categoryName": "Phụ kiện & Thiết bị ngoại vi",
+      "category_name": "Phụ kiện & Thiết bị ngoại vi",
+      "stockQuantity": 15,
+      "stock": 15
+    },
+    {
+      "id": "p1000000-0000-0000-0000-000000000015",
+      "categorySlug": "accessory",
+      "name": "Củ sạc nhanh Anker Prime 67W GaN (3 cổng 2C1A)",
+      "slug": "anker-prime-67w-gan-charger",
+      "brand": "Anker",
+      "price": 990000,
+      "originalPrice": 1390000,
+      "thumbnail": "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&q=80"
+      ],
+      "specs": {
+        "power": "Tổng công suất 67W Max (sạc được MacBook Pro 14 inch, iPhone, iPad cùng lúc)",
+        "ports": "2 cổng USB-C + 1 cổng USB-A",
+        "technology": "GaNPrime thế hệ mới nhất, kiểm soát nhiệt độ ActiveShield 2.0",
+        "size": "Nhỏ hơn 51% so với củ sạc MacBook 67W gốc của Apple"
+      },
+      "description": "Củ sạc GaN 67W siêu nhỏ gọn bỏ túi áo, cung cấp năng lượng an toàn cho toàn bộ hệ sinh thái laptop, điện thoại và tai nghe.",
+      "warrantyMonths": 18,
+      "categoryName": "Phụ kiện & Thiết bị ngoại vi",
+      "category_name": "Phụ kiện & Thiết bị ngoại vi",
+      "stockQuantity": 15,
+      "stock": 15
+    }
+  ],
+  "updatedAt": "2026-10-11T08:55:51.395Z",
+  "orders": [
+    {
+      "id": "order-1791708897424",
+      "orderCode": "#BK-3117",
+      "customerName": "abcda",
+      "phone": "0123456789",
+      "address": "abcdd",
+      "note": "",
+      "totalAmount": 128470000,
+      "paymentMethod": "COD",
+      "status": "delivered",
+      "trackingInfo": "Giao thành công: Khách hàng đã nhận máy và thanh toán hoàn tất.",
+      "createdAt": "2026-10-11T08:54:57.424Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000004",
+          "productSlug": "dell-xps-13-9340-intel-core-ultra-7",
+          "productName": "Dell XPS 13 9340 (Intel Core Ultra 7 155H, 16GB RAM, 512GB SSD)",
+          "quantity": 1,
+          "unitPrice": 42490000,
+          "price": 42490000
+        },
+        {
+          "productId": "p1000000-0000-0000-0000-000000000003",
+          "productSlug": "asus-rog-zephyrus-g14-2024",
+          "productName": "ASUS ROG Zephyrus G14 OLED (Ryzen 9 8945HS, RTX 4060 8GB, 16GB)",
+          "quantity": 1,
+          "unitPrice": 46990000,
+          "price": 46990000
+        },
+        {
+          "productId": "p1000000-0000-0000-0000-000000000005",
+          "productSlug": "lenovo-legion-pro-5-16irx9",
+          "productName": "Lenovo Legion Pro 5 16IRX9 (Core i7 14650HX, RTX 4060 8GB, 16GB, 1TB)",
+          "quantity": 1,
+          "unitPrice": 38990000,
+          "price": 38990000
+        }
+      ]
+    },
+    {
+      "id": "ord-1024",
+      "orderCode": "#BK-1024",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "Giao giờ hành chính, gọi trước khi đến",
+      "totalAmount": 31990000,
+      "paymentMethod": "COD",
+      "status": "delivered",
+      "trackingInfo": "Đơn hàng đã được giao thành công vào lúc 14:30 ngày 15/09/2026. Người nhận: Nguyễn Văn An.",
+      "createdAt": "2026-09-15T14:30:00.000Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000001",
+          "productSlug": "macbook-air-m3-13-16gb-512gb",
+          "productName": "Apple MacBook Air 13 M3 (16GB RAM / 512GB SSD)",
+          "quantity": 1,
+          "unitPrice": 31990000,
+          "price": 31990000
+        }
+      ]
+    },
+    {
+      "id": "ord-2048",
+      "orderCode": "#BK-2048",
+      "customerName": "Trần Thị Mai",
+      "phone": "0987654321",
+      "address": "Tòa nhà Landmark 81, 720A Điện Biên Phủ, Phường 22, Bình Thạnh, TP. Hồ Chí Minh",
+      "note": "Chuyển khoản QR trước",
+      "totalAmount": 35480000,
+      "paymentMethod": "QR_PAY",
+      "status": "shipping",
+      "trackingInfo": "Kiện hàng đã rời kho trung chuyển Tân Bình lúc 08:15 sáng nay và đang trên đường giao hàng bởi shipper.",
+      "createdAt": "2026-10-09T08:15:00.000Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000008",
+          "productSlug": "iphone-16-pro-max-256gb",
+          "productName": "Apple iPhone 16 Pro Max 256GB Titan Tự Nhiên",
+          "quantity": 1,
+          "unitPrice": 34490000,
+          "price": 34490000
+        },
+        {
+          "productId": "p1000000-0000-0000-0000-000000000015",
+          "productSlug": "anker-prime-67w-gan-charger",
+          "productName": "Củ sạc nhanh Anker 735 GaNPrime 65W (3 Cổng)",
+          "quantity": 1,
+          "unitPrice": 990000,
+          "price": 990000
+        }
+      ]
+    },
+    {
+      "id": "ord-3072",
+      "orderCode": "#BK-3072",
+      "customerName": "Lê Hoàng Long",
+      "phone": "0905123987",
+      "address": "Khu Công Nghệ Phần Mềm, Đường 2/9, Hải Châu, Đà Nẵng",
+      "note": "Thanh toán tiền mặt khi nhận hàng",
+      "totalAmount": 2090000,
+      "paymentMethod": "COD",
+      "status": "pending",
+      "trackingInfo": "Đơn hàng đã được tiếp nhận trên hệ thống lúc 10:00 sáng. Quản trị viên đang kiểm tra tồn kho tại chi nhánh Đà Nẵng để đóng gói.",
+      "createdAt": "2026-10-10T10:00:00.000Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000013",
+          "productSlug": "logitech-mx-master-3s",
+          "productName": "Chuột Không Dây Logitech MX Master 3S",
+          "quantity": 1,
+          "unitPrice": 2090000,
+          "price": 2090000
+        }
+      ]
+    }
+  ],
+  "reviews": [
+    {
+      "id": "rev-1791708951393",
+      "productId": "p1000000-0000-0000-0000-000000000005",
+      "productSlug": "lenovo-legion-pro-5-16irx9",
+      "orderId": "order-1791708897424",
+      "orderCode": "#BK-3117",
+      "customerName": "abcda",
+      "phone": "0123456789",
+      "rating": 5,
+      "comment": "đỉnhh",
+      "createdAt": "2026-10-11T08:55:51.393Z"
+    },
+    {
+      "id": "rev-1791708929710",
+      "productId": "p1000000-0000-0000-0000-000000000003",
+      "productSlug": "asus-rog-zephyrus-g14-2024",
+      "orderId": "order-1791708897424",
+      "orderCode": "#BK-3117",
+      "customerName": "abcda",
+      "phone": "0123456789",
+      "rating": 5,
+      "comment": "ngônnn",
+      "createdAt": "2026-10-11T08:55:29.710Z"
+    },
+    {
+      "id": "rev-1791708921118",
+      "productId": "p1000000-0000-0000-0000-000000000004",
+      "productSlug": "dell-xps-13-9340-intel-core-ultra-7",
+      "orderId": "order-1791708897424",
+      "orderCode": "#BK-3117",
+      "customerName": "abcda",
+      "phone": "0123456789",
+      "rating": 5,
+      "comment": "tuyệt",
+      "createdAt": "2026-10-11T08:55:21.118Z"
+    },
+    {
+      "id": "rev-init-1",
+      "productId": "p1000000-0000-0000-0000-000000000001",
+      "productSlug": "macbook-air-m3-13-16gb-512gb",
+      "orderCode": "#BK-0812",
+      "customerName": "Hoàng Minh Quân",
+      "phone": "0981122334",
+      "rating": 5,
+      "comment": "Máy siêu mỏng nhẹ, pin trâu dùng lướt web cả ngày chỉ hết 40%. Bàn phím gõ rất nảy và màn hình cực nét. Đóng gói rất kỹ càng!",
+      "createdAt": "2026-10-06T08:50:00.879Z"
+    },
+    {
+      "id": "rev-init-2",
+      "productId": "p1000000-0000-0000-0000-000000000001",
+      "productSlug": "macbook-air-m3-13-16gb-512gb",
+      "orderCode": "#BK-0855",
+      "customerName": "Trần Thu Hà",
+      "phone": "0972334455",
+      "rating": 5,
+      "comment": "Màu Starlight sang chảnh, chip M3 mở project code chạy mượt mà không nóng máy. Giao hàng hỏa tốc trong 2 giờ rất uy tín.",
+      "createdAt": "2026-10-08T08:50:00.879Z"
+    },
+    {
+      "id": "rev-init-3",
+      "productId": "p1000000-0000-0000-0000-000000000008",
+      "productSlug": "iphone-16-pro-max-256gb",
+      "orderCode": "#BK-0790",
+      "customerName": "Vũ Quốc Bảo",
+      "phone": "0933445566",
+      "rating": 5,
+      "comment": "Viền titan tự nhiên cầm rất nhẹ tay, nút Camera Control chụp ảnh nhanh rất tiện. Màn hình 120Hz mượt mà và camera zoom 5x sắc nét.",
+      "createdAt": "2026-10-04T08:50:00.879Z"
+    },
+    {
+      "id": "rev-init-4",
+      "productId": "p1000000-0000-0000-0000-000000000011",
+      "productSlug": "sony-wh-1000xm5-black",
+      "orderCode": "#BK-0677",
+      "customerName": "Đặng Mai Phương",
+      "phone": "0966778899",
+      "rating": 5,
+      "comment": "Khả năng chống ồn tuyệt đối, đeo đi cà phê hoặc máy bay không nghe thấy tiếng ồn xung quanh. Đệm tai êm ái đeo nhiều giờ không đau.",
+      "createdAt": "2026-10-01T08:50:00.879Z"
+    },
+    {
+      "id": "rev-init-5",
+      "productId": "p1000000-0000-0000-0000-000000000013",
+      "productSlug": "logitech-mx-master-3s",
+      "orderCode": "#BK-0544",
+      "customerName": "Lê Tuấn Hưng",
+      "phone": "0944556677",
+      "rating": 5,
+      "comment": "Chuột công thái học số 1 cho dân văn phòng và coder, cuộn vô cực MagSpeed cực mượt và click cực kỳ êm không gây tiếng ồn.",
+      "createdAt": "2026-09-27T08:50:00.879Z"
+    }
+  ]
+}

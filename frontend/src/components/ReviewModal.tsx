@@ -51,17 +51,52 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
   // Selected item being reviewed
   const [reviewingItem, setReviewingItem] = useState<OrderItem | null>(null);
+  const [reviewingItemIdx, setReviewingItemIdx] = useState<number | null>(null);
   const [rating, setRating] = useState<number>(5);
   const [hoverRating, setHoverRating] = useState<number>(0);
   const [comment, setComment] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState('');
 
+  // Strict helper to check if a review belongs to a given order item (never matching undefined === undefined)
+  const doesReviewMatchItem = React.useCallback((r: Review, item: OrderItem): boolean => {
+    if (item.productId && r.productId && String(r.productId) === String(item.productId)) {
+      return true;
+    }
+    if (item.productSlug && r.productSlug && r.productSlug === item.productSlug) {
+      return true;
+    }
+    if (item.productId && r.productSlug && r.productSlug === String(item.productId)) {
+      return true;
+    }
+    if (item.productSlug && r.productId && String(r.productId) === item.productSlug) {
+      return true;
+    }
+    return false;
+  }, []);
+
+  // Strict helper to check if two order items are the same product
+  const isSameOrderItem = React.useCallback((a: OrderItem | null, b: OrderItem | null): boolean => {
+    if (!a || !b) return false;
+    if (a === b) return true;
+    if (a.productId && b.productId) {
+      return String(a.productId) === String(b.productId);
+    }
+    if (a.productSlug && b.productSlug) {
+      return a.productSlug === b.productSlug;
+    }
+    if (a.productName && b.productName) {
+      return a.productName === b.productName;
+    }
+    return false;
+  }, []);
+
   const loadOrderAndReviews = React.useCallback(
     async (codeToSearch: string, phoneToSearch: string, targetProdId?: string) => {
       setErrorMsg('');
       setSubmitSuccess('');
       setReviewingItem(null);
+      setReviewingItemIdx(null);
 
       if (!codeToSearch.trim()) {
         setErrorMsg('Vui lòng nhập mã đơn hàng (ví dụ: BK-1024).');
@@ -84,17 +119,19 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
           // If target item specified and not yet reviewed, auto open form for it
           if (targetProdId && res.data.items) {
-            const found = res.data.items.find(
-              (it) => it.productId === targetProdId || it.productSlug === targetProdId
+            const foundIdx = res.data.items.findIndex(
+              (it) =>
+                (Boolean(it.productId) && String(it.productId) === targetProdId) ||
+                (Boolean(it.productSlug) && it.productSlug === targetProdId) ||
+                (Boolean(it.productName) && it.productName === targetProdId)
             );
-            const isAlreadyReviewed = reviews.some(
-              (r) =>
-                r.productSlug === targetProdId ||
-                r.productId === targetProdId ||
-                (found && (r.productSlug === found.productSlug || r.productId === found.productId))
-            );
-            if (found && !isAlreadyReviewed) {
-              setReviewingItem(found);
+            if (foundIdx !== -1) {
+              const found = res.data.items[foundIdx];
+              const isAlreadyReviewed = reviews.some((r) => doesReviewMatchItem(r, found));
+              if (!isAlreadyReviewed) {
+                setReviewingItem(found);
+                setReviewingItemIdx(foundIdx);
+              }
             }
           }
         } else {
@@ -108,7 +145,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
         setIsLoadingOrder(false);
       }
     },
-    []
+    [doesReviewMatchItem]
   );
 
   useEffect(() => {
@@ -122,6 +159,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
     } else {
       setSubmitSuccess('');
       setReviewingItem(null);
+      setReviewingItemIdx(null);
     }
   }, [isOpen, initialOrderCode, initialPhone, initialProductId, loadOrderAndReviews]);
 
@@ -132,8 +170,9 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
     loadOrderAndReviews(orderCode, phone);
   };
 
-  const handleStartReview = (item: OrderItem) => {
+  const handleStartReview = (item: OrderItem, idx: number) => {
     setReviewingItem(item);
+    setReviewingItemIdx(idx);
     setRating(5);
     setComment('');
     setSubmitSuccess('');
@@ -152,7 +191,11 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
     setIsSubmitting(true);
     setErrorMsg('');
 
-    const targetProd = reviewingItem.productSlug || reviewingItem.productId || '';
+    const targetProd =
+      reviewingItem.productSlug ||
+      reviewingItem.productId ||
+      reviewingItem.productName ||
+      '';
 
     try {
       const res = await submitProductReview({
@@ -169,6 +212,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
         );
         setOrderReviews((prev) => [res.data!, ...prev]);
         setReviewingItem(null);
+        setReviewingItemIdx(null);
         setComment('');
         if (onReviewSubmitted) {
           onReviewSubmitted(res.data);
@@ -185,11 +229,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
   // Helper check if an item in order has already been reviewed
   const getExistingReview = (item: OrderItem): Review | undefined => {
-    return orderReviews.find(
-      (r) =>
-        (item.productSlug && r.productSlug === item.productSlug) ||
-        (item.productId && r.productId === item.productId)
-    );
+    return orderReviews.find((r) => doesReviewMatchItem(r, item));
   };
 
   return (
@@ -317,13 +357,14 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                       item.productName || item.productSlug || item.productId || 'Thiết bị công nghệ';
                     const isDelivered = orderData.status === 'delivered';
                     const isCurrentlySelected =
-                      reviewingItem &&
-                      (reviewingItem.productSlug === item.productSlug ||
-                        reviewingItem.productId === item.productId);
+                      reviewingItem !== null &&
+                      (reviewingItemIdx !== null
+                        ? reviewingItemIdx === idx
+                        : isSameOrderItem(reviewingItem, item));
 
                     return (
                       <div
-                        key={idx}
+                        key={item.productId || item.productSlug || idx}
                         className={`p-4 rounded-2xl border transition-all ${
                           isCurrentlySelected
                             ? 'border-blue-500 bg-blue-50/30 ring-2 ring-blue-500/10'
@@ -356,7 +397,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                               </div>
                             ) : isDelivered ? (
                               <button
-                                onClick={() => handleStartReview(item)}
+                                onClick={() => handleStartReview(item, idx)}
                                 className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                                   isCurrentlySelected
                                     ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
@@ -414,13 +455,16 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                     <span className="text-xs font-bold text-slate-900">
                       Viết đánh giá cho:{' '}
                       <span className="text-blue-700 font-extrabold">
-                        {reviewingItem.productName || reviewingItem.productSlug}
+                        {reviewingItem.productName || reviewingItem.productSlug || reviewingItem.productId}
                       </span>
                     </span>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setReviewingItem(null)}
+                    onClick={() => {
+                      setReviewingItem(null);
+                      setReviewingItemIdx(null);
+                    }}
                     className="text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
                   >
                     Đóng
@@ -494,7 +538,10 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                 <div className="flex justify-end gap-2.5 pt-2">
                   <button
                     type="button"
-                    onClick={() => setReviewingItem(null)}
+                    onClick={() => {
+                      setReviewingItem(null);
+                      setReviewingItemIdx(null);
+                    }}
                     className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
                   >
                     Hủy

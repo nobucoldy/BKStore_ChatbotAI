@@ -870,6 +870,33 @@ export async function deleteProductApi(id: string): Promise<ApiResponse<void>> {
   }
 }
 
+const LOCAL_STORAGE_ORDERS_KEY = 'bkstore_orders_v1';
+
+function getStoredFallbackOrders(): Order[] {
+  if (typeof window === 'undefined') return FALLBACK_ORDERS;
+  try {
+    const raw = window.localStorage.getItem(LOCAL_STORAGE_ORDERS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn('[API] Failed to read orders from localStorage:', err);
+  }
+  return FALLBACK_ORDERS;
+}
+
+function saveStoredFallbackOrders(orders: Order[]): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(LOCAL_STORAGE_ORDERS_KEY, JSON.stringify(orders));
+  } catch (err) {
+    console.warn('[API] Failed to write orders to localStorage:', err);
+  }
+}
+
 export async function createOrderApi(payload: CreateOrderPayload): Promise<ApiResponse<Order>> {
   try {
     const res = await fetch(`${API_BASE_URL}/orders`, {
@@ -881,8 +908,27 @@ export async function createOrderApi(payload: CreateOrderPayload): Promise<ApiRe
     return json;
   } catch (error: unknown) {
     console.warn('[API] createOrder fallback mock:', error);
-    // Offline / Mock fallback order
-    const randomCode = `BK-${Math.floor(1000 + Math.random() * 9000)}`;
+    // Offline / Mock fallback order persisted to localStorage
+    const randomCode = `#BK-${Math.floor(1000 + Math.random() * 9000)}`;
+    const mappedItems = (payload.items || []).map((it) => {
+      const prod = FALLBACK_PRODUCTS.find(
+        (p) => p.id === it.productId || p.slug === it.productId
+      );
+      const unitPrice = prod ? prod.price : 0;
+      return {
+        productId: prod?.id || it.productId,
+        productSlug: prod?.slug || it.productId,
+        productName: prod?.name || it.productId,
+        quantity: it.quantity,
+        unitPrice,
+        price: unitPrice,
+      };
+    });
+    const calculatedTotal = mappedItems.reduce(
+      (sum, it) => sum + (it.unitPrice || 0) * it.quantity,
+      0
+    );
+
     const mockOrder: Order = {
       id: `ord-${Date.now()}`,
       orderCode: randomCode,
@@ -890,15 +936,22 @@ export async function createOrderApi(payload: CreateOrderPayload): Promise<ApiRe
       phone: payload.phone,
       address: payload.address,
       note: payload.note,
-      totalAmount: 35990000,
+      totalAmount: calculatedTotal || 35990000,
       paymentMethod: payload.paymentMethod,
       status: 'pending',
       trackingInfo: 'Đơn hàng đang chờ nhân viên kiểm tra kho và xác nhận.',
       createdAt: new Date().toISOString(),
+      items: mappedItems,
     };
+
+    const currentOrders = getStoredFallbackOrders();
+    const updatedOrders = [mockOrder, ...currentOrders];
+    FALLBACK_ORDERS.splice(0, FALLBACK_ORDERS.length, ...updatedOrders);
+    saveStoredFallbackOrders(updatedOrders);
+
     return {
       success: true,
-      message: 'Đặt hàng thành công! (Chế độ mô phỏng offline)',
+      message: 'Đặt hàng thành công! (Đã lưu vào bộ nhớ cục bộ)',
       data: mockOrder,
     };
   }
@@ -914,9 +967,23 @@ export async function trackOrderApi(orderCode: string, phone: string): Promise<A
     const json = await res.json();
     return json;
   } catch {
+    const cleanCode = orderCode.trim().replace(/^#/, '').toLowerCase();
+    const cleanPhone = phone.trim();
+    const stored = getStoredFallbackOrders();
+    const found = stored.find(
+      (o) =>
+        o.orderCode.replace(/^#/, '').toLowerCase() === cleanCode &&
+        o.phone.trim() === cleanPhone
+    );
+    if (found) {
+      return {
+        success: true,
+        data: found,
+      };
+    }
     return {
       success: false,
-      error: 'Không thể kết nối máy chủ để tra cứu đơn hàng. Vui lòng thử lại sau.',
+      error: 'Không tìm thấy đơn hàng khớp với mã đơn và số điện thoại đã nhập.',
     };
   }
 }
@@ -1029,7 +1096,7 @@ export async function fetchAllOrders(status?: string, page = 1, limit = 20): Pro
     console.warn('[API] fetchAllOrders fallback to local seed:', error);
   }
 
-  let list = [...FALLBACK_ORDERS];
+  let list = [...getStoredFallbackOrders()];
   if (status && status !== 'all') {
     list = list.filter((o) => o.status.toLowerCase() === status.toLowerCase());
   }
@@ -1056,14 +1123,17 @@ export async function updateOrderStatusApi(
     const json = await res.json();
     return json;
   } catch {
-    // In-memory fallback
-    const found = FALLBACK_ORDERS.find(
-      (o) => o.orderCode.replace(/^#/, '') === orderCode.replace(/^#/, '')
+    // Persistent localStorage fallback
+    const stored = getStoredFallbackOrders();
+    const found = stored.find(
+      (o) => o.orderCode.replace(/^#/, '').toLowerCase() === orderCode.replace(/^#/, '').toLowerCase()
     );
     if (found) {
       found.status = status as OrderStatus;
       if (trackingInfo) found.trackingInfo = trackingInfo;
-      return { success: true, data: found, message: 'Cập nhật thành công (Chế độ mô phỏng)!' };
+      FALLBACK_ORDERS.splice(0, FALLBACK_ORDERS.length, ...stored);
+      saveStoredFallbackOrders(stored);
+      return { success: true, data: found, message: 'Cập nhật thành công (Đã lưu cục bộ)!' };
     }
     return { success: false, error: 'Không thể kết nối máy chủ để cập nhật.' };
   }

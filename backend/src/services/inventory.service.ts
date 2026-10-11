@@ -1,4 +1,5 @@
 import { pool, checkDbConnection } from '../config/db';
+import { readLocalDb, writeLocalDb } from '../db/localStore';
 import {
   products as fallbackProducts,
   branches as fallbackBranches,
@@ -58,12 +59,23 @@ export interface InventoryFilters {
 // In-memory state for fallback mode
 const inMemoryInventoryMap = new Map<string, { quantity: number; updatedAt: string }>();
 
+function saveInventoryToLocalDb(): void {
+  const serialized: Record<string, number> = {};
+  inMemoryInventoryMap.forEach((val, key) => {
+    serialized[key] = val.quantity;
+  });
+  writeLocalDb({ inventory: serialized });
+}
+
 function initInMemoryInventory(): void {
   if (inMemoryInventoryMap.size === 0) {
+    const persistedInv = readLocalDb().inventory || {};
     fallbackProducts.forEach((p, pIdx) => {
       fallbackBranches.forEach((b, bIdx) => {
-        const qty = ((pIdx * 3 + bIdx * 7) % 8) + 2;
-        inMemoryInventoryMap.set(`${p.id}:${b.id}`, {
+        const key = `${p.id}:${b.id}`;
+        const defaultQty = ((pIdx * 3 + bIdx * 7) % 8) + 2;
+        const qty = persistedInv[key] !== undefined ? Number(persistedInv[key]) : defaultQty;
+        inMemoryInventoryMap.set(key, {
           quantity: qty,
           updatedAt: new Date().toISOString(),
         });
@@ -361,6 +373,7 @@ export const updateProductBranchStock = async (
 
     (prod as any).stockQuantity = totalStock;
     (prod as any).stock = totalStock;
+    saveInventoryToLocalDb();
 
     return {
       productId: prod.id,
@@ -447,6 +460,7 @@ export const transferStock = async (
       quantity: currentTo + quantity,
       updatedAt: now,
     });
+    saveInventoryToLocalDb();
 
     return {
       success: true,

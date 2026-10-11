@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { pool, checkDbConnection } from '../config/db';
+import { readLocalDb, writeLocalDb } from '../db/localStore';
 import { products as fallbackProducts, branches as fallbackBranches, categories as fallbackCategories } from '../db/seedData';
 import { CreateProductInput, UpdateProductInput } from '../schemas/product.schema';
 
@@ -14,8 +15,8 @@ export interface ProductFilterOptions {
   limit?: number;
 }
 
-// In-memory store for fallback mode when database is not connected
-let inMemoryProducts: any[] = fallbackProducts.map((p) => {
+// Default seed products normalized
+const defaultProducts: any[] = fallbackProducts.map((p) => {
   const cat = fallbackCategories.find((c) => c.slug === p.categorySlug);
   return {
     ...p,
@@ -26,8 +27,23 @@ let inMemoryProducts: any[] = fallbackProducts.map((p) => {
   };
 });
 
+const persistedProducts = readLocalDb().products;
+let inMemoryProducts: any[] =
+  Array.isArray(persistedProducts) && persistedProducts.length > 0
+    ? persistedProducts
+    : [...defaultProducts];
+
 export const findProductByIdOrSlug = (idOrSlug: string) => {
-  return inMemoryProducts.find((p) => p.id === idOrSlug || p.slug === idOrSlug) || null;
+  if (!idOrSlug) return null;
+  const normalized = idOrSlug.trim().toLowerCase();
+  return (
+    inMemoryProducts.find(
+      (p) =>
+        p.id === idOrSlug ||
+        p.slug?.toLowerCase() === normalized ||
+        p.name?.toLowerCase() === normalized
+    ) || null
+  );
 };
 
 export const deductStockInMemory = (productId: string, quantity: number): boolean => {
@@ -37,6 +53,7 @@ export const deductStockInMemory = (productId: string, quantity: number): boolea
   if (currentStock < quantity) return false;
   prod.stockQuantity = currentStock - quantity;
   prod.stock = prod.stockQuantity;
+  writeLocalDb({ products: inMemoryProducts });
   return true;
 };
 
@@ -274,6 +291,7 @@ export const createProduct = async (input: CreateProductInput) => {
     };
 
     inMemoryProducts.unshift(newProduct);
+    writeLocalDb({ products: inMemoryProducts });
     return newProduct;
   }
 
@@ -348,6 +366,7 @@ export const updateProduct = async (id: string, input: UpdateProductInput) => {
     };
 
     inMemoryProducts[idx] = updated;
+    writeLocalDb({ products: inMemoryProducts });
     return updated;
   }
 
@@ -435,7 +454,11 @@ export const deleteProduct = async (id: string): Promise<boolean> => {
   if (!isDbConnected) {
     const initialLen = inMemoryProducts.length;
     inMemoryProducts = inMemoryProducts.filter((p) => p.id !== id && p.slug !== id);
-    return inMemoryProducts.length < initialLen;
+    const deleted = inMemoryProducts.length < initialLen;
+    if (deleted) {
+      writeLocalDb({ products: inMemoryProducts });
+    }
+    return deleted;
   }
 
   const res = await pool.query('DELETE FROM products WHERE id::text = $1 OR slug = $1 RETURNING id', [id]);

@@ -274,7 +274,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                     const itemTotalPrice = itemUnitPrice * itemQty;
                     const displayName =
                       item.productName || item.productSlug || item.productId || 'Thiết bị công nghệ';
-                    const targetProd = item.productSlug || item.productId || '';
+                    const targetProd = item.productSlug || item.productId || item.productName || '';
 
                     return (
                       <div key={idx} className="py-2.5 flex items-center justify-between gap-3">

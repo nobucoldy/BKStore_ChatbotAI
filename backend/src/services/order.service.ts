@@ -1,10 +1,15 @@
 import { pool, checkDbConnection } from '../config/db';
 import { sampleOrders as fallbackOrders } from '../db/seedData';
+import { readLocalDb, writeLocalDb } from '../db/localStore';
 import { CreateOrderInput } from '../schemas/order.schema';
 import { findProductByIdOrSlug, deductStockInMemory } from './product.service';
 
-// In-memory store for newly created orders when running without DB
-export const inMemoryOrders: any[] = [...fallbackOrders];
+// Persistent local store for orders when running without PostgreSQL
+const persistedOrders = readLocalDb().orders;
+export const inMemoryOrders: any[] =
+  Array.isArray(persistedOrders) && persistedOrders.length > 0
+    ? persistedOrders
+    : [...fallbackOrders];
 
 const generateOrderCode = (): string => {
   const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -16,7 +21,7 @@ export const createOrder = async (input: CreateOrderInput) => {
   const isDbConnected = await checkDbConnection();
 
   if (!isDbConnected) {
-    // In-memory fallback
+    // In-memory / Local DB fallback
     let totalAmount = 0;
     const itemsWithDetails: any[] = [];
 
@@ -36,6 +41,7 @@ export const createOrder = async (input: CreateOrderInput) => {
       totalAmount += itemTotal;
       itemsWithDetails.push({
         productId: prod.id,
+        productSlug: prod.slug,
         productName: prod.name,
         quantity: item.quantity,
         unitPrice: prod.price,
@@ -64,6 +70,7 @@ export const createOrder = async (input: CreateOrderInput) => {
     };
 
     inMemoryOrders.unshift(newOrder);
+    writeLocalDb({ orders: inMemoryOrders });
     return newOrder;
   }
 
@@ -73,12 +80,12 @@ export const createOrder = async (input: CreateOrderInput) => {
     await client.query('BEGIN');
 
     let calculatedTotal = 0;
-    const itemsToInsert: { productId: string; productName: string; quantity: number; unitPrice: number }[] = [];
+    const itemsToInsert: { productId: string; productSlug: string; productName: string; quantity: number; unitPrice: number; price: number }[] = [];
 
     for (const item of input.items) {
       // Find product by id or slug with row lock
       const pRes = await client.query(
-        'SELECT id, name, price, stock_quantity FROM products WHERE id::text = $1 OR slug = $1 FOR UPDATE',
+        'SELECT id, slug, name, price, stock_quantity FROM products WHERE id::text = $1 OR slug = $1 FOR UPDATE',
         [item.productId]
       );
       if (pRes.rows.length === 0) {
@@ -98,9 +105,11 @@ export const createOrder = async (input: CreateOrderInput) => {
 
       itemsToInsert.push({
         productId: product.id,
+        productSlug: product.slug,
         productName: product.name,
         quantity: item.quantity,
         unitPrice,
+        price: unitPrice,
       });
     }
 
@@ -160,6 +169,24 @@ export interface OrderFilterOptions {
   limit?: number;
 }
 
+const normalizeOrderItemsInMemory = (items: any[]) => {
+  return (items || []).map((it: any) => {
+    const matchedProd = findProductByIdOrSlug(
+      it.productId || it.productSlug || it.productName || ''
+    );
+    const unitPrice = Number(it.unitPrice ?? it.price ?? matchedProd?.price ?? 0);
+    return {
+      ...it,
+      productId: it.productId || matchedProd?.id || it.productSlug,
+      productSlug: it.productSlug || matchedProd?.slug || it.productId,
+      productName: it.productName || matchedProd?.name || it.productSlug || 'Thiết bị công nghệ',
+      quantity: Number(it.quantity || 1),
+      unitPrice,
+      price: unitPrice,
+    };
+  });
+};
+
 export const getAllOrders = async (options: OrderFilterOptions = {}) => {
   const page = Math.max(1, Number(options.page) || 1);
   const limit = Math.max(1, Math.min(100, Number(options.limit) || 20));
@@ -172,14 +199,7 @@ export const getAllOrders = async (options: OrderFilterOptions = {}) => {
       id: o.id || `ord-${o.orderCode.replace(/^#/, '') || idx}`,
       createdAt: o.createdAt || new Date(Date.now() - 3600000 * (idx + 1) * 6).toISOString(),
       totalAmount: Number(o.totalAmount || 0),
-      items: (o.items || []).map((it: any) => ({
-        ...it,
-        productId: it.productId || it.productSlug,
-        productName: it.productName || it.productSlug || 'Thiết bị công nghệ',
-        quantity: Number(it.quantity || 1),
-        unitPrice: Number(it.unitPrice ?? it.price ?? 0),
-        price: Number(it.price ?? it.unitPrice ?? 0),
-      })),
+      items: normalizeOrderItemsInMemory(o.items),
     }));
 
     if (options.status && options.status !== 'all') {
@@ -223,15 +243,18 @@ export const getAllOrders = async (options: OrderFilterOptions = {}) => {
       COALESCE(
         json_agg(
           json_build_object(
-            'productId', oi.product_id,
+            'productId', COALESCE(oi.product_id, p.id),
+            'productSlug', p.slug,
             'productName', oi.product_name,
             'quantity', oi.quantity,
-            'unitPrice', oi.unit_price
+            'unitPrice', oi.unit_price,
+            'price', oi.unit_price
           )
         ) FILTER (WHERE oi.id IS NOT NULL), '[]'::json
       ) as items
     FROM orders o
     LEFT JOIN order_items oi ON oi.order_id = o.id
+    LEFT JOIN products p ON (p.id = oi.product_id OR LOWER(p.name) = LOWER(oi.product_name))
     ${whereClause}
     GROUP BY o.id
     ORDER BY o.created_at DESC
@@ -265,11 +288,7 @@ export const getOrderByCodeAndPhone = async (orderCode: string, phone: string) =
     if (!order) return null;
     return {
       ...order,
-      items: (order.items || []).map((it: any) => ({
-        ...it,
-        price: it.price !== undefined ? it.price : (it.unitPrice !== undefined ? it.unitPrice : 0),
-        unitPrice: it.unitPrice !== undefined ? it.unitPrice : (it.price !== undefined ? it.price : 0),
-      })),
+      items: normalizeOrderItemsInMemory(order.items),
     };
   }
 
@@ -282,7 +301,8 @@ export const getOrderByCodeAndPhone = async (orderCode: string, phone: string) =
       COALESCE(
         json_agg(
           json_build_object(
-            'productId', oi.product_id,
+            'productId', COALESCE(oi.product_id, p.id),
+            'productSlug', p.slug,
             'productName', oi.product_name,
             'quantity', oi.quantity,
             'unitPrice', oi.unit_price,
@@ -292,6 +312,7 @@ export const getOrderByCodeAndPhone = async (orderCode: string, phone: string) =
       ) as items
     FROM orders o
     LEFT JOIN order_items oi ON oi.order_id = o.id
+    LEFT JOIN products p ON (p.id = oi.product_id OR LOWER(p.name) = LOWER(oi.product_name))
     WHERE LOWER(o.order_code) = LOWER($1) AND o.phone = $2
     GROUP BY o.id
   `;
@@ -311,11 +332,7 @@ export const getOrderByCode = async (orderCode: string) => {
     if (!order) return null;
     return {
       ...order,
-      items: (order.items || []).map((it: any) => ({
-        ...it,
-        price: it.price !== undefined ? it.price : (it.unitPrice !== undefined ? it.unitPrice : 0),
-        unitPrice: it.unitPrice !== undefined ? it.unitPrice : (it.price !== undefined ? it.price : 0),
-      })),
+      items: normalizeOrderItemsInMemory(order.items),
     };
   }
 
@@ -328,7 +345,8 @@ export const getOrderByCode = async (orderCode: string) => {
       COALESCE(
         json_agg(
           json_build_object(
-            'productId', oi.product_id,
+            'productId', COALESCE(oi.product_id, p.id),
+            'productSlug', p.slug,
             'productName', oi.product_name,
             'quantity', oi.quantity,
             'unitPrice', oi.unit_price,
@@ -338,6 +356,7 @@ export const getOrderByCode = async (orderCode: string) => {
       ) as items
     FROM orders o
     LEFT JOIN order_items oi ON oi.order_id = o.id
+    LEFT JOIN products p ON (p.id = oi.product_id OR LOWER(p.name) = LOWER(oi.product_name))
     WHERE LOWER(o.order_code) = LOWER($1)
     GROUP BY o.id
   `;
@@ -352,10 +371,15 @@ export const getOrdersByPhone = async (phone: string) => {
 
   const isDbConnected = await checkDbConnection();
   if (!isDbConnected) {
-    return inMemoryOrders.filter((o) => {
-      const p = (o.phone || '').replace(/[^0-9]/g, '');
-      return p.includes(cleanPhone) || cleanPhone.includes(p);
-    });
+    return inMemoryOrders
+      .filter((o) => {
+        const p = (o.phone || '').replace(/[^0-9]/g, '');
+        return p.includes(cleanPhone) || cleanPhone.includes(p);
+      })
+      .map((o) => ({
+        ...o,
+        items: normalizeOrderItemsInMemory(o.items),
+      }));
   }
 
   const query = `
@@ -367,15 +391,18 @@ export const getOrdersByPhone = async (phone: string) => {
       COALESCE(
         json_agg(
           json_build_object(
-            'productId', oi.product_id,
+            'productId', COALESCE(oi.product_id, p.id),
+            'productSlug', p.slug,
             'productName', oi.product_name,
             'quantity', oi.quantity,
-            'unitPrice', oi.unit_price
+            'unitPrice', oi.unit_price,
+            'price', oi.unit_price
           )
         ) FILTER (WHERE oi.id IS NOT NULL), '[]'::json
       ) as items
     FROM orders o
     LEFT JOIN order_items oi ON oi.order_id = o.id
+    LEFT JOIN products p ON (p.id = oi.product_id OR LOWER(p.name) = LOWER(oi.product_name))
     WHERE o.phone LIKE $1
     GROUP BY o.id
     ORDER BY o.created_at DESC
@@ -400,6 +427,7 @@ export const updateOrderStatus = async (
     if (!order) return null;
     order.status = status;
     if (trackingInfo) order.trackingInfo = trackingInfo;
+    writeLocalDb({ orders: inMemoryOrders });
     return order;
   }
 
