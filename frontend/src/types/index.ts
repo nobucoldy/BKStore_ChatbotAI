@@ -138,6 +138,7 @@ export interface ChatMessage {
   products?: Product[];
   cards?: ChatMessageCard;
   citations?: string[];
+  suggestions?: string[];
   toolUsed?: string;
   metrics?: ChatPerformanceMetrics;
   timestamp: string;

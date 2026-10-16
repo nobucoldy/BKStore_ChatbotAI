@@ -234,7 +234,7 @@ export default function HomePage() {
       <Hero
         onExploreClick={handleExploreClick}
         onOpenChat={() => {
-          setChatInitialPrompt('Chào BK-Bot! Bạn có thể tư vấn cho tôi một chiếc laptop lập trình tốt không?');
+          setChatInitialPrompt('Chào BK-Bot! Bạn có thể tư vấn cho tôi một chiếc laptop tốt không?');
           setIsChatOpen(true);
         }}
       />

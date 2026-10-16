@@ -160,6 +160,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
           content: cleanAssistantMessage(responseData.reply),
           cards: responseData.cards,
           citations: responseData.citations,
+          suggestions: responseData.suggestions,
           toolUsed: responseData.toolUsed,
           metrics: responseData.metrics,
           timestamp: new Date().toISOString(),
@@ -606,6 +607,23 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                           <ArrowRight className="w-3 h-3" />
                         </Link>
                       )}
+                    </div>
+                  )}
+
+                  {/* 4.5. QUICK SUGGESTION / CLARIFICATION CHIPS */}
+                  {msg.role === 'assistant' && Array.isArray(msg.suggestions) && msg.suggestions.length > 0 && (
+                    <div className="pt-2 flex flex-wrap gap-1.5 animate-in fade-in">
+                      {msg.suggestions.map((suggestion, sIdx) => (
+                        <button
+                          key={sIdx}
+                          type="button"
+                          onClick={() => handleSendPrompt(suggestion)}
+                          disabled={isTyping}
+                          className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-blue-50/90 hover:bg-blue-600 hover:text-white text-blue-700 border border-blue-200 transition-all shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer disabled:opacity-50 text-left"
+                        >
+                          💬 {suggestion}
+                        </button>
+                      ))}
                     </div>
                   )}
 

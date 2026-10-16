@@ -70,6 +70,11 @@ export interface ChatResponseData {
     type: 'products' | 'order' | 'inventory' | 'reviews';
     data: any;
   };
+  suggestions?: string[];
+  clarification?: {
+    domain: 'product_recommendation' | 'order_tracking' | 'inventory_check' | 'product_reviews';
+    missingSlots: string[];
+  };
   toolUsed?: string;
   model: string;
   metrics?: ChatPerformanceMetrics;
@@ -93,7 +98,12 @@ NGUYÊN TẮC BẮT BUỘC:
 7. TUYỆT ĐỐI KHÔNG XUẤT RA DỮ LIỆU NỘI BỘ HAY CHECKLIST:
 - CHỈ xuất ra đúng nội dung câu trả lời tư vấn gửi đến khách hàng.
 - Tuyệt đối KHÔNG in ra các nhãn kỹ thuật nội bộ như "[Tài liệu: ...]", "[Mục: ...]", "Độ khớp: ...%", hoặc các đoạn code/tag debug thô.
-- Tuyệt đối KHÔNG in ra bất kỳ dòng suy nghĩ, checklist, tự kiểm tra, self-reflection (như "technical metadata printed", "Checked", "Suggest next step at end: Checked", "Verified",...).`;
+- Tuyệt đối KHÔNG in ra bất kỳ dòng suy nghĩ, checklist, tự kiểm tra, self-reflection (như "technical metadata printed", "Checked", "Suggest next step at end: Checked", "Verified",...).
+8. NGUYÊN TẮC HỎI LẠI KHI THIẾU THÔNG TIN (CLARIFICATION & SLOT-FILLING):
+- Khi khách hàng hỏi tư vấn mua sản phẩm nhưng chưa nêu rõ ngân sách hoặc nhu cầu cụ thể (ví dụ: "tư vấn laptop cho tôi", "tôi muốn mua laptop", "gợi ý máy tính"): ĐỪNG liệt kê ngẫu nhiên sản phẩm. Hãy lịch sự, ân cần hỏi lại khách hàng về mức ngân sách dự kiến và mục đích sử dụng chính (văn phòng, sinh viên, lập trình, gaming).
+- Khi khách hỏi tra cứu đơn hàng nhưng thiếu mã đơn hoặc số điện thoại: Hãy yêu cầu khách cung cấp thông tin còn thiếu để tra cứu bảo mật.
+- Khi khách hỏi tồn kho nhưng chưa nêu tên máy: Hãy hỏi lại khách đang quan tâm đến dòng máy cụ thể nào.
+- Luôn đặt câu hỏi ngắn gọn, lịch thiệp, có gạch đầu dòng rõ ràng và gợi ý các lựa chọn mẫu để khách hàng dễ dàng phản hồi.`;
 
 /**
  * Làm sạch câu trả lời của AI: Loại bỏ triệt để các nhãn kỹ thuật, nhãn debug,
@@ -254,6 +264,130 @@ class ChatService {
   }
 
   /**
+   * Trích xuất và tích lũy các slots tư vấn qua các lượt hội thoại (Multi-turn Slot Filling)
+   */
+  private extractAccumulatedSlots(
+    message: string,
+    history: ChatHistoryItem[] = []
+  ): {
+    category?: 'laptop' | 'smartphone' | 'accessory';
+    brand?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    useCase?: string;
+  } {
+    const userMessages: string[] = [];
+    if (history && history.length > 0) {
+      for (const h of history.slice(-8)) {
+        if (h.role === 'user' && h.content) {
+          userMessages.push(h.content);
+        }
+      }
+    }
+    userMessages.push(message);
+
+    let category: 'laptop' | 'smartphone' | 'accessory' | undefined;
+    let brand: string | undefined;
+    let minPrice: number | undefined;
+    let maxPrice: number | undefined;
+    let useCase: string | undefined;
+
+    const candidateBrands = [
+      'Apple', 'Asus', 'Dell', 'Lenovo', 'Acer', 'Samsung',
+      'Xiaomi', 'Sony', 'Logitech', 'Keychron', 'Anker',
+    ];
+
+    for (const msg of userMessages) {
+      const norm = normalizeText(msg);
+
+      // 1. Category
+      if (norm.includes('laptop') || norm.includes('may tinh') || norm.includes('macbook')) {
+        category = 'laptop';
+      } else if (norm.includes('dien thoai') || norm.includes('smartphone') || norm.includes('iphone') || norm.includes('galaxy')) {
+        category = 'smartphone';
+      } else if (norm.includes('tai nghe') || norm.includes('chuot') || norm.includes('ban phim') || norm.includes('phu kien')) {
+        category = 'accessory';
+      }
+
+      // 2. Brand
+      for (const b of candidateBrands) {
+        if (norm.includes(b.toLowerCase())) {
+          brand = b;
+          break;
+        }
+      }
+
+      // 3. Use Case
+      if (
+        norm.includes('lap trinh') ||
+        norm.includes('code') ||
+        norm.includes('cntt') ||
+        norm.includes('it') ||
+        norm.includes('ky su phan mem') ||
+        norm.includes('ai') ||
+        norm.includes('data')
+      ) {
+        useCase = 'lap_trinh';
+        if (!category) category = 'laptop';
+      } else if (
+        norm.includes('gaming') ||
+        norm.includes('choi game') ||
+        norm.includes('do hoa') ||
+        norm.includes('thiet ke') ||
+        norm.includes('render') ||
+        norm.includes('kien truc') ||
+        norm.includes('dung phim') ||
+        norm.includes('edit video')
+      ) {
+        useCase = 'gaming_dohoa';
+        if (!category) category = 'laptop';
+      } else if (
+        norm.includes('sinh vien') ||
+        norm.includes('hoc sinh') ||
+        norm.includes('hoc tap') ||
+        norm.includes('di hoc') ||
+        norm.includes('kinh te') ||
+        norm.includes('ngoai ngu')
+      ) {
+        useCase = 'sinh_vien';
+        if (!category) category = 'laptop';
+      } else if (
+        norm.includes('van phong') ||
+        norm.includes('ke toan') ||
+        norm.includes('doanh nhan') ||
+        norm.includes('mong nhe') ||
+        norm.includes('pin trau')
+      ) {
+        useCase = 'van_phong';
+        if (!category) category = 'laptop';
+      }
+
+      // 4. Budget / Price Range
+      const rangeMatch = norm.match(/(\d+)\s*(?:den|to|-)\s*(\d+)\s*(?:trieu|tr)/i);
+      const aboveMatch = norm.match(/(?:tren|tu)\s*(\d+)\s*(?:trieu|tr)/i);
+      const underMatch = norm.match(/(?:duoi)\s*(\d+)\s*(?:trieu|tr)/i);
+      const aroundMatch = norm.match(/(?:tam|khoang|tam gia|khoang gia)?\s*(\d+)\s*(?:trieu|tr)/i);
+
+      if (rangeMatch) {
+        minPrice = parseInt(rangeMatch[1], 10) * 1000000;
+        maxPrice = parseInt(rangeMatch[2], 10) * 1000000;
+      } else if (aboveMatch) {
+        minPrice = parseInt(aboveMatch[1], 10) * 1000000;
+        maxPrice = undefined;
+      } else if (underMatch) {
+        maxPrice = parseInt(underMatch[1], 10) * 1000000;
+        minPrice = undefined;
+      } else if (aroundMatch) {
+        const val = parseInt(aroundMatch[1], 10) * 1000000;
+        minPrice = Math.max(0, val - 5000000);
+        maxPrice = val + 5000000;
+      }
+    }
+
+    return { category, brand, minPrice, maxPrice, useCase };
+  }
+
+  /**
    * Phân tích ý định người dùng để tiền xử lý công cụ (Deterministic Intent Parser)
    */
   private detectIntent(
@@ -269,6 +403,10 @@ class ChatService {
       | 'warranty_all_products'
       | 'check_review_eligibility'
       | 'product_reviews'
+      | 'clarify_product_need'
+      | 'clarify_order_tracking'
+      | 'clarify_inventory_product'
+      | 'clarify_review_product'
       | 'general';
     extracted: any;
   } {
@@ -317,13 +455,25 @@ class ChatService {
       norm.includes('ma van don') ||
       isOrderWarehouseQuestion;
 
-    // Tìm mã đơn hàng (#BK-xxxx, BK-xxxx, BKxxxx, hoặc 4 chữ số khi có từ khóa đơn hàng/đánh giá)
+    const contextOrder = this.findOrderInContext(history);
+    const lastAssistantMsg = [...history].reverse().find((h) => h.role === 'assistant');
+    const lastBotContent = lastAssistantMsg ? normalizeText(lastAssistantMsg.content || '') : '';
+
+    // Tìm mã đơn hàng (#BK-xxxx, BK-xxxx, BKxxxx, hoặc 4 chữ số khi có từ khóa đơn hàng/đánh giá/ngữ cảnh)
     const orderCodeMatch =
       text.match(/#?BK[-_ ]?\d{3,6}/i) ||
-      (isOrderKeyword || isReviewKeyword ? text.match(/\b\d{4}\b/) : null);
+      (isOrderKeyword || isReviewKeyword || contextOrder.phone || lastBotContent.includes('ma don')
+        ? text.match(/\b\d{4}\b/)
+        : null);
 
     // Tìm số điện thoại (10 chữ số bắt đầu bằng 0 hoặc +84)
     const phoneMatch = text.match(/(?:\+?84|0)(?:\d{9}|\d{8})\b/);
+
+    const isOrderContextFollowUp = Boolean(
+      (contextOrder.orderCode && phoneMatch) ||
+      (contextOrder.phone && orderCodeMatch) ||
+      (lastBotContent.includes('so dien thoai') && phoneMatch)
+    );
 
     // 0.1. Nếu có từ khóa đánh giá kết hợp mã đơn hàng hoặc SĐT -> Kiểm tra điều kiện đánh giá đơn
     if (isReviewKeyword && (orderCodeMatch || (norm.includes('don') && phoneMatch))) {
@@ -337,9 +487,18 @@ class ChatService {
       };
     }
 
-    // 0.2. Nếu có từ khóa đánh giá / review
-    if (isReviewKeyword) {
-      const directMatchedProd = this.matchProductFromText(text);
+    // 0.2. Nếu có từ khóa đánh giá / review hoặc nối tiếp câu hỏi hỏi lại về review
+    const wasAskingReview = Boolean(
+      lastBotContent &&
+      (lastBotContent.includes('danh gia') ||
+        lastBotContent.includes('review') ||
+        lastBotContent.includes('dong san pham nao'))
+    );
+
+    const directMatchedReviewProd = this.matchProductFromText(text);
+
+    if (isReviewKeyword || (wasAskingReview && directMatchedReviewProd)) {
+      const directMatchedProd = directMatchedReviewProd;
       const hasPronounRef =
         norm.includes('may nay') ||
         norm.includes('san pham nay') ||
@@ -382,20 +541,80 @@ class ChatService {
         };
       }
 
+      // Khi người dùng hỏi đánh giá/review nói chung mà chưa rõ sản phẩm nào
+      if (!isHowToReviewPolicy && (norm.includes('xem') || norm.includes('sao') || norm.includes('the nao') || norm.includes('tot khong') || norm.includes('ai review') || norm.includes('review') || wasAskingReview)) {
+        return {
+          intent: 'clarify_review_product',
+          extracted: {
+            missingSlots: ['productName'],
+          },
+        };
+      }
+
       return { intent: 'general', extracted: null };
     }
 
-    if (isAskingMyOrders || orderCodeMatch || (isOrderKeyword && phoneMatch) || isOrderWarehouseQuestion || norm.includes('don nay') || (isOrderKeyword && !isReviewKeyword)) {
+    if (
+      isAskingMyOrders ||
+      orderCodeMatch ||
+      (isOrderKeyword && phoneMatch) ||
+      isOrderContextFollowUp ||
+      isOrderWarehouseQuestion ||
+      norm.includes('don nay') ||
+      (isOrderKeyword && !isReviewKeyword)
+    ) {
       const code = orderCodeMatch ? orderCodeMatch[0].replace(/[^0-9]/g, '') : undefined;
-      const contextOrder = this.findOrderInContext(history);
+      const finalCode = code ? `#BK-${code}` : contextOrder.orderCode;
+      const finalPhone = phoneMatch ? phoneMatch[0] : (currentUser?.phone || contextOrder.phone);
+
+      if (currentUser) {
+        return {
+          intent: 'track_order',
+          extracted: {
+            orderCode: finalCode,
+            phone: finalPhone,
+            isAskingMyOrders,
+            userId: currentUser.id,
+            userName: currentUser.name,
+          },
+        };
+      }
+
+      // Khách vãng lai / chưa đăng nhập
+      if (!finalCode && !finalPhone) {
+        return {
+          intent: 'clarify_order_tracking',
+          extracted: {
+            missingSlots: ['orderCode', 'phone'],
+          },
+        };
+      }
+
+      if (finalCode && !finalPhone) {
+        return {
+          intent: 'clarify_order_tracking',
+          extracted: {
+            orderCode: finalCode,
+            missingSlots: ['phone'],
+          },
+        };
+      }
+
+      if (!finalCode && finalPhone) {
+        return {
+          intent: 'clarify_order_tracking',
+          extracted: {
+            phone: finalPhone,
+            missingSlots: ['orderCode'],
+          },
+        };
+      }
+
       return {
         intent: 'track_order',
         extracted: {
-          orderCode: code ? `#BK-${code}` : contextOrder.orderCode,
-          phone: phoneMatch ? phoneMatch[0] : (currentUser?.phone || contextOrder.phone),
-          isAskingMyOrders,
-          userId: currentUser?.id,
-          userName: currentUser?.name,
+          orderCode: finalCode,
+          phone: finalPhone,
         },
       };
     }
@@ -454,6 +673,14 @@ class ChatService {
     }
 
     // 2. Kiểm tra ý định Tra cứu tồn kho chi nhánh
+    const wasAskingInventory = Boolean(
+      lastBotContent &&
+      (lastBotContent.includes('ton kho') ||
+        lastBotContent.includes('tinh trang con hang') ||
+        lastBotContent.includes('chi nhanh') ||
+        lastBotContent.includes('mau san pham cu the nao'))
+    );
+
     const isInventoryKeyword =
       norm.includes('con hang') ||
       norm.includes('het hang') ||
@@ -463,32 +690,28 @@ class ChatService {
       norm.includes('co san') ||
       norm.includes('mua tai');
 
-    if (isInventoryKeyword) {
+    if (isInventoryKeyword || (wasAskingInventory && Boolean(this.matchProductFromText(text)))) {
       let branchName = '';
       if (norm.includes('cau giay') || norm.includes('ha noi')) branchName = 'Cầu Giấy';
       else if (norm.includes('quan 1') || norm.includes('ho chi minh') || norm.includes('tphcm') || norm.includes('hcm')) branchName = 'Quận 1';
       else if (norm.includes('hai chau') || norm.includes('da nang')) branchName = 'Hải Châu';
 
       const contextProd = this.findProductInContext(text, history);
-      let cleanProdName = contextProd ? contextProd.name : text;
 
       if (!contextProd) {
-        const removePhrases = [
-          /ở\s+(cầu giấy|hà nội|quận 1|hồ chí minh|tphcm|hcm|hải châu|đà nẵng)/gi,
-          /tại\s+(cầu giấy|hà nội|quận 1|hồ chí minh|tphcm|hcm|hải châu|đà nẵng)/gi,
-          /(còn hàng|hết hàng|còn máy|tồn kho|có sẵn)\s*(không|k|ko|hả|hở)?\s*(shop|em|bạn|ạ)?/gi,
-          /(cho mình hỏi|shop ơi|em ơi|ad ơi|bạn ơi|cho hỏi)/gi,
-        ];
-        for (const rx of removePhrases) {
-          cleanProdName = cleanProdName.replace(rx, ' ');
-        }
-        cleanProdName = cleanProdName.trim();
+        return {
+          intent: 'clarify_inventory_product',
+          extracted: {
+            branchName: branchName || undefined,
+            missingSlots: ['productName'],
+          },
+        };
       }
 
       return {
         intent: 'check_inventory',
         extracted: {
-          productName: cleanProdName || text,
+          productName: contextProd.name,
           branchName: branchName || undefined,
         },
       };
@@ -607,50 +830,78 @@ class ChatService {
         norm.includes('phu kien'));
 
     if (isFilterKeyword) {
-      let category = '';
-      if (norm.includes('laptop') || norm.includes('may tinh') || norm.includes('macbook') || useCase) category = 'laptop';
-      else if (norm.includes('dien thoai') || norm.includes('smartphone') || norm.includes('iphone')) category = 'smartphone';
-      else if (norm.includes('tai nghe') || norm.includes('chuot') || norm.includes('ban phim') || norm.includes('phu kien')) category = 'accessory';
-
-      // Trích xuất thương hiệu
-      let brand: string | undefined;
-      const candidateBrands = ['Apple', 'Asus', 'Dell', 'Lenovo', 'Acer', 'Samsung', 'Xiaomi', 'Sony', 'Logitech', 'Anker'];
-      for (const b of candidateBrands) {
-        if (norm.includes(b.toLowerCase())) {
-          brand = b;
-          break;
-        }
+      const accumulated = this.extractAccumulatedSlots(text, history);
+      let category = accumulated.category || '';
+      if (!category) {
+        if (norm.includes('laptop') || norm.includes('may tinh') || norm.includes('macbook') || accumulated.useCase) category = 'laptop';
+        else if (norm.includes('dien thoai') || norm.includes('smartphone') || norm.includes('iphone')) category = 'smartphone';
+        else if (norm.includes('tai nghe') || norm.includes('chuot') || norm.includes('ban phim') || norm.includes('phu kien')) category = 'accessory';
+        else category = 'laptop';
       }
 
-      // Trích xuất số tiền (ví dụ: "20 đến 30 triệu", "dưới 25 triệu", "tầm 15tr")
-      let minPrice: number | undefined;
-      let maxPrice: number | undefined;
+      const brand = accumulated.brand;
+      const minPrice = accumulated.minPrice;
+      const maxPrice = accumulated.maxPrice;
+      const useCase = accumulated.useCase;
 
-      const priceRangeMatch = norm.match(/(\d+)\s*(den|to|-)\s*(\d+)\s*(trieu|tr)/i);
-      const underPriceMatch = norm.match(/(duoi|tam|khoang)\s*(\d+)\s*(trieu|tr)/i);
+      const hasBudget = minPrice !== undefined || maxPrice !== undefined;
+      const hasUseCase = useCase !== undefined;
+      const hasBrand = brand !== undefined;
 
-      if (priceRangeMatch) {
-        minPrice = parseInt(priceRangeMatch[1], 10) * 1000000;
-        maxPrice = parseInt(priceRangeMatch[3], 10) * 1000000;
-      } else if (underPriceMatch) {
-        const val = parseInt(underPriceMatch[2], 10) * 1000000;
-        if (norm.includes('duoi')) {
-          maxPrice = val;
-        } else {
-          minPrice = Math.max(0, val - 5000000);
-          maxPrice = val + 5000000;
-        }
+      // TH1: Thiếu cả ngân sách LẪN nhu cầu sử dụng LẪN hãng cụ thể
+      // Ví dụ: "tư vấn laptop cho tôi", "tôi muốn mua laptop", "gợi ý máy tính", "nên mua máy nào"
+      if (!hasBudget && !hasUseCase && !hasBrand) {
+        return {
+          intent: 'clarify_product_need',
+          extracted: {
+            category,
+            missingSlots: ['budget', 'useCase'],
+          },
+        };
       }
 
+      // TH2: Đã có nhu cầu sử dụng, nhưng chưa có khoảng ngân sách
+      // Ví dụ: "tư vấn laptop học lập trình", "laptop cho sinh viên CNTT", "máy chơi game tốt"
+      if (hasUseCase && !hasBudget) {
+        return {
+          intent: 'filter_products',
+          extracted: {
+            category,
+            brand,
+            minPrice: undefined,
+            maxPrice: undefined,
+            useCase,
+            missingSlots: ['budget'],
+          },
+        };
+      }
+
+      // TH3: Đã có khoảng ngân sách, nhưng chưa rõ nhu cầu sử dụng
+      // Ví dụ: "tư vấn laptop tầm 25 triệu", "có máy nào tầm 20 đến 30 triệu không"
+      if (hasBudget && !hasUseCase) {
+        return {
+          intent: 'filter_products',
+          extracted: {
+            category,
+            brand,
+            minPrice,
+            maxPrice,
+            useCase: undefined,
+            missingSlots: ['useCase'],
+          },
+        };
+      }
+
+      // TH4: Đã đủ cả ngân sách và nhu cầu (hoặc có thương hiệu cụ thể)
       return {
         intent: 'filter_products',
         extracted: {
-          category: category || undefined,
+          category,
           brand,
           minPrice,
           maxPrice,
           useCase,
-          keyword: undefined,
+          missingSlots: [],
         },
       };
     }
@@ -727,6 +978,13 @@ class ChatService {
     let toolResultData: any = null;
     let cardPayload: any = undefined;
     let toolUsed: string | undefined = undefined;
+    let suggestions: string[] | undefined = undefined;
+    let clarification:
+      | {
+          domain: 'product_recommendation' | 'order_tracking' | 'inventory_check' | 'product_reviews';
+          missingSlots: string[];
+        }
+      | undefined = undefined;
 
     // 1. Phân tích ý định & kích hoạt AI Tool (truyền kèm history để hiểu "máy này")
     const startIntent = performance.now();
@@ -734,7 +992,95 @@ class ChatService {
     const intentDetectionMs = Math.max(1, Math.round((performance.now() - startIntent) * 100) / 100);
 
     const startTool = performance.now();
-    if (detected.intent === 'check_review_eligibility') {
+    if (detected.intent === 'clarify_product_need') {
+      toolUsed = 'clarifyProductNeed';
+      const cat = detected.extracted?.category || 'laptop';
+      clarification = {
+        domain: 'product_recommendation',
+        missingSlots: ['budget', 'useCase'],
+      };
+      suggestions = [
+        'Dưới 15 triệu',
+        '15 - 25 triệu',
+        '25 - 40 triệu',
+        'Học tập & Văn phòng',
+        'Lập trình / IT',
+        'Đồ họa - Gaming',
+      ];
+      toolResultData = {
+        category: cat,
+        missingSlots: ['budget', 'useCase'],
+        suggestedBudgets: ['Dưới 15 triệu', '15 - 25 triệu', '25 - 40 triệu', 'Trên 40 triệu'],
+        suggestedUseCases: ['Học tập & Văn phòng', 'Lập trình & Kỹ thuật IT', 'Đồ họa & Gaming', 'Mỏng nhẹ cao cấp'],
+      };
+      // Preview 2 trending products in this category
+      const topProds = seedProducts.filter((p) => p.categorySlug === cat).slice(0, 2);
+      if (topProds.length > 0) {
+        cardPayload = {
+          type: 'products',
+          data: topProds.map((p) => ({
+            id: p.id,
+            name: p.name,
+            slug: p.slug,
+            brand: p.brand,
+            price: Number(p.price),
+            formattedPrice: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(p.price)),
+            thumbnail: p.thumbnail,
+            specsSummary: Object.entries(p.specs || {}).slice(0, 3).map(([k, v]) => `${k.toUpperCase()}: ${v}`).join(' • '),
+            inStock: true,
+          })),
+        };
+      }
+    } else if (detected.intent === 'clarify_order_tracking') {
+      toolUsed = 'clarifyOrderTracking';
+      const missing = detected.extracted?.missingSlots || ['orderCode', 'phone'];
+      clarification = {
+        domain: 'order_tracking',
+        missingSlots: missing,
+      };
+      toolResultData = {
+        orderCode: detected.extracted?.orderCode,
+        phone: detected.extracted?.phone,
+        missingSlots: missing,
+      };
+      if (missing.includes('orderCode') && missing.includes('phone')) {
+        suggestions = ['Đăng nhập tài khoản', 'Tra cứu mã #BK-1024', 'Hotline 1800 6868'];
+      } else if (missing.includes('phone')) {
+        suggestions = ['0912345678', 'Gọi tổng đài hỗ trợ'];
+      } else {
+        suggestions = ['Mã đơn #BK-1024', 'Mã đơn #BK-2048', 'Đăng nhập tài khoản'];
+      }
+    } else if (detected.intent === 'clarify_inventory_product') {
+      toolUsed = 'clarifyInventoryProduct';
+      clarification = {
+        domain: 'inventory_check',
+        missingSlots: ['productName'],
+      };
+      toolResultData = {
+        branchName: detected.extracted?.branchName,
+        missingSlots: ['productName'],
+      };
+      suggestions = [
+        'MacBook Air M3',
+        'Dell XPS 14',
+        'ASUS ROG Zephyrus',
+        'iPhone 16 Pro Max',
+      ];
+    } else if (detected.intent === 'clarify_review_product') {
+      toolUsed = 'clarifyReviewProduct';
+      clarification = {
+        domain: 'product_reviews',
+        missingSlots: ['productName'],
+      };
+      toolResultData = {
+        missingSlots: ['productName'],
+      };
+      suggestions = [
+        'Đánh giá MacBook Air M3',
+        'Đánh giá Dell XPS 14',
+        'Đánh giá iPhone 16 Pro Max',
+      ];
+    } else if (detected.intent === 'check_review_eligibility') {
       toolUsed = 'checkReviewEligibility';
       const elig = await checkReviewEligibilityTool(detected.extracted);
       toolResultData = elig;
@@ -744,6 +1090,7 @@ class ChatService {
           data: elig,
         };
       }
+      suggestions = ['Xem đánh giá sản phẩm', 'Chính sách bảo hành', 'Hotline 1800 6868'];
     } else if (detected.intent === 'product_reviews') {
       toolUsed = 'getProductReviews';
       const rev = await getProductReviewsTool(detected.extracted);
@@ -754,6 +1101,7 @@ class ChatService {
           data: rev,
         };
       }
+      suggestions = ['Xem cấu hình chi tiết', 'Kiểm tra tồn kho', 'Chính sách bảo hành'];
     } else if (detected.intent === 'check_inventory') {
       toolUsed = 'checkInventory';
       const inv = await checkInventory(detected.extracted);
@@ -764,6 +1112,7 @@ class ChatService {
           data: inv,
         };
       }
+      suggestions = ['Xem thông số chi tiết', 'Chính sách 1 đổi 1 30 ngày', 'Tư vấn trả góp 0%'];
     } else if (detected.intent === 'track_order') {
       toolUsed = 'trackOrder';
       if (options.currentUser && (detected.extracted?.isAskingMyOrders || (!detected.extracted?.orderCode && !detected.extracted?.phone))) {
@@ -818,15 +1167,50 @@ class ChatService {
           };
         }
       }
+      suggestions = ['Xem chi tiết sản phẩm', 'Chính sách bảo hành', 'Hotline 1800 6868'];
     } else if (detected.intent === 'filter_products') {
       toolUsed = 'filterProducts';
+      const missingSlots = detected.extracted?.missingSlots || [];
       const filt = await filterProducts(detected.extracted);
       toolResultData = filt;
-      if (filt.products && filt.products.length > 0) {
-        cardPayload = {
-          type: 'products',
-          data: filt.products,
+
+      if (missingSlots.includes('budget')) {
+        clarification = {
+          domain: 'product_recommendation',
+          missingSlots: ['budget'],
         };
+        suggestions = ['Dưới 20 triệu', '20 - 30 triệu', '30 - 45 triệu', 'Trên 45 triệu'];
+        if (filt.products && filt.products.length > 0) {
+          cardPayload = {
+            type: 'products',
+            data: filt.products.slice(0, 2),
+          };
+        }
+      } else if (missingSlots.includes('useCase')) {
+        clarification = {
+          domain: 'product_recommendation',
+          missingSlots: ['useCase'],
+        };
+        suggestions = [
+          'Lập trình / Code / IT',
+          'Đồ họa & Gaming',
+          'Học tập - Văn phòng',
+          'Mỏng nhẹ di chuyển',
+        ];
+        if (filt.products && filt.products.length > 0) {
+          cardPayload = {
+            type: 'products',
+            data: filt.products.slice(0, 2),
+          };
+        }
+      } else {
+        suggestions = ['Kiểm tra tồn kho', 'Chính sách bảo hành', 'Chính sách trả góp 0%'];
+        if (filt.products && filt.products.length > 0) {
+          cardPayload = {
+            type: 'products',
+            data: filt.products.slice(0, 4),
+          };
+        }
       }
     } else if (detected.intent === 'product_details') {
       toolUsed = 'getProductDetails';
@@ -841,12 +1225,14 @@ class ChatService {
           data: [det.product],
         };
       }
+      suggestions = ['Kiểm tra tồn kho chi nhánh', 'Xem đánh giá thực tế', 'Chính sách bảo hành'];
     } else if (detected.intent === 'warranty_all_products') {
       toolUsed = 'getWarrantyCatalog';
       toolResultData = {
         found: true,
         warrantyCatalog: this.getAllProductsWarrantyCatalog(),
       };
+      suggestions = ['Bảo hành MacBook', 'Bảo hành Dell XPS', 'Chính sách 1 đổi 1 30 ngày'];
     }
     const toolExecutionMs = toolUsed ? Math.max(1, Math.round((performance.now() - startTool) * 100) / 100) : 0;
 
@@ -916,7 +1302,33 @@ Hãy đưa ra câu trả lời trực tiếp cho khách hàng (chỉ xuất lờ
 
       // Smart Fallback nếu Gemini API tạm gián đoạn (503/Quota)
       if (toolResultData) {
-        if (toolUsed === 'getWarrantyCatalog') {
+        if (toolUsed === 'clarifyProductNeed') {
+          const catName = toolResultData.category === 'smartphone' ? 'điện thoại' : toolResultData.category === 'accessory' ? 'phụ kiện' : 'laptop';
+          replyText = `Dạ chào anh/chị! Để em có thể chọn lọc và tư vấn mẫu **${catName}** chuẩn xác và phù hợp nhất cho mình, anh/chị chia sẻ thêm giúp em 2 thông tin nhỏ này nhé ạ:\n\n` +
+            `1. **Mức ngân sách dự kiến:** Anh/chị đang muốn đầu tư trong khoảng bao nhiêu triệu (ví dụ: *Dưới 15 triệu*, *15 - 25 triệu*, *25 - 40 triệu*, hoặc *Trên 40 triệu*)?\n` +
+            `2. **Nhu cầu sử dụng chính:** Anh/chị mua máy để phục vụ tác vụ gì là chủ yếu (ví dụ: *Học tập - Văn phòng*, *Lập trình / Kỹ thuật IT*, *Đồ họa - Gaming*, hay *Mỏng nhẹ di chuyển nhiều*)?\n\n` +
+            `Anh/chị có thể bấm nhanh vào các nút gợi ý bên dưới hoặc nhắn trực tiếp cho em nhé! Em có gửi trước 2 mẫu máy nổi bật bên dưới để anh/chị tham khảo trước ạ.`;
+        } else if (toolUsed === 'clarifyOrderTracking') {
+          const missing = toolResultData.missingSlots || [];
+          if (missing.includes('orderCode') && missing.includes('phone')) {
+            replyText = `Dạ chào anh/chị! Để tra cứu tiến trình đơn hàng và kho xuất hàng tại BK-Store, anh/chị có thể:\n\n` +
+              `• **Đăng nhập tài khoản:** Bấm nút **"Đăng nhập"** ở góc trên màn hình để hệ thống tự động tải toàn bộ lịch sử đơn hàng của mình.\n` +
+              `• **Tra cứu nhanh:** Cung cấp giúp em **Mã đơn hàng** (dạng *#BK-xxxx*) và **Số điện thoại** đã dùng khi đặt hàng để em tra cứu bảo mật ngay cho mình nhé ạ!`;
+          } else if (missing.includes('phone')) {
+            replyText = `Dạ em đã nhận được mã đơn hàng **${toolResultData.orderCode}** của anh/chị. Để đảm bảo tính bảo mật thông tin đơn hàng cá nhân, anh/chị vui lòng cung cấp thêm **Số điện thoại** đã dùng khi đặt hàng để em kiểm tra tiến trình giao hàng ngay nhé ạ!`;
+          } else {
+            replyText = `Dạ em đã ghi nhận số điện thoại **${toolResultData.phone}**. Anh/chị vui lòng cung cấp thêm **Mã đơn hàng** (ví dụ: *#BK-1024* trong tin nhắn xác nhận hoặc email) để em tra cứu lộ trình xuất kho và vận chuyển cho mình nhé ạ!`;
+          }
+        } else if (toolUsed === 'clarifyInventoryProduct') {
+          const branchText = toolResultData.branchName ? ` tại chi nhánh **${toolResultData.branchName}**` : '';
+          replyText = `Dạ chào anh/chị! Hệ thống kho của BK-Store hiện luôn cập nhật số lượng tồn thời gian thực tại cả 3 Showroom (Hà Nội, TP.HCM, Đà Nẵng).\n\n` +
+            `Anh/chị đang quan tâm và muốn kiểm tra tình trạng còn hàng${branchText} của **mẫu sản phẩm cụ thể nào** ạ? (Ví dụ: *MacBook Air M3*, *Dell XPS 14*, *ASUS ROG Zephyrus*, hoặc *iPhone 16 Pro Max*).\n\n` +
+            `Anh/chị có thể bấm chọn gợi ý bên dưới để em kiểm tra ngay lập tức nhé!`;
+        } else if (toolUsed === 'clarifyReviewProduct') {
+          replyText = `Dạ chào anh/chị! BK-Store có hệ thống đánh giá 100% từ khách hàng thực tế đã nhận máy thành công.\n\n` +
+            `Anh/chị muốn xem nhận xét & đánh giá trải nghiệm thực tế của **dòng sản phẩm nào** ạ? (Ví dụ: *MacBook Air M3*, *Dell XPS 14*, *iPhone 16 Pro Max*).\n\n` +
+            `Anh/chị có thể chọn một trong các gợi ý bên dưới để xem số sao và nhận xét chi tiết nhé!`;
+        } else if (toolUsed === 'getWarrantyCatalog') {
           replyText = `Dạ chào anh/chị! Tại BK-Store, tất cả sản phẩm bán ra đều là **hàng chính hãng 100% nguyên seal hộp** với thời hạn và chế độ bảo hành cụ thể cho từng máy như sau ạ:\n\n`;
           replyText += `**1. Thời hạn bảo hành chính hãng theo từng dòng máy:**\n`;
           replyText += `• **Nhóm bảo hành 24 tháng:**\n  - Dell XPS 14 9440, Lenovo ThinkPad X1 Carbon Gen 12\n  - ASUS ROG Zephyrus G14 OLED, ASUS Zenbook 14 OLED UX3405MA\n  - Acer Predator Helios Neo 16\n`;
@@ -996,14 +1408,31 @@ Hãy đưa ra câu trả lời trực tiếp cho khách hàng (chỉ xuất lờ
             replyText = `Dạ chào anh/chị! ${toolResultData.message}`;
           }
         } else if (toolUsed === 'filterProducts') {
-          const introAdvice = toolResultData.advice
-            ? `${toolResultData.advice}\n\n**Dưới đây là các mẫu máy phù hợp nhất đang sẵn hàng tại BK-Store:**\n\n`
-            : `Dạ chào anh/chị! Dưới đây là các sản phẩm phù hợp nhất với tầm giá và nhu cầu của mình tại BK-Store:\n\n`;
-          replyText = `Dạ chào anh/chị! ${introAdvice}`;
-          replyText += toolResultData.products
-            .map((p: any) => `• **${p.name}** — Giá ưu đãi: **${p.formattedPrice}**\n  *Cấu hình:* ${p.specsSummary}`)
-            .join('\n\n');
-          replyText += `\n\nTất cả sản phẩm đều là hàng chính hãng 100%, bảo hành 1 đổi 1 trong 30 ngày ạ!`;
+          const missingSlots = detected.extracted?.missingSlots || [];
+          if (missingSlots.includes('budget')) {
+            const introAdvice = toolResultData.advice
+              ? `${toolResultData.advice}\n\n`
+              : `Dạ chào anh/chị! Dòng máy này tại BK-Store có khá nhiều phân khúc giá khác nhau.\n\n`;
+            replyText = `Dạ chào anh/chị! ${introAdvice}` +
+              `Để em lọc ra đúng các mẫu máy phù hợp nhất trong tầm giá của mình, **anh/chị dự định đầu tư khoảng bao nhiêu triệu** ạ? (Ví dụ: *Dưới 20 triệu*, *20 - 30 triệu*, hoặc *Trên 30 triệu*).\n\n` +
+              `Em có gửi trước 2 mẫu máy tiêu biểu đang được yêu thích nhất ngay bên dưới để anh/chị tham khảo trước nhé!`;
+          } else if (missingSlots.includes('useCase')) {
+            replyText = `Dạ chào anh/chị! Trong tầm ngân sách này tại BK-Store có khá nhiều sự lựa chọn chất lượng.\n\n` +
+              `Để em chọn lọc chuẩn xác nhất, **nhu cầu sử dụng chính của anh/chị là gì** ạ?\n` +
+              `• **Học tập / Văn phòng:** Cần pin trâu, máy mỏng nhẹ mang đi lại thường xuyên.\n` +
+              `• **Lập trình / Kỹ thuật (IT):** Cần CPU mạnh, RAM từ 16GB–32GB, bàn phím gõ êm.\n` +
+              `• **Gaming / Đồ họa 3D:** Cần card đồ họa rời NVIDIA RTX, tản nhiệt tốt, màn hình tần số quét cao.\n\n` +
+              `Anh/chị có thể bấm chọn gợi ý bên dưới hoặc nhắn trực tiếp cho em nhé! Em có gửi trước 2 mẫu máy tiêu biểu trong tầm giá này bên dưới ạ.`;
+          } else {
+            const introAdvice = toolResultData.advice
+              ? `${toolResultData.advice}\n\n**Dưới đây là các mẫu máy phù hợp nhất đang sẵn hàng tại BK-Store:**\n\n`
+              : `Dạ chào anh/chị! Dưới đây là các sản phẩm phù hợp nhất với tầm giá và nhu cầu của mình tại BK-Store:\n\n`;
+            replyText = `Dạ chào anh/chị! ${introAdvice}`;
+            replyText += toolResultData.products
+              .map((p: any) => `• **${p.name}** — Giá ưu đãi: **${p.formattedPrice}**\n  *Cấu hình:* ${p.specsSummary}`)
+              .join('\n\n');
+            replyText += `\n\nTất cả sản phẩm đều là hàng chính hãng 100%, bảo hành 1 đổi 1 trong 30 ngày ạ!`;
+          }
         } else if (matchedRagChunks && matchedRagChunks.length > 0) {
           const topChunk = matchedRagChunks[0].chunk;
           const cleanContent = topChunk.content
@@ -1069,6 +1498,8 @@ Hãy đưa ra câu trả lời trực tiếp cho khách hàng (chỉ xuất lờ
       reply: cleanedReply,
       citations: Array.from(new Set(citations)),
       cards: cardPayload,
+      suggestions,
+      clarification,
       toolUsed,
       model: usedModel,
       metrics,
@@ -1122,6 +1553,8 @@ Hãy đưa ra câu trả lời trực tiếp cho khách hàng (chỉ xuất lờ
       fullReply: result.reply,
       cards: result.cards,
       citations: result.citations,
+      suggestions: result.suggestions,
+      clarification: result.clarification,
       model: result.model,
       metrics: result.metrics,
     });

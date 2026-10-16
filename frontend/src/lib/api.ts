@@ -1331,6 +1331,7 @@ export interface ChatApiResponseData {
     type: 'products' | 'order' | 'inventory' | 'reviews';
     data: any;
   };
+  suggestions?: string[];
   toolUsed?: string;
   model: string;
   metrics?: {

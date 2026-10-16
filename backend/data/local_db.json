@@ -424,7 +424,7 @@
       "stock": 15
     }
   ],
-  "updatedAt": "2026-10-16T15:58:51.008Z",
+  "updatedAt": "2026-10-16T16:23:40.963Z",
   "orders": [
     {
       "id": "order-1792163527867",
@@ -437,8 +437,8 @@
       "branchName": "BK-Store Quận 1 (TP. Hồ Chí Minh)",
       "totalAmount": 96980000,
       "paymentMethod": "COD",
-      "status": "confirmed",
-      "trackingInfo": "Đã duyệt đơn: Nhân viên BK-Store đã xác nhận và chuẩn bị xuất kho.",
+      "status": "delivered",
+      "trackingInfo": "Giao thành công: Khách hàng đã nhận máy và thanh toán hoàn tất.",
       "createdAt": "2026-10-16T15:12:07.868Z",
       "items": [
         {
