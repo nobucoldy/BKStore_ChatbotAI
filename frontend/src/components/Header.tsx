@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Search, ShoppingBag, Truck, Phone, Sparkles, X, ChevronDown, Layers, Star } from 'lucide-react';
+import { Search, ShoppingBag, Truck, Phone, Sparkles, X, ChevronDown, Layers, Star, User as UserIcon, Package, LogOut } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
+import { useAuthStore } from '@/store/authStore';
 import { Brand } from '@/types';
 import { fetchBrands, FALLBACK_BRANDS } from '@/lib/api';
 
@@ -14,6 +15,8 @@ interface HeaderProps {
   onOpenTracking: () => void;
   onOpenReview?: () => void;
   onOpenChat: () => void;
+  onOpenAuth?: () => void;
+  onOpenMyOrders?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -23,6 +26,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenTracking,
   onOpenReview,
   onOpenChat,
+  onOpenAuth,
+  onOpenMyOrders,
 }) => {
 
   const [localSearch, setLocalSearch] = useState(searchQuery);
@@ -46,8 +51,12 @@ export const Header: React.FC<HeaderProps> = ({
   // Dropdown states
   const [isBrandOpen, setIsBrandOpen] = useState(false);
   const [isMobileBrandOpen, setIsMobileBrandOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const brandDropdownRef = useRef<HTMLDivElement>(null);
   const mobileBrandRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const { user, isAuthenticated, logout, openAuthModal } = useAuthStore();
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -57,6 +66,9 @@ export const Header: React.FC<HeaderProps> = ({
       }
       if (mobileBrandRef.current && !mobileBrandRef.current.contains(event.target as Node)) {
         setIsMobileBrandOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -208,51 +220,112 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-3">
-          {/* Order Tracking Button */}
-          <button
-            onClick={onOpenTracking}
-            className="flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-slate-700 hover:text-blue-600 bg-slate-100/80 hover:bg-blue-50 rounded-xl transition-all cursor-pointer"
-            title="Tra cứu trạng thái đơn hàng"
-          >
-            <Truck className="w-4 h-4 text-blue-600" />
-            <span className="hidden sm:inline">Tra cứu đơn</span>
-          </button>
-
-          {/* Review Order Button */}
-          {onOpenReview && (
-            <button
-              onClick={onOpenReview}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 hover:text-amber-600 bg-slate-100/80 hover:bg-amber-50 rounded-xl transition-all cursor-pointer"
-              title="Đánh giá sản phẩm đã mua"
-            >
-              <Star className="w-4 h-4 text-amber-500 fill-amber-400" />
-              <span className="hidden md:inline">Đánh giá</span>
-            </button>
-          )}
-
-
-          {/* Cart Button with Jumping Animation */}
+        <div className="flex items-center gap-2.5">
+          {/* 1. Cart Button with text (on left of Avatar) */}
           <button
             onClick={onOpenCart}
+            aria-label="Giỏ hàng"
+            title={`Giỏ hàng (${totalItems} món)`}
             className={`relative flex items-center gap-2 px-3.5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl shadow-sm shadow-blue-500/25 transition-all cursor-pointer ${
               isCartJumping ? 'animate-cart-jump ring-4 ring-blue-400/40 shadow-blue-500/50' : ''
             }`}
           >
-            <ShoppingBag className={`w-4 h-4 transition-transform ${isCartJumping ? 'scale-125 text-amber-300' : ''}`} />
+            <div className="relative">
+              <ShoppingBag className={`w-5 h-5 transition-transform ${isCartJumping ? 'scale-125 text-amber-300' : ''}`} />
+              {totalItems > 0 && (
+                <span
+                  className={`absolute -top-2 -right-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full border-2 border-white transition-all ${
+                    isCartJumping
+                      ? 'scale-125 bg-amber-400 text-slate-950 font-black'
+                      : 'bg-rose-500 text-white'
+                  }`}
+                >
+                  {totalItems}
+                </span>
+              )}
+            </div>
             <span className="hidden sm:inline">Giỏ hàng</span>
-            {totalItems > 0 && (
-              <span
-                className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1 text-[11px] font-bold rounded-full transition-all ${
-                  isCartJumping
-                    ? 'scale-125 bg-amber-300 text-slate-950 font-black'
-                    : 'bg-white text-blue-700'
-                }`}
-              >
-                {totalItems}
-              </span>
-            )}
           </button>
+
+          {/* 2. User Auth Button or Circular Avatar (on far right) */}
+          {!isAuthenticated ? (
+            <button
+              onClick={() => (onOpenAuth ? onOpenAuth() : openAuthModal())}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-slate-700 hover:text-blue-600 bg-slate-100/80 hover:bg-blue-50 rounded-xl transition-all cursor-pointer"
+              title="Đăng nhập hoặc Đăng ký tài khoản"
+            >
+              <UserIcon className="w-4 h-4 text-slate-500" />
+              <span className="hidden sm:inline">Đăng nhập</span>
+            </button>
+          ) : (
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-500 text-white flex items-center justify-center text-sm font-bold shadow-xs hover:scale-105 hover:ring-2 hover:ring-blue-400/50 transition-all cursor-pointer border border-white/20"
+                title={`${user?.name} (${user?.email})`}
+                aria-label="Tài khoản người dùng"
+              >
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              </button>
+
+              {isUserMenuOpen && (
+                <div className="absolute right-0 mt-2 w-60 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  {/* User info card */}
+                  <div className="p-3 pb-2.5 border-b border-slate-100 mb-1">
+                    <p className="text-xs font-bold text-slate-900 truncate">{user?.name}</p>
+                    <p className="text-[11px] text-slate-400 truncate">{user?.email}</p>
+                    <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
+                      {user?.role === 'admin' ? '⚙️ Quản trị viên' : '👤 Khách hàng'}
+                    </span>
+                  </div>
+
+                  {/* 1. Thông tin cá nhân */}
+                  <Link
+                    href="/profile"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer text-left"
+                  >
+                    <UserIcon className="w-4 h-4 text-slate-500" />
+                    <span>Thông tin cá nhân</span>
+                  </Link>
+
+                  {/* 2. Đơn hàng của tôi */}
+                  <Link
+                    href="/orders"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer text-left"
+                  >
+                    <Package className="w-4 h-4 text-blue-600" />
+                    <span>Đơn hàng của tôi</span>
+                  </Link>
+
+                  {/* Admin link */}
+                  {user?.role === 'admin' && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors cursor-pointer text-left"
+                    >
+                      <Layers className="w-4 h-4 text-indigo-600" />
+                      <span>Trang Quản trị Admin</span>
+                    </Link>
+                  )}
+
+                  {/* 3. Đăng xuất */}
+                  <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      logout();
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer text-left mt-1 border-t border-slate-100"
+                  >
+                    <LogOut className="w-4 h-4 text-rose-500" />
+                    <span>Đăng xuất</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

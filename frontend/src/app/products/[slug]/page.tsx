@@ -20,11 +20,13 @@ import {
   User,
   ThumbsUp,
   Filter,
+  Lock,
 } from 'lucide-react';
 import { fetchProductBySlug, fetchProducts, fetchProductReviews } from '@/lib/api';
 import { Product, ProductReviewsData, Review } from '@/types';
 import { formatPrice } from '@/lib/utils';
 import { useCartStore } from '@/store/cartStore';
+import { useAuthStore } from '@/store/authStore';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
@@ -59,6 +61,8 @@ export default function ProductDetailPage() {
   const [chatInitialPrompt, setChatInitialPrompt] = useState('');
 
   const addItem = useCartStore((state) => state.addItem);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const openAuthModal = useAuthStore((state) => state.openAuthModal);
 
   const loadReviews = React.useCallback(async (targetSlug: string) => {
     try {
@@ -155,15 +159,28 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = () => {
     if (isOutOfStock) return;
-    addItem(product, quantity);
-    setIsAdded(true);
-    setTimeout(() => setIsAdded(false), 1500);
+    if (!isAuthenticated) {
+      openAuthModal('Vui lòng đăng nhập tài khoản để thêm sản phẩm vào giỏ hàng.');
+      return;
+    }
+    const res = addItem(product, quantity);
+    if (res.success) {
+      setIsAdded(true);
+      setTimeout(() => setIsAdded(false), 1500);
+    }
   };
 
   const handleBuyNow = () => {
     if (isOutOfStock) return;
-    addItem(product, quantity);
-    setIsCheckoutOpen(true);
+    if (!isAuthenticated) {
+      openAuthModal('Vui lòng đăng nhập tài khoản để đặt mua sản phẩm.');
+      return;
+    }
+    const res = addItem(product, quantity);
+    if (res.success) {
+      useCartStore.getState().selectOnlyItem(product.id);
+      setIsCheckoutOpen(true);
+    }
   };
 
   const handleAskAI = () => {
@@ -340,6 +357,15 @@ export default function ProductDetailPage() {
                     )}
                   </span>
                 </div>
+
+                {!isAuthenticated && (
+                  <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs">
+                    <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>
+                      Vui lòng <button type="button" onClick={() => openAuthModal('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.')} className="font-bold underline text-amber-900 hover:text-blue-700 cursor-pointer">đăng nhập</button> để thêm sản phẩm vào giỏ hoặc đặt mua hàng.
+                    </span>
+                  </div>
+                )}
 
                 <div className="flex gap-3 pt-2">
                   <button

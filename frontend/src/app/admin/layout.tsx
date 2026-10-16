@@ -12,7 +12,9 @@ import {
   ArrowLeft,
   ShieldCheck,
   ExternalLink,
+  LogOut,
 } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
 
 export default function AdminLayout({
   children,
@@ -20,6 +22,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { logout, user } = useAuthStore();
 
   const navItems = [
     {
@@ -150,13 +153,22 @@ export default function AdminLayout({
 
             <div className="flex items-center gap-2 pl-4 border-l border-slate-200">
               <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs">
-                AD
+                {user?.name ? user.name.slice(0, 2).toUpperCase() : 'AD'}
               </div>
               <div className="hidden sm:flex flex-col text-left">
-                <span className="text-xs font-bold text-slate-800 leading-tight">Quản Trị Viên</span>
+                <span className="text-xs font-bold text-slate-800 leading-tight">{user?.name || 'Quản Trị Viên'}</span>
                 <span className="text-[10px] text-slate-500 font-mono">Bắc & Kiệt</span>
               </div>
             </div>
+
+            <button
+              onClick={() => logout(true)}
+              title="Đăng xuất khỏi trang Quản trị"
+              className="flex items-center gap-1.5 text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg border border-rose-200 transition-colors cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Đăng xuất</span>
+            </button>
           </div>
         </header>
 

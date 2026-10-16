@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 export interface LocalDbSchema {
+  users?: any[];
   orders?: any[];
   reviews?: any[];
   products?: any[];

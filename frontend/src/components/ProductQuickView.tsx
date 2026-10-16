@@ -5,6 +5,7 @@ import { X, ShoppingBag, Sparkles, Package } from 'lucide-react';
 import { Product } from '@/types';
 import { formatPrice } from '@/lib/utils';
 import { useCartStore } from '@/store/cartStore';
+import { useAuthStore } from '@/store/authStore';
 
 interface ProductQuickViewProps {
   product: Product | null;
@@ -25,6 +26,8 @@ export const ProductQuickView: React.FC<ProductQuickViewProps> = ({
 
   const addItem = useCartStore((state) => state.addItem);
   const cartQty = useCartStore((state) => (product ? state.getItemQuantity(product.id) : 0));
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const openAuthModal = useAuthStore((state) => state.openAuthModal);
 
   if (!product) return null;
 
@@ -38,15 +41,29 @@ export const ProductQuickView: React.FC<ProductQuickViewProps> = ({
 
   const handleAddToCart = () => {
     if (isOutOfStock || isReachedMaxInCart) return;
-    addItem(product, quantity);
-    setIsPopping(true);
-    setTimeout(() => setIsPopping(false), 700);
+    if (!isAuthenticated) {
+      onClose();
+      openAuthModal('Vui lòng đăng nhập tài khoản để thêm sản phẩm vào giỏ hàng.');
+      return;
+    }
+    const res = addItem(product, quantity);
+    if (res.success) {
+      setIsPopping(true);
+      setTimeout(() => setIsPopping(false), 700);
+    }
   };
 
   const handleBuyNow = () => {
     if (isOutOfStock) return;
-    addItem(product, quantity);
-    onBuyNow(product, quantity);
+    if (!isAuthenticated) {
+      onClose();
+      openAuthModal('Vui lòng đăng nhập tài khoản để đặt mua sản phẩm.');
+      return;
+    }
+    const res = addItem(product, quantity);
+    if (res.success) {
+      onBuyNow(product, quantity);
+    }
   };
 
   return (

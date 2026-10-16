@@ -88,6 +88,12 @@ export const createOrder = async (input: CreateOrderInput) => {
 
     const branchLabel = fulfilledBranch?.branchName || 'Kho trung tâm BK-Store';
 
+    const allLocalUsers = readLocalDb().users || [];
+    const matchedUser = input.userId
+      ? allLocalUsers.find((u: any) => u.id === input.userId)
+      : allLocalUsers.find((u: any) => u.phone && u.phone.trim() === input.phone.trim());
+    const resolvedUserId = input.userId || matchedUser?.id || undefined;
+
     const newOrder = {
       id: `order-${Date.now()}`,
       orderCode,
@@ -103,6 +109,7 @@ export const createOrder = async (input: CreateOrderInput) => {
       trackingInfo: `Đơn hàng mới tạo — Xuất kho từ chi nhánh ${branchLabel}, đang chờ quản trị viên duyệt kho.`,
       createdAt: new Date().toISOString(),
       items: itemsWithDetails,
+      userId: resolvedUserId,
     };
 
     inMemoryOrders.unshift(newOrder);
@@ -517,3 +524,84 @@ export const updateOrderStatus = async (
   const res = await pool.query(query, [status, trackingInfo || null, normalizedCode]);
   return res.rows[0] || null;
 };
+
+export const getOrdersByUserId = async (userId: string, userPhone?: string) => {
+  const isDbConnected = await checkDbConnection();
+  if (!isDbConnected) {
+    const allLocalUsers = readLocalDb().users || [];
+    const matchedUser = allLocalUsers.find((u: any) => u.id === userId);
+    const cleanPhone = (userPhone || matchedUser?.phone || '').trim();
+
+    const userOrders = inMemoryOrders
+      .filter((o) => o.userId === userId || (cleanPhone && o.phone && o.phone.trim() === cleanPhone))
+      .map((o, idx) => ({
+        ...o,
+        id: o.id || `ord-${o.orderCode.replace(/^#/, '') || idx}`,
+        createdAt: o.createdAt || new Date(Date.now() - 3600000 * (idx + 1) * 6).toISOString(),
+        totalAmount: Number(o.totalAmount || 0),
+        items: normalizeOrderItemsInMemory(o.items),
+      }));
+
+    return userOrders.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+
+  const query = `
+    SELECT 
+      o.id, o.order_code as "orderCode", o.customer_name as "customerName",
+      o.phone, o.address, o.note, o.total_amount as "totalAmount",
+      o.payment_method as "paymentMethod", o.status, o.tracking_info as "trackingInfo",
+      o.created_at as "createdAt", o.user_id as "userId",
+      COALESCE(
+        json_agg(
+          json_build_object(
+            'productId', COALESCE(oi.product_id, p.id),
+            'productSlug', p.slug,
+            'productName', oi.product_name,
+            'quantity', oi.quantity,
+            'unitPrice', oi.unit_price,
+            'price', oi.unit_price
+          )
+        ) FILTER (WHERE oi.id IS NOT NULL), '[]'::json
+      ) as items
+    FROM orders o
+    LEFT JOIN order_items oi ON oi.order_id = o.id
+    LEFT JOIN products p ON (p.id = oi.product_id OR LOWER(p.name) = LOWER(oi.product_name))
+    WHERE o.user_id::text = $1 OR o.phone IN (SELECT phone FROM users WHERE id::text = $1)
+    GROUP BY o.id
+    ORDER BY o.created_at DESC
+  `;
+  const res = await pool.query(query, [userId]);
+  return res.rows;
+};
+
+export const linkOrdersToUser = async (userId: string, phone: string) => {
+  if (!phone) return;
+  const cleanPhone = phone.trim();
+
+  // Update in memory
+  let modified = false;
+  for (const ord of inMemoryOrders) {
+    if (ord.phone && ord.phone.trim() === cleanPhone && !ord.userId) {
+      ord.userId = userId;
+      modified = true;
+    }
+  }
+  if (modified) {
+    writeLocalDb({ orders: inMemoryOrders });
+  }
+
+  const isDbConnected = await checkDbConnection();
+  if (isDbConnected) {
+    try {
+      await pool.query('UPDATE orders SET user_id = $1 WHERE phone = $2 AND user_id IS NULL', [
+        userId,
+        cleanPhone,
+      ]);
+    } catch (err) {
+      console.warn('⚠️ [OrderService] Failed to link orders in DB:', err);
+    }
+  }
+};
+

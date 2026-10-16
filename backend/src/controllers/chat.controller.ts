@@ -29,7 +29,7 @@ export const handleChatMessage = async (req: Request, res: Response) => {
       };
 
       try {
-        await chatService.streamChat({ message, history }, sendEvent);
+        await chatService.streamChat({ message, history, currentUser: req.user }, sendEvent);
       } catch (streamErr: any) {
         sendEvent('error', {
           message: streamErr.message || 'Đã có lỗi xảy ra trong quá trình phản hồi.',
@@ -41,7 +41,7 @@ export const handleChatMessage = async (req: Request, res: Response) => {
     }
 
     // Phản hồi dạng JSON thông thường
-    const responseData = await chatService.handleMessage({ message, history });
+    const responseData = await chatService.handleMessage({ message, history, currentUser: req.user });
     return res.json({
       success: true,
       data: responseData,

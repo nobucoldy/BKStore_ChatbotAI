@@ -23,6 +23,7 @@ import {
 import { ChatMessage, Product } from '@/types';
 import { sendChatMessage, fetchProductBySlug } from '@/lib/api';
 import { useCartStore } from '@/store/cartStore';
+import { useAuthStore } from '@/store/authStore';
 
 interface ChatWidgetProps {
   isOpen: boolean;
@@ -73,6 +74,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   messagesRef.current = messages;
   const lastPromptRef = useRef<string>('');
   const addItem = useCartStore((state) => state.addItem);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const openAuthModal = useAuthStore((state) => state.openAuthModal);
 
   const quickPrompts = [
     'Tư vấn laptop AI & Lập trình 30-50 triệu',
@@ -83,6 +86,11 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
 
   const handleAddToCart = (e: React.MouseEvent, prod: any) => {
     e.stopPropagation();
+    if (!isAuthenticated) {
+      openAuthModal('Vui lòng đăng nhập tài khoản để thêm sản phẩm vào giỏ hàng.');
+      return;
+    }
+
     const productObj: Product = {
       id: prod.id,
       name: prod.name,
@@ -97,11 +105,13 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
       stock: prod.stockQuantity ?? prod.stock ?? 10,
     };
 
-    addItem(productObj, 1);
-    setAddedItemIds((prev) => ({ ...prev, [prod.id]: true }));
-    setTimeout(() => {
-      setAddedItemIds((prev) => ({ ...prev, [prod.id]: false }));
-    }, 1500);
+    const res = addItem(productObj, 1);
+    if (res.success) {
+      setAddedItemIds((prev) => ({ ...prev, [prod.id]: true }));
+      setTimeout(() => {
+        setAddedItemIds((prev) => ({ ...prev, [prod.id]: false }));
+      }, 1500);
+    }
   };
 
   const handleSendPrompt = React.useCallback(
@@ -641,7 +651,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                   <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-bounce delay-100"></div>
                   <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-bounce delay-200"></div>
                 </div>
-                <span className="text-[11px]">BK-Bot đang tra cứu tri thức & dữ liệu kho...</span>
+                <span className="text-[11px]">BK-Bot đang soạn tin nhắn...</span>
               </div>
             )}
             <div ref={messagesEndRef} />

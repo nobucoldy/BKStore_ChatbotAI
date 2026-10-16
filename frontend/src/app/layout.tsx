@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Be_Vietnam_Pro, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
+import { GlobalAuthModal } from '@/components/GlobalAuthModal';
 
 const beVietnamPro = Be_Vietnam_Pro({
   variable: '--font-sans',
@@ -33,6 +34,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-[#F8FAFC] text-[#0F172A] font-sans antialiased selection:bg-blue-600 selection:text-white">
         {children}
+        <GlobalAuthModal />
       </body>
     </html>
   );

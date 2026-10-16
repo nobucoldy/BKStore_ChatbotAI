@@ -25,7 +25,11 @@ export const getOrders = async (req: Request, res: Response): Promise<void> => {
 
 export const createOrder = async (req: Request, res: Response): Promise<void> => {
   try {
-    const order = await orderService.createOrder(req.body);
+    const payload = {
+      ...req.body,
+      userId: req.user?.id || req.body.userId,
+    };
+    const order = await orderService.createOrder(payload);
     res.status(201).json({
       success: true,
       message: 'Đặt hàng thành công!',
@@ -35,6 +39,25 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
     res.status(400).json({
       success: false,
       error: error.message || 'Lỗi khi tạo đơn hàng',
+    });
+  }
+};
+
+export const getMyOrders = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Vui lòng đăng nhập để xem lịch sử đơn hàng.' });
+      return;
+    }
+    const orders = await orderService.getOrdersByUserId(req.user.id, req.user.phone);
+    res.json({
+      success: true,
+      data: orders,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi khi lấy lịch sử đơn hàng.',
     });
   }
 };

@@ -133,6 +133,13 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                 setReviewingItemIdx(foundIdx);
               }
             }
+          } else if (res.data.items && res.data.items.length === 1) {
+            const singleItem = res.data.items[0];
+            const isAlreadyReviewed = reviews.some((r) => doesReviewMatchItem(r, singleItem));
+            if (!isAlreadyReviewed) {
+              setReviewingItem(singleItem);
+              setReviewingItemIdx(0);
+            }
           }
         } else {
           setErrorMsg(res.error || 'Không tìm thấy đơn hàng khớp với mã đơn và số điện thoại đã nhập.');
@@ -254,46 +261,70 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
           Chỉ khách hàng đã nhận hàng thành công mới có thể gửi đánh giá xác thực cho các sản phẩm trong đơn.
         </p>
 
-        {/* Search Order Form */}
-        <form onSubmit={handleSearchSubmit} className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Mã đơn hàng</label>
-              <input
-                type="text"
-                value={orderCode}
-                onChange={(e) => setOrderCode(e.target.value)}
-                placeholder="Ví dụ: BK-1024"
-                className="w-full text-xs font-mono uppercase bg-white px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-500 outline-none"
-              />
+        {/* If prefilled from order: Show verified badge banner, no manual code/phone entry */}
+        {orderData ? (
+          <div className="bg-blue-50/80 border border-blue-200/90 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-blue-900 font-mono flex items-center gap-2">
+                  <span>{orderData.orderCode}</span>
+                  <span className="text-[10px] font-sans font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    Đã hoàn thành
+                  </span>
+                </div>
+                <div className="text-xs text-slate-600 mt-0.5">
+                  Người nhận: <strong>{orderData.customerName}</strong> • {orderData.phone}
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Số điện thoại đặt hàng</label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="0912345678"
-                className="w-full text-xs font-mono bg-white px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-500 outline-none"
-              />
+            <div className="text-[11px] text-blue-700 font-medium bg-white px-3 py-1.5 rounded-xl border border-blue-200">
+              Đánh giá xác thực (Verified Purchase)
             </div>
           </div>
+        ) : isLoadingOrder ? (
+          <div className="py-8 flex flex-col items-center justify-center text-slate-500 text-xs gap-2 mb-6">
+            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <span>Đang tải thông tin đơn hàng và sản phẩm...</span>
+          </div>
+        ) : !initialOrderCode ? (
+          /* Search Order Form: Only shown when opened standalone */
+          <form onSubmit={handleSearchSubmit} className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Mã đơn hàng</label>
+                <input
+                  type="text"
+                  value={orderCode}
+                  onChange={(e) => setOrderCode(e.target.value)}
+                  placeholder="Ví dụ: BK-1024"
+                  className="w-full text-xs font-mono uppercase bg-white px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Số điện thoại đặt hàng</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="0912345678"
+                  className="w-full text-xs font-mono bg-white px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-500 outline-none"
+                />
+              </div>
+            </div>
 
-          <button
-            type="submit"
-            disabled={isLoadingOrder}
-            className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs shadow-sm shadow-blue-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
-          >
-            {isLoadingOrder ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            ) : (
-              <>
-                <Search className="w-3.5 h-3.5" />
-                <span>Xác thực đơn hàng & mở danh sách đánh giá</span>
-              </>
-            )}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={isLoadingOrder}
+              className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs shadow-sm shadow-blue-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
+            >
+              <Search className="w-3.5 h-3.5" />
+              <span>Xác thực đơn hàng & mở danh sách đánh giá</span>
+            </button>
+          </form>
+        ) : null}
 
         {/* Alerts */}
         {errorMsg && (
@@ -327,18 +358,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                   Để đảm bảo tính khách quan và uy tín của cộng đồng BK-Store, bạn chỉ có thể đánh giá sản phẩm sau khi đơn hàng được giao thành công đến tay bạn.
                 </p>
               </div>
-            ) : (
-              <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 flex flex-wrap items-center justify-between gap-2 text-xs">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span className="font-bold text-emerald-900">Xác thực người mua thành công!</span>
-                  <span className="text-emerald-700">({orderData.customerName})</span>
-                </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold text-[11px]">
-                  Đã giao hàng thành công
-                </span>
-              </div>
-            )}
+            ) : null}
 
             {/* List of Products in the Order */}
             {orderData.items && orderData.items.length > 0 && (

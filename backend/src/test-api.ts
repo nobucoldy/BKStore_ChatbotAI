@@ -557,6 +557,144 @@ const tests: TestCase[] = [
       }
     },
   },
+  {
+    name: '27. Auth: Customer & Admin Login (/api/auth/login)',
+    run: async () => {
+      // Customer login
+      const customerRes = await fetch(`${BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'khachhang@bkstore.vn',
+          password: '123456',
+        }),
+      });
+      if (customerRes.status !== 200) {
+        throw new Error(`Expected customer login status 200, got ${customerRes.status}`);
+      }
+      const customerData = await customerRes.json();
+      if (!customerData.success || !customerData.data?.token || customerData.data?.user?.role !== 'customer') {
+        throw new Error('Customer login payload mismatch');
+      }
+
+      // Admin login
+      const adminRes = await fetch(`${BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'admin@bkstore.vn',
+          password: 'admin123',
+        }),
+      });
+      if (adminRes.status !== 200) {
+        throw new Error(`Expected admin login status 200, got ${adminRes.status}`);
+      }
+      const adminData = await adminRes.json();
+      if (!adminData.success || !adminData.data?.token || adminData.data?.user?.role !== 'admin') {
+        throw new Error('Admin login payload mismatch');
+      }
+    },
+  },
+  {
+    name: '28. Auth: Verify Current User Profile (/api/auth/me)',
+    run: async () => {
+      // First login
+      const loginRes = await fetch(`${BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'khachhang@bkstore.vn',
+          password: '123456',
+        }),
+      });
+      const loginData = await loginRes.json();
+      const token = loginData.data.token;
+
+      // Call /api/auth/me
+      const meRes = await fetch(`${BASE_URL}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (meRes.status !== 200) {
+        throw new Error(`Expected /api/auth/me 200, got ${meRes.status}`);
+      }
+      const meData = await meRes.json();
+      if (!meData.success || meData.data?.email !== 'khachhang@bkstore.vn') {
+        throw new Error('/api/auth/me response mismatch');
+      }
+    },
+  },
+  {
+    name: '29. Orders: Authenticated User Order History (/api/orders/my-orders)',
+    run: async () => {
+      // Login as customer
+      const loginRes = await fetch(`${BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'khachhang@bkstore.vn',
+          password: '123456',
+        }),
+      });
+      const loginData = await loginRes.json();
+      const token = loginData.data.token;
+
+      // Get my orders
+      const ordersRes = await fetch(`${BASE_URL}/api/orders/my-orders`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (ordersRes.status !== 200) {
+        throw new Error(`Expected /api/orders/my-orders 200, got ${ordersRes.status}`);
+      }
+      const ordersData = await ordersRes.json();
+      if (!ordersData.success || !Array.isArray(ordersData.data)) {
+        throw new Error('/api/orders/my-orders must return array of orders');
+      }
+      // Customer has at least #BK-1024 linked
+      const hasOrder1024 = ordersData.data.some((o: any) => o.orderCode === '#BK-1024');
+      if (!hasOrder1024) {
+        throw new Error('Expected #BK-1024 in customer order history');
+      }
+    },
+  },
+  {
+    name: '30. Chatbot: Authenticated User Order Inquiry (/api/chat)',
+    run: async () => {
+      // Login as customer
+      const loginRes = await fetch(`${BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'khachhang@bkstore.vn',
+          password: '123456',
+        }),
+      });
+      const loginData = await loginRes.json();
+      const token = loginData.data.token;
+
+      // Ask chatbot "đơn hàng của tôi đâu"
+      const chatRes = await fetch(`${BASE_URL}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          message: 'Cho tôi xem đơn hàng của tôi',
+        }),
+      });
+      if (chatRes.status !== 200) {
+        throw new Error(`Expected /api/chat 200, got ${chatRes.status}`);
+      }
+      const chatData = await chatRes.json();
+      if (!chatData.success || !chatData.data?.reply) {
+        throw new Error('Chatbot response missing reply');
+      }
+      // The reply should mention the user's order #BK-1024
+      if (!chatData.data.reply.includes('#BK-1024')) {
+        throw new Error(`Expected chat reply to reference #BK-1024, got: ${chatData.data.reply}`);
+      }
+    },
+  },
 ];
 
 

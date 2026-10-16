@@ -212,6 +212,7 @@ export interface OrderTrackResult {
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
   pending: 'Chờ xác nhận & chuẩn bị hàng',
+  confirmed: 'Đã xác nhận đơn hàng',
   processing: 'Đang đóng gói tại kho',
   shipping: 'Đang trên đường giao hàng',
   delivered: 'Giao hàng thành công',

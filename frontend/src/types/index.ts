@@ -54,6 +54,7 @@ export interface Branch {
 export interface CartItem {
   product: Product;
   quantity: number;
+  selected?: boolean;
 }
 
 export interface OrderItem {
@@ -82,6 +83,7 @@ export interface Order {
   paymentMethod: 'COD' | 'QR_PAY';
   status: OrderStatus;
   trackingInfo?: string;
+  userId?: string;
   createdAt: string;
   items?: OrderItem[];
 }
@@ -92,6 +94,7 @@ export interface CreateOrderPayload {
   address: string;
   note?: string;
   branchId?: string;
+  userId?: string;
   paymentMethod: 'COD' | 'QR_PAY';
   items: {
     productId: string;
@@ -231,4 +234,34 @@ export interface TransferStockPayload {
   quantity: number;
   note?: string;
 }
+
+export interface User {
+  id: string;
+  name: string;
+  fullName?: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  role: 'customer' | 'admin';
+  createdAt: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  token: string;
+}
+
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface RegisterPayload {
+  name: string;
+  email: string;
+  password: string;
+  phone: string;
+  address?: string;
+}
+
 

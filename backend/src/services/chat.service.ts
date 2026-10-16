@@ -18,6 +18,7 @@ import {
   ProductDetailResult,
   ProductReviewsResult,
 } from './ai-tools.service';
+import { getOrdersByUserId } from './order.service';
 
 dotenv.config();
 
@@ -42,6 +43,13 @@ export interface ChatRequestOptions {
   message: string;
   history?: ChatHistoryItem[];
   stream?: boolean;
+  currentUser?: {
+    id: string;
+    email: string;
+    name: string;
+    role: 'customer' | 'admin';
+    phone?: string;
+  };
 }
 
 export interface ChatPerformanceMetrics {
@@ -85,15 +93,7 @@ NGUYÊN TẮC BẮT BUỘC:
 7. TUYỆT ĐỐI KHÔNG XUẤT RA DỮ LIỆU NỘI BỘ HAY CHECKLIST:
 - CHỈ xuất ra đúng nội dung câu trả lời tư vấn gửi đến khách hàng.
 - Tuyệt đối KHÔNG in ra các nhãn kỹ thuật nội bộ như "[Tài liệu: ...]", "[Mục: ...]", "Độ khớp: ...%", hoặc các đoạn code/tag debug thô.
-- Tuyệt đối KHÔNG in ra bất kỳ dòng suy nghĩ, checklist, tự kiểm tra, self-reflection (như "technical metadata printed", "Checked", "Suggest next step at end: Checked", "Verified",...).
-8. CHÍNH SÁCH VÀ HƯỚNG DẪN ĐÁNH GIÁ SẢN PHẨM (VERIFIED PURCHASE):
-- Điều kiện đánh giá: Chỉ những khách hàng đã mua hàng và đơn hàng có trạng thái "Đã giao hàng" (delivered) mới có quyền gửi đánh giá sản phẩm. Điều này nhằm đảm bảo 100% đánh giá là từ người dùng thực tế và khách quan.
-- Xác thực: Khi gửi đánh giá, khách hàng cần nhập Mã đơn hàng (ví dụ: #BK-1024) và Số điện thoại đã đặt hàng để hệ thống xác thực.
-- 3 cách thực hiện đánh giá trên website:
-  1) Bấm vào nút "⭐ Đánh giá" trên thanh menu Header hoặc ở chân trang Footer.
-  2) Tra cứu vận đơn tại cửa sổ "Tra cứu đơn hàng" -> với các đơn hàng đã giao thành công, sẽ xuất hiện nút "⭐ Đánh giá sản phẩm".
-  3) Vào trực tiếp trang chi tiết sản phẩm (/products/[slug]) -> cuộn xuống mục "Đánh giá từ khách hàng" -> bấm "Gửi đánh giá cho sản phẩm này".
-- Thang điểm: Từ 1 đến 5 sao kèm bình luận cảm nhận chân thực. Mỗi sản phẩm trong một đơn hàng chỉ được đánh giá 1 lần để tránh spam.`;
+- Tuyệt đối KHÔNG in ra bất kỳ dòng suy nghĩ, checklist, tự kiểm tra, self-reflection (như "technical metadata printed", "Checked", "Suggest next step at end: Checked", "Verified",...).`;
 
 /**
  * Làm sạch câu trả lời của AI: Loại bỏ triệt để các nhãn kỹ thuật, nhãn debug,
@@ -258,7 +258,8 @@ class ChatService {
    */
   private detectIntent(
     message: string,
-    history: ChatHistoryItem[] = []
+    history: ChatHistoryItem[] = [],
+    currentUser?: { id: string; name: string; email: string; phone?: string; role: string }
   ): {
     intent:
       | 'track_order'
@@ -288,7 +289,20 @@ class ChatService {
       (norm.includes('don') || norm.includes('kien hang')) &&
       (norm.includes('kho') || norm.includes('chi nhanh') || norm.includes('xuat tu') || norm.includes('lay tu'));
 
+    const isAskingMyOrders =
+      norm.includes('don hang cua toi') ||
+      norm.includes('don cua toi') ||
+      norm.includes('don cua minh') ||
+      norm.includes('don cua em') ||
+      norm.includes('don gan nhat') ||
+      norm.includes('lich su don') ||
+      norm.includes('da mua nhung may gi') ||
+      norm.includes('da mua may nao') ||
+      norm.includes('cac don da dat') ||
+      (norm.includes('don') && (norm.includes('cua toi') || norm.includes('cua minh') || norm.includes('cua em')));
+
     const isOrderKeyword =
+      isAskingMyOrders ||
       norm.includes('don hang') ||
       norm.includes('don nay') ||
       norm.includes('ma don') ||
@@ -318,7 +332,7 @@ class ChatService {
         intent: 'check_review_eligibility',
         extracted: {
           orderCode: code ? `#BK-${code}` : undefined,
-          phone: phoneMatch ? phoneMatch[0] : undefined,
+          phone: phoneMatch ? phoneMatch[0] : (currentUser?.phone || undefined),
         },
       };
     }
@@ -371,14 +385,17 @@ class ChatService {
       return { intent: 'general', extracted: null };
     }
 
-    if (orderCodeMatch || (isOrderKeyword && phoneMatch) || isOrderWarehouseQuestion || norm.includes('don nay')) {
+    if (isAskingMyOrders || orderCodeMatch || (isOrderKeyword && phoneMatch) || isOrderWarehouseQuestion || norm.includes('don nay') || (isOrderKeyword && !isReviewKeyword)) {
       const code = orderCodeMatch ? orderCodeMatch[0].replace(/[^0-9]/g, '') : undefined;
       const contextOrder = this.findOrderInContext(history);
       return {
         intent: 'track_order',
         extracted: {
           orderCode: code ? `#BK-${code}` : contextOrder.orderCode,
-          phone: phoneMatch ? phoneMatch[0] : contextOrder.phone,
+          phone: phoneMatch ? phoneMatch[0] : (currentUser?.phone || contextOrder.phone),
+          isAskingMyOrders,
+          userId: currentUser?.id,
+          userName: currentUser?.name,
         },
       };
     }
@@ -713,7 +730,7 @@ class ChatService {
 
     // 1. Phân tích ý định & kích hoạt AI Tool (truyền kèm history để hiểu "máy này")
     const startIntent = performance.now();
-    const detected = this.detectIntent(message, history);
+    const detected = this.detectIntent(message, history, options.currentUser);
     const intentDetectionMs = Math.max(1, Math.round((performance.now() - startIntent) * 100) / 100);
 
     const startTool = performance.now();
@@ -749,13 +766,57 @@ class ChatService {
       }
     } else if (detected.intent === 'track_order') {
       toolUsed = 'trackOrder';
-      const ord = await trackOrder(detected.extracted);
-      toolResultData = ord;
-      if (ord.found) {
-        cardPayload = {
-          type: 'order',
-          data: ord,
+      if (options.currentUser && (detected.extracted?.isAskingMyOrders || (!detected.extracted?.orderCode && !detected.extracted?.phone))) {
+        const userOrders = await getOrdersByUserId(options.currentUser.id, options.currentUser.phone);
+        if (userOrders.length > 0) {
+          const latest = userOrders[0];
+          toolResultData = {
+            found: true,
+            orderCode: latest.orderCode,
+            customerName: latest.customerName || options.currentUser.name,
+            totalAmount: latest.totalAmount,
+            formattedTotal: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(latest.totalAmount)),
+            status: latest.status,
+            statusLabel:
+              latest.status === 'delivered'
+                ? 'Giao hàng thành công'
+                : latest.status === 'shipping'
+                ? 'Đang vận chuyển'
+                : latest.status === 'confirmed'
+                ? 'Đã xác nhận đơn'
+                : latest.status === 'cancelled'
+                ? 'Đã hủy đơn'
+                : 'Chờ xác nhận',
+            trackingInfo: latest.trackingInfo,
+            branchName: latest.branchName || 'BK-Store Cầu Giấy (Hà Nội)',
+            deliveryAddress: latest.address,
+            userOrdersCount: userOrders.length,
+            message: `Tìm thấy ${userOrders.length} đơn hàng của khách hàng ${options.currentUser.name}.`,
+          };
+          cardPayload = {
+            type: 'order',
+            data: toolResultData,
+          };
+        } else {
+          toolResultData = {
+            found: false,
+            message: `Dạ em kiểm tra trên hệ thống thì tài khoản của anh/chị ${options.currentUser.name} hiện chưa có đơn hàng nào tại BK-Store. Anh/chị cần em hỗ trợ tư vấn dòng máy nào không ạ?`,
+          };
+        }
+      } else if (!options.currentUser && !detected.extracted?.orderCode && !detected.extracted?.phone) {
+        toolResultData = {
+          found: false,
+          message: 'Dạ để tra cứu đơn hàng cá nhân, anh/chị có thể đăng nhập tài khoản bằng nút "Đăng nhập" ở góc trên màn hình để xem toàn bộ lịch sử đơn. Hoặc cung cấp giúp em Mã đơn hàng (#BK-xxxx) và Số điện thoại đã dùng khi đặt hàng để em tra cứu bảo mật ngay cho mình nhé ạ!',
         };
+      } else {
+        const ord = await trackOrder(detected.extracted);
+        toolResultData = ord;
+        if (ord.found) {
+          cardPayload = {
+            type: 'order',
+            data: ord,
+          };
+        }
       }
     } else if (detected.intent === 'filter_products') {
       toolUsed = 'filterProducts';
@@ -926,7 +987,11 @@ Hãy đưa ra câu trả lời trực tiếp cho khách hàng (chỉ xuất lờ
           replyText += `\n\nAnh/chị có muốn em giữ máy trước tại chi nhánh gần mình không ạ?`;
         } else if (toolUsed === 'trackOrder') {
           if (toolResultData.found) {
-            replyText = `Dạ chào anh/chị! BK-Bot xin gửi thông tin chi tiết đơn hàng:\n\n• **Mã đơn:** ${toolResultData.orderCode}\n• **Khách hàng:** ${toolResultData.customerName || 'Quý khách'}\n• **Kho xuất hàng:** **${toolResultData.branchName || 'BK-Store Cầu Giấy (Hà Nội)'}**\n• **Địa chỉ nhận:** ${toolResultData.deliveryAddress || 'Giao hàng tận nơi'}\n• **Trạng thái:** ${toolResultData.statusLabel}\n• **Tiến trình:** ${toolResultData.trackingInfo}\n• **Tổng thanh toán:** ${toolResultData.formattedTotal}\n\nĐơn hàng đang được BK-Store xử lý đúng tiến độ ạ!`;
+            if (toolResultData.userOrdersCount) {
+              replyText = `Dạ em chào anh/chị **${toolResultData.customerName}**! Em đã tra cứu thấy tài khoản của mình hiện có **${toolResultData.userOrdersCount} đơn hàng** tại BK-Store. Đơn hàng gần nhất là **${toolResultData.orderCode}**:\n\n• **Mã đơn:** ${toolResultData.orderCode}\n• **Trạng thái:** ${toolResultData.statusLabel}\n• **Kho xuất hàng:** **${toolResultData.branchName || 'BK-Store Cầu Giấy (Hà Nội)'}**\n• **Tổng thanh toán:** ${toolResultData.formattedTotal}\n• **Lộ trình:** ${toolResultData.trackingInfo || 'Đang chuẩn bị giao hàng'}\n\nAnh/chị có thể xem thẻ chi tiết đơn hàng ngay bên dưới hoặc mở mục **"Đơn hàng của tôi"** trên menu để xem toàn bộ danh sách nhé ạ!`;
+            } else {
+              replyText = `Dạ chào anh/chị! BK-Bot xin gửi thông tin chi tiết đơn hàng:\n\n• **Mã đơn:** ${toolResultData.orderCode}\n• **Khách hàng:** ${toolResultData.customerName || 'Quý khách'}\n• **Kho xuất hàng:** **${toolResultData.branchName || 'BK-Store Cầu Giấy (Hà Nội)'}**\n• **Địa chỉ nhận:** ${toolResultData.deliveryAddress || 'Giao hàng tận nơi'}\n• **Trạng thái:** ${toolResultData.statusLabel}\n• **Tiến trình:** ${toolResultData.trackingInfo}\n• **Tổng thanh toán:** ${toolResultData.formattedTotal}\n\nĐơn hàng đang được BK-Store xử lý đúng tiến độ ạ!`;
+            }
           } else {
             replyText = `Dạ chào anh/chị! ${toolResultData.message}`;
           }

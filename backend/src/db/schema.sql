@@ -74,9 +74,25 @@ CREATE TABLE IF NOT EXISTS inventories (
 CREATE INDEX IF NOT EXISTS idx_inventories_product ON inventories(product_id);
 CREATE INDEX IF NOT EXISTS idx_inventories_branch ON inventories(branch_id);
 
+-- 4.5 USERS TABLE (Tài khoản người dùng & Phân quyền)
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(150) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    phone VARCHAR(20),
+    address TEXT,
+    role VARCHAR(20) NOT NULL DEFAULT 'customer', -- 'customer' | 'admin'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
+
 -- 5. ORDERS TABLE (Đơn hàng phục vụ Checkout & AI Tool Tra cứu đơn)
 CREATE TABLE IF NOT EXISTS orders (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     order_code VARCHAR(20) UNIQUE NOT NULL, -- e.g. #BK-1024
     customer_name VARCHAR(150) NOT NULL,
     phone VARCHAR(20) NOT NULL,
@@ -90,6 +106,7 @@ CREATE TABLE IF NOT EXISTS orders (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_code_phone ON orders(order_code, phone);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 

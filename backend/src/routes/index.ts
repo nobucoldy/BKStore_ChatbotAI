@@ -8,9 +8,11 @@ import knowledgeRoutes from './knowledge.routes';
 import chatRoutes from './chat.routes';
 import reviewRoutes from './review.routes';
 import inventoryRoutes from './inventory.routes';
+import authRoutes from './auth.routes';
 
 const apiRouter = Router();
 
+apiRouter.use('/auth', authRoutes);
 apiRouter.use('/categories', categoryRoutes);
 apiRouter.use('/brands', brandRoutes);
 apiRouter.use('/products', productRoutes);

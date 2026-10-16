@@ -6,6 +6,7 @@ export const createOrderSchema = z.object({
   address: z.string().min(5, 'Địa chỉ nhận hàng tối thiểu 5 ký tự'),
   note: z.string().optional(),
   branchId: z.string().optional(),
+  userId: z.string().optional(),
   paymentMethod: z.enum(['COD', 'QR_PAY'], {
     errorMap: () => ({ message: 'Phương thức thanh toán phải là COD hoặc QR_PAY' }),
   }),

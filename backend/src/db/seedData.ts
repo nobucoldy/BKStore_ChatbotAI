@@ -507,6 +507,7 @@ export const sampleOrders = [
   {
     id: 'ord-1024',
     orderCode: '#BK-1024',
+    userId: 'u-customer-001',
     customerName: 'Nguyễn Văn An',
     phone: '0912345678',
     address: 'Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội',

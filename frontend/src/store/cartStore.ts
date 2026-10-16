@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { CartItem, Product } from '@/types';
+import { useAuthStore } from './authStore';
 
 export interface AddItemResult {
   success: boolean;
@@ -19,9 +20,17 @@ interface CartState {
   addItem: (product: Product, quantity?: number) => AddItemResult;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => UpdateQuantityResult;
+  toggleSelectItem: (productId: string) => void;
+  setItemSelected: (productId: string, selected: boolean) => void;
+  selectAllItems: (selected: boolean) => void;
+  selectOnlyItem: (productId: string) => void;
+  removeSelectedItems: () => void;
   clearCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
+  getSelectedItems: () => CartItem[];
+  getSelectedTotalPrice: () => number;
+  getSelectedTotalItems: () => number;
   getItemQuantity: (productId: string) => number;
 }
 
@@ -31,6 +40,16 @@ export const useCartStore = create<CartState>()(
       items: [],
 
       addItem: (product: Product, quantity = 1): AddItemResult => {
+        const { isAuthenticated, openAuthModal } = useAuthStore.getState();
+        if (!isAuthenticated) {
+          openAuthModal('Vui lòng đăng nhập tài khoản để thêm sản phẩm vào giỏ hàng.');
+          return {
+            success: false,
+            message: 'Khách vãng lai cần đăng nhập tài khoản để thêm sản phẩm vào giỏ hàng.',
+            addedQuantity: 0,
+          };
+        }
+
         const maxStock = product.stock ?? product.stock_quantity ?? 0;
 
         if (maxStock <= 0) {
@@ -65,10 +84,11 @@ export const useCartStore = create<CartState>()(
             updatedItems[existingItemIndex] = {
               ...updatedItems[existingItemIndex],
               quantity: currentQty + actualAdd,
+              selected: true,
             };
             return { items: updatedItems };
           }
-          return { items: [...s.items, { product, quantity: actualAdd }] };
+          return { items: [...s.items, { product, quantity: actualAdd, selected: true }] };
         });
 
         if (isClamped) {
@@ -127,6 +147,47 @@ export const useCartStore = create<CartState>()(
         return { success: true };
       },
 
+      toggleSelectItem: (productId: string) => {
+        set((state) => ({
+          items: state.items.map((item) => {
+            if (item.product.id === productId) {
+              const currentSelected = item.selected !== false;
+              return { ...item, selected: !currentSelected };
+            }
+            return item;
+          }),
+        }));
+      },
+
+      setItemSelected: (productId: string, selected: boolean) => {
+        set((state) => ({
+          items: state.items.map((item) =>
+            item.product.id === productId ? { ...item, selected } : item
+          ),
+        }));
+      },
+
+      selectAllItems: (selected: boolean) => {
+        set((state) => ({
+          items: state.items.map((item) => ({ ...item, selected })),
+        }));
+      },
+
+      selectOnlyItem: (productId: string) => {
+        set((state) => ({
+          items: state.items.map((item) => ({
+            ...item,
+            selected: item.product.id === productId,
+          })),
+        }));
+      },
+
+      removeSelectedItems: () => {
+        set((state) => ({
+          items: state.items.filter((item) => item.selected === false),
+        }));
+      },
+
       clearCart: () => set({ items: [] }),
 
       getTotalItems: () => {
@@ -138,6 +199,25 @@ export const useCartStore = create<CartState>()(
           (total, item) => total + item.product.price * item.quantity,
           0
         );
+      },
+
+      getSelectedItems: () => {
+        return get().items.filter((item) => item.selected !== false);
+      },
+
+      getSelectedTotalPrice: () => {
+        return get()
+          .getSelectedItems()
+          .reduce(
+            (total, item) => total + item.product.price * item.quantity,
+            0
+          );
+      },
+
+      getSelectedTotalItems: () => {
+        return get()
+          .getSelectedItems()
+          .reduce((total, item) => total + item.quantity, 0);
       },
 
       getItemQuantity: (productId: string) => {

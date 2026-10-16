@@ -7,6 +7,7 @@ import { ShoppingCart, Eye, Sparkles } from 'lucide-react';
 import { Product } from '@/types';
 import { formatPrice } from '@/lib/utils';
 import { useCartStore } from '@/store/cartStore';
+import { useAuthStore } from '@/store/authStore';
 
 interface ProductCardProps {
   product: Product;
@@ -21,6 +22,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const router = useRouter();
   const [isPopping, setIsPopping] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const openAuthModal = useAuthStore((state) => state.openAuthModal);
 
   const stock = product.stock ?? product.stock_quantity ?? 0;
   const isOutOfStock = stock <= 0;
@@ -29,9 +32,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     e.preventDefault();
     e.stopPropagation();
     if (isOutOfStock) return;
-    addItem(product, 1);
-    setIsPopping(true);
-    setTimeout(() => setIsPopping(false), 700);
+    if (!isAuthenticated) {
+      openAuthModal('Vui lòng đăng nhập tài khoản để thêm sản phẩm vào giỏ hàng.');
+      return;
+    }
+    const res = addItem(product, 1);
+    if (res.success) {
+      setIsPopping(true);
+      setTimeout(() => setIsPopping(false), 700);
+    }
   };
 
   const handleBrandClick = (e: React.MouseEvent) => {
@@ -160,7 +169,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-500/40 ring-2 ring-blue-400/50 scale-105'
                     : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-blue-500/20'
                 }`}
-                title={isOutOfStock ? 'Sản phẩm tạm thời hết hàng' : 'Thêm vào giỏ hàng'}
+                title={
+                  isOutOfStock
+                    ? 'Sản phẩm tạm thời hết hàng'
+                    : !isAuthenticated
+                    ? 'Đăng nhập để thêm vào giỏ hàng'
+                    : 'Thêm vào giỏ hàng'
+                }
               >
                 <ShoppingCart
                   className={`w-3.5 h-3.5 transition-transform ${

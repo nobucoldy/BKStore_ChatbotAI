@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, CheckCircle, Copy, Check, CreditCard, Banknote, ShieldAlert, ArrowRight, Warehouse, MapPin } from 'lucide-react';
+import { X, CheckCircle, Copy, Check, CreditCard, Banknote, ShieldAlert, ArrowRight, Warehouse, MapPin, Lock, LogIn, UserCheck, ShoppingBag } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
+import { useAuthStore } from '@/store/authStore';
 import { formatPrice } from '@/lib/utils';
 import { createOrderApi, fetchInventoryOverview } from '@/lib/api';
 import { Order, Branch, Product, ProductInventoryItem } from '@/types';
@@ -35,14 +36,22 @@ interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOrderSuccess: (order: Order) => void;
+  onRequireLogin?: () => void;
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   isOpen,
   onClose,
   onOrderSuccess,
+  onRequireLogin,
 }) => {
-  const { items, getTotalPrice, clearCart } = useCartStore();
+  const { items, removeSelectedItems } = useCartStore();
+  const selectedItems = items.filter((item) => item.selected !== false);
+  const selectedTotalPrice = selectedItems.reduce(
+    (total, item) => total + item.product.price * item.quantity,
+    0
+  );
+  const { user, isAuthenticated, openAuthModal } = useAuthStore();
 
   const [customerName, setCustomerName] = useState('');
   const [phone, setPhone] = useState('');
@@ -57,6 +66,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
   const [isCopied, setIsCopied] = useState(false);
+
+  // Auto fill user details when available
+  React.useEffect(() => {
+    if (isOpen && user) {
+      const displayName = user.name || user.fullName || '';
+      if (displayName) setCustomerName(displayName);
+      if (user.phone) setPhone(user.phone);
+      if (user.address) setAddress(user.address);
+    }
+  }, [isOpen, user]);
 
   const getBranchStockForProduct = React.useCallback(
     (product: Product, branchId: string): number => {
@@ -122,8 +141,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   if (!isOpen) return null;
 
-  const totalPrice = getTotalPrice();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -145,18 +162,18 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       return;
     }
 
-    if (items.length === 0) {
-      setErrorMsg('Giỏ hàng trống! Vui lòng chọn ít nhất 1 sản phẩm.');
+    if (selectedItems.length === 0) {
+      setErrorMsg('Không có món nào được chọn trong giỏ hàng! Vui lòng quay lại giỏ và tích chọn sản phẩm bạn muốn mua.');
       return;
     }
 
     const selectedBranchObj = branches.find((b) => b.id === selectedBranchId) || DEFAULT_BRANCHES[0];
 
-    // Client-side inventory validation (total + selected branch)
-    for (const item of items) {
+    // Client-side inventory validation (total + selected branch) only for selected items
+    for (const item of selectedItems) {
       const maxStock = item.product.stock ?? item.product.stock_quantity ?? 0;
       if (maxStock <= 0) {
-        setErrorMsg(`Sản phẩm "${item.product.name}" hiện đã hết hàng trong kho. Vui lòng quay lại giỏ hàng để gỡ bỏ.`);
+        setErrorMsg(`Sản phẩm "${item.product.name}" hiện đã hết hàng trong kho. Vui lòng quay lại giỏ hàng để bỏ chọn hoặc gỡ bỏ.`);
         return;
       }
       if (item.quantity > maxStock) {
@@ -175,6 +192,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       }
     }
 
+    if (!isAuthenticated || !user) {
+      setErrorMsg('Vui lòng đăng nhập tài khoản trước khi tiến hành đặt hàng.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -185,7 +207,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         note: note.trim() || undefined,
         branchId: selectedBranchId,
         paymentMethod,
-        items: items.map((i) => ({
+        userId: user.id,
+        items: selectedItems.map((i) => ({
           productId: i.product.id,
           quantity: i.quantity,
         })),
@@ -195,7 +218,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
       if (res.success && res.data) {
         setCreatedOrder(res.data);
-        clearCart();
+        removeSelectedItems();
       } else {
         setErrorMsg(res.error || 'Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại.');
       }
@@ -351,12 +374,58 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </button>
             </div>
           </div>
+        ) : !isAuthenticated ? (
+          /* AUTHENTICATION REQUIRED GATE */
+          <div className="py-6 px-2 flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 border border-blue-100 shadow-xs">
+              <Lock className="w-8 h-8" />
+            </div>
+            <h3 className="text-2xl font-bold text-slate-900 mb-2">Đăng nhập để đặt hàng</h3>
+            <p className="text-sm text-slate-600 max-w-md mb-6 leading-relaxed">
+              BK-Store yêu cầu khách hàng đăng nhập tài khoản trước khi hoàn tất đặt đơn. Điều này giúp bạn dễ dàng theo dõi tiến trình đơn hàng, bảo hành chính hãng và nhận hỗ trợ đơn hàng nhanh chóng từ BK-Bot.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm mb-6">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  if (onRequireLogin) onRequireLogin();
+                  else openAuthModal('Vui lòng đăng nhập tài khoản để tiến hành đặt hàng.');
+                }}
+                className="flex-1 py-3 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-sm shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer transition-all"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Đăng nhập / Đăng ký</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="py-3 px-4 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold text-sm cursor-pointer transition-colors"
+              >
+                Quay lại giỏ hàng
+              </button>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 w-full max-w-md text-left">
+              <div className="font-semibold text-slate-800 mb-1">💡 Tài khoản demo dùng thử nhanh:</div>
+              <div className="font-mono text-[11px] text-slate-600">
+                Email: <span className="text-blue-700 font-bold">khachhang@bkstore.vn</span> | MK: <span className="font-bold">123456</span>
+              </div>
+            </div>
+          </div>
         ) : (
           /* CHECKOUT FORM VIEW */
           <div>
-            <h3 className="text-xl font-bold text-slate-900 mb-1">Thông tin đặt hàng</h3>
-            <p className="text-xs text-slate-500 mb-6">
-              Vui lòng cung cấp số điện thoại chính xác để tra cứu tiến trình vận đơn sau này.
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xl font-bold text-slate-900">Thông tin đặt hàng</h3>
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
+                <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>{user?.name || user?.fullName}</span>
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 mb-5">
+              Thông tin người nhận đã được đồng bộ tự động từ tài khoản của bạn.
             </p>
 
             {errorMsg && (
@@ -366,220 +435,272 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Customer Name */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Họ và tên người nhận <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="Ví dụ: Nguyễn Quế Bắc"
-                  className="w-full text-sm px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none"
-                />
+            {selectedItems.length === 0 ? (
+              <div className="py-12 flex flex-col items-center justify-center text-center">
+                <ShoppingBag className="w-16 h-16 text-slate-300 stroke-1 mb-3" />
+                <h4 className="text-base font-bold text-slate-800">Chưa có sản phẩm nào được chọn</h4>
+                <p className="text-xs text-slate-500 mt-1 max-w-xs">
+                  Vui lòng quay lại giỏ hàng và tích chọn các món bạn muốn đặt mua.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="mt-5 px-6 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors cursor-pointer"
+                >
+                  Quay lại giỏ hàng
+                </button>
               </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Customer Name */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Họ và tên người nhận <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="Ví dụ: Nguyễn Quế Bắc"
+                    className="w-full text-sm px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none"
+                  />
+                </div>
 
-              {/* Phone */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Số điện thoại <span className="text-rose-500">* (10 số, bắt đầu bằng số 0)</span>
-                </label>
-                <input
-                  type="tel"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="0912345678"
-                  className="w-full text-sm font-mono px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none"
-                />
-              </div>
+                {/* Phone */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Số điện thoại <span className="text-rose-500">* (10 số, bắt đầu bằng số 0)</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="0912345678"
+                    className="w-full text-sm font-mono px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none"
+                  />
+                </div>
 
-              {/* Address */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Địa chỉ giao hàng <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố"
-                  className="w-full text-sm px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none"
-                />
-              </div>
+                {/* Address */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Địa chỉ giao hàng <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố"
+                    className="w-full text-sm px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none"
+                  />
+                </div>
 
-              {/* Branch / Warehouse Selection */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
-                  <Warehouse className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Chọn kho / chi nhánh xuất hàng <span className="text-rose-500">*</span></span>
-                </label>
-                <div className="grid grid-cols-1 gap-2.5">
-                  {branches.map((branch) => {
-                    const isSelected = selectedBranchId === branch.id;
-                    const itemStocks = items.map(({ product, quantity }) => {
-                      const avail = getBranchStockForProduct(product, branch.id);
-                      return {
-                        productName: product.name,
-                        needed: quantity,
-                        avail,
-                        enough: avail >= quantity,
-                      };
-                    });
-                    const canFulfillAll = itemStocks.every((s) => s.enough);
+                {/* Branch / Warehouse Selection */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                    <Warehouse className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Chọn kho / chi nhánh xuất hàng <span className="text-rose-500">*</span></span>
+                  </label>
+                  <div className="grid grid-cols-1 gap-2.5">
+                    {branches.map((branch) => {
+                      const isSelected = selectedBranchId === branch.id;
+                      const itemStocks = selectedItems.map(({ product, quantity }) => {
+                        const avail = getBranchStockForProduct(product, branch.id);
+                        return {
+                          productName: product.name,
+                          needed: quantity,
+                          avail,
+                          enough: avail >= quantity,
+                        };
+                      });
+                      const canFulfillAll = itemStocks.every((s) => s.enough);
 
-                    return (
-                      <button
-                        key={branch.id}
-                        type="button"
-                        onClick={() => setSelectedBranchId(branch.id)}
-                        className={`p-3 rounded-xl border text-left transition-all flex flex-col gap-1.5 ${
-                          isSelected
-                            ? canFulfillAll
-                              ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-500/15'
-                              : 'border-rose-500 bg-rose-50/50 ring-2 ring-rose-500/15'
-                            : canFulfillAll
-                            ? 'border-slate-200 hover:border-slate-300 bg-white'
-                            : 'border-slate-200 bg-slate-50/70 opacity-75'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
+                      return (
+                        <button
+                          key={branch.id}
+                          type="button"
+                          onClick={() => setSelectedBranchId(branch.id)}
+                          className={`p-3 rounded-xl border text-left transition-all flex flex-col gap-1.5 ${
+                            isSelected
+                              ? canFulfillAll
+                                ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-500/15'
+                                : 'border-rose-500 bg-rose-50/50 ring-2 ring-rose-500/15'
+                              : canFulfillAll
+                              ? 'border-slate-200 hover:border-slate-300 bg-white'
+                              : 'border-slate-200 bg-slate-50/70 opacity-75'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                                  isSelected
+                                    ? 'border-blue-600 bg-blue-600 text-white'
+                                    : 'border-slate-300 bg-white'
+                                }`}
+                              >
+                                {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                              </span>
+                              <span className="text-xs font-bold text-slate-900">{branch.name}</span>
+                            </div>
                             <span
-                              className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
-                                isSelected
-                                  ? 'border-blue-600 bg-blue-600 text-white'
-                                  : 'border-slate-300 bg-white'
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                                canFulfillAll
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : 'bg-rose-100 text-rose-700'
                               }`}
                             >
-                              {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                              {canFulfillAll ? 'Đủ hàng giao ngay' : 'Không đủ tồn kho'}
                             </span>
-                            <span className="text-xs font-bold text-slate-900">{branch.name}</span>
                           </div>
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
-                              canFulfillAll
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : 'bg-rose-100 text-rose-700'
-                            }`}
-                          >
-                            {canFulfillAll ? 'Đủ hàng giao ngay' : 'Không đủ tồn kho'}
-                          </span>
+
+                          <div className="pl-6 flex items-center gap-1 text-[11px] text-slate-500">
+                            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span className="truncate">{branch.address}</span>
+                          </div>
+
+                          <div className="pl-6 flex flex-wrap gap-1.5 mt-0.5">
+                            {itemStocks.map((st, idx) => (
+                              <span
+                                key={idx}
+                                className={`text-[10px] font-mono px-2 py-0.5 rounded-md border ${
+                                  st.enough
+                                    ? 'bg-white border-slate-200 text-slate-600'
+                                    : 'bg-rose-50 border-rose-200 text-rose-700 font-semibold'
+                                }`}
+                              >
+                                {selectedItems.length > 1 ? `${st.productName.split('(')[0].trim()}: ` : 'Tồn kho tại nhánh: '}
+                                <strong>{st.avail}</strong> máy (cần {st.needed})
+                              </span>
+                            ))}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Note */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Ghi chú cho shipper (tùy chọn)
+                  </label>
+                  <input
+                    type="text"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="Giao giờ hành chính, gọi trước khi đến..."
+                    className="w-full text-sm px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none"
+                  />
+                </div>
+
+                {/* Payment Method */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-2">
+                    Phương thức thanh toán
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('COD')}
+                      className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all ${
+                        paymentMethod === 'COD'
+                          ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-500/10'
+                          : 'border-slate-200 hover:border-slate-300 text-slate-700'
+                      }`}
+                    >
+                      <Banknote className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                      <div>
+                        <div className="text-xs font-bold">Thanh toán COD</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">Tiền mặt khi nhận hàng</div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('QR_PAY')}
+                      className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all ${
+                        paymentMethod === 'QR_PAY'
+                          ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-500/10'
+                          : 'border-slate-200 hover:border-slate-300 text-slate-700'
+                      }`}
+                    >
+                      <CreditCard className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                      <div>
+                        <div className="text-xs font-bold">Chuyển khoản QR</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">Quét mã VietQR nhanh 24/7</div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Selected Products Preview */}
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                  <div className="text-xs font-bold text-slate-700 mb-2 flex items-center justify-between">
+                    <span>Sản phẩm đặt mua ({selectedItems.length}):</span>
+                    <span className="text-[11px] font-normal text-slate-500">
+                      {selectedItems.reduce((s, i) => s + i.quantity, 0)} món
+                    </span>
+                  </div>
+                  <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
+                    {selectedItems.map(({ product, quantity }) => (
+                      <div
+                        key={product.id}
+                        className="flex items-center gap-2.5 text-xs bg-white p-2 rounded-lg border border-slate-100"
+                      >
+                        <img
+                          src={product.thumbnail}
+                          alt={product.name}
+                          className="w-9 h-9 object-contain rounded border border-slate-200 p-0.5 shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-slate-800 truncate">{product.name}</div>
+                          <div className="text-[11px] text-slate-500 font-mono">
+                            {formatPrice(product.price)} × {quantity}
+                          </div>
                         </div>
-
-                        <div className="pl-6 flex items-center gap-1 text-[11px] text-slate-500">
-                          <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span className="truncate">{branch.address}</span>
+                        <div className="font-mono font-bold text-slate-700 shrink-0">
+                          {formatPrice(product.price * quantity)}
                         </div>
-
-                        <div className="pl-6 flex flex-wrap gap-1.5 mt-0.5">
-                          {itemStocks.map((st, idx) => (
-                            <span
-                              key={idx}
-                              className={`text-[10px] font-mono px-2 py-0.5 rounded-md border ${
-                                st.enough
-                                  ? 'bg-white border-slate-200 text-slate-600'
-                                  : 'bg-rose-50 border-rose-200 text-rose-700 font-semibold'
-                              }`}
-                            >
-                              {items.length > 1 ? `${st.productName.split('(')[0].trim()}: ` : 'Tồn kho tại nhánh: '}
-                              <strong>{st.avail}</strong> máy (cần {st.needed})
-                            </span>
-                          ))}
-                        </div>
-                      </button>
-                    );
-                  })}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* Note */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Ghi chú cho shipper (tùy chọn)
-                </label>
-                <input
-                  type="text"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="Giao giờ hành chính, gọi trước khi đến..."
-                  className="w-full text-sm px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none"
-                />
-              </div>
-
-              {/* Payment Method */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-2">
-                  Phương thức thanh toán
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('COD')}
-                    className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all ${
-                      paymentMethod === 'COD'
-                        ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-500/10'
-                        : 'border-slate-200 hover:border-slate-300 text-slate-700'
-                    }`}
-                  >
-                    <Banknote className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="text-xs font-bold">Thanh toán COD</div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">Tiền mặt khi nhận hàng</div>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('QR_PAY')}
-                    className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all ${
-                      paymentMethod === 'QR_PAY'
-                        ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-500/10'
-                        : 'border-slate-200 hover:border-slate-300 text-slate-700'
-                    }`}
-                  >
-                    <CreditCard className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="text-xs font-bold">Chuyển khoản QR</div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">Quét mã VietQR nhanh 24/7</div>
-                    </div>
-                  </button>
+                {/* Order items summary */}
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                  <div className="flex justify-between text-slate-600 mb-1">
+                    <span>Tổng số lượng:</span>
+                    <span className="font-semibold text-slate-800">
+                      {selectedItems.reduce((s, i) => s + i.quantity, 0)} món
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-slate-600 mb-1">
+                    <span>Phí vận chuyển:</span>
+                    <span className="font-semibold text-emerald-600">Miễn phí toàn quốc</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm font-bold text-slate-900 pt-2 border-t border-slate-200 mt-2">
+                    <span>Tổng thanh toán:</span>
+                    <span className="text-lg text-blue-700 font-mono">{formatPrice(selectedTotalPrice)}</span>
+                  </div>
                 </div>
-              </div>
 
-              {/* Order items summary */}
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-                <div className="flex justify-between text-slate-600 mb-1">
-                  <span>Số lượng sản phẩm:</span>
-                  <span className="font-semibold text-slate-800">{items.reduce((s, i) => s + i.quantity, 0)} món</span>
-                </div>
-                <div className="flex justify-between text-slate-600 mb-1">
-                  <span>Phí vận chuyển:</span>
-                  <span className="font-semibold text-emerald-600">Miễn phí toàn quốc</span>
-                </div>
-                <div className="flex justify-between items-center text-sm font-bold text-slate-900 pt-2 border-t border-slate-200 mt-2">
-                  <span>Tổng thanh toán:</span>
-                  <span className="text-lg text-blue-700 font-mono">{formatPrice(totalPrice)}</span>
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 disabled:opacity-70 transition-all"
-              >
-                {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                ) : (
-                  <span>Xác nhận đặt hàng</span>
-                )}
-              </button>
-            </form>
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 disabled:opacity-70 transition-all cursor-pointer"
+                >
+                  {isLoading ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <span>Xác nhận đặt hàng</span>
+                  )}
+                </button>
+              </form>
+            )}
           </div>
         )}
 

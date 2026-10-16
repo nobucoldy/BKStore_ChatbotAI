@@ -16,9 +16,29 @@ import {
   InventoryOverviewData,
   UpdateInventoryPayload,
   TransferStockPayload,
+  User,
+  AuthResponse,
+  LoginPayload,
+  RegisterPayload,
 } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const AUTH_TOKEN_KEY = 'bkstore_auth_token_v1';
+
+export function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+export function setAuthToken(token: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
+}
+
+export function removeAuthToken(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+}
 
 // Fallback seed brands
 export const FALLBACK_BRANDS: Brand[] = [
@@ -899,9 +919,15 @@ function saveStoredFallbackOrders(orders: Order[]): void {
 
 export async function createOrderApi(payload: CreateOrderPayload): Promise<ApiResponse<Order>> {
   try {
+    const token = getAuthToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const res = await fetch(`${API_BASE_URL}/orders`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(payload),
     });
     const json = await res.json();
@@ -1320,9 +1346,15 @@ export interface ChatApiResponseData {
 }
 
 export async function sendChatMessage(payload: ChatApiPayload): Promise<ChatApiResponseData> {
+  const token = getAuthToken();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${API_BASE_URL}/chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
@@ -1630,6 +1662,191 @@ export async function transferInventoryStock(
     };
   }
 }
+
+// ============================================================================
+// AUTHENTICATION & USER PROFILE API
+// ============================================================================
+
+export async function loginApi(payload: LoginPayload): Promise<ApiResponse<AuthResponse>> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if (json.success && json.data?.token) {
+      setAuthToken(json.data.token);
+    }
+    return json;
+  } catch {
+    // Offline / Mock fallback
+    const normalized = payload.email.toLowerCase().trim();
+    if (normalized === 'khachhang@bkstore.vn' && payload.password === '123456') {
+      const mockCustomer: User = {
+        id: 'u-customer-001',
+        name: 'Nguyễn Văn An',
+        email: 'khachhang@bkstore.vn',
+        phone: '0912345678',
+        address: 'Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội',
+        role: 'customer',
+        createdAt: '2026-09-01T08:00:00.000Z',
+      };
+      setAuthToken('mock-jwt-customer-token');
+      return {
+        success: true,
+        data: { user: mockCustomer, token: 'mock-jwt-customer-token' },
+        message: 'Đăng nhập thành công (Chế độ mô phỏng offline)!',
+      };
+    }
+    if (normalized === 'admin@bkstore.vn' && payload.password === 'admin123') {
+      const mockAdmin: User = {
+        id: 'u-admin-001',
+        name: 'Quản Trị Viên BK-Store',
+        email: 'admin@bkstore.vn',
+        phone: '0988889999',
+        address: '268 Cầu Giấy, Hà Nội',
+        role: 'admin',
+        createdAt: '2026-09-01T08:00:00.000Z',
+      };
+      setAuthToken('mock-jwt-admin-token');
+      return {
+        success: true,
+        data: { user: mockAdmin, token: 'mock-jwt-admin-token' },
+        message: 'Đăng nhập thành công (Quản trị viên offline)!',
+      };
+    }
+    return {
+      success: false,
+      error: 'Email hoặc mật khẩu không chính xác.',
+    };
+  }
+}
+
+export async function registerApi(payload: RegisterPayload): Promise<ApiResponse<AuthResponse>> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if (json.success && json.data?.token) {
+      setAuthToken(json.data.token);
+    }
+    return json;
+  } catch {
+    // Offline / Mock fallback
+    const newUser: User = {
+      id: `u-${Date.now()}`,
+      name: payload.name.trim(),
+      email: payload.email.trim().toLowerCase(),
+      phone: payload.phone.trim(),
+      address: payload.address?.trim() || '',
+      role: 'customer',
+      createdAt: new Date().toISOString(),
+    };
+    const mockToken = `mock-jwt-${newUser.id}`;
+    setAuthToken(mockToken);
+    return {
+      success: true,
+      data: { user: newUser, token: mockToken },
+      message: 'Đăng ký thành công (Chế độ offline)!',
+    };
+  }
+}
+
+export async function fetchMeApi(): Promise<ApiResponse<User>> {
+  const token = getAuthToken();
+  if (!token) return { success: false, error: 'Chưa đăng nhập' };
+
+  if (token === 'mock-jwt-admin-token') {
+    return {
+      success: true,
+      data: {
+        id: 'u-admin-001',
+        name: 'Quản Trị Viên BK-Store',
+        email: 'admin@bkstore.vn',
+        phone: '0988889999',
+        address: '268 Cầu Giấy, Hà Nội',
+        role: 'admin',
+        createdAt: '2026-09-01T08:00:00.000Z',
+      },
+    };
+  }
+
+  if (token === 'mock-jwt-customer-token' || token.startsWith('mock-jwt-')) {
+    return {
+      success: true,
+      data: {
+        id: 'u-customer-001',
+        name: 'Nguyễn Văn An',
+        email: 'khachhang@bkstore.vn',
+        phone: '0912345678',
+        address: 'Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội',
+        role: 'customer',
+        createdAt: '2026-09-01T08:00:00.000Z',
+      },
+    };
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const json = await res.json();
+    return json;
+  } catch {
+    return { success: false, error: 'Lỗi kết nối máy chủ.' };
+  }
+}
+
+export async function updateProfileApi(payload: Partial<User>): Promise<ApiResponse<User>> {
+  try {
+    const token = getAuthToken();
+    const res = await fetch(`${API_BASE_URL}/auth/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    return json;
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || 'Lỗi kết nối khi cập nhật thông tin.',
+    };
+  }
+}
+
+export async function fetchMyOrdersApi(): Promise<ApiResponse<Order[]>> {
+  try {
+    const token = getAuthToken();
+    if (!token) throw new Error('Chưa đăng nhập');
+
+    const res = await fetch(`${API_BASE_URL}/orders/my-orders`, {
+      cache: 'no-store',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const json = await res.json();
+    if (json.success && Array.isArray(json.data)) {
+      return json;
+    }
+    throw new Error(json.error || 'Lỗi khi tải lịch sử đơn hàng');
+  } catch (err) {
+    console.warn('[API] fetchMyOrdersApi fallback:', err);
+    // Offline fallback: load from stored orders
+    const stored = getStoredFallbackOrders();
+    return {
+      success: true,
+      data: stored,
+    };
+  }
+}
+
 
 
 

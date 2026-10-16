@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ShieldCheck, Truck, Headphones, RotateCcw, Sparkles } from 'lucide-react';
 
 interface FooterProps {
-  onOpenTracking: () => void;
+  onOpenTracking?: () => void;
   onOpenReview?: () => void;
 }
 
@@ -114,12 +114,12 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTracking, onOpenReview }) 
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <button
-                  onClick={onOpenTracking}
+                <Link
+                  href="/orders"
                   className="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1.5 font-medium cursor-pointer"
                 >
-                  <span>→ Tra cứu tiến trình vận đơn</span>
-                </button>
+                  <span>→ Lịch sử & Tiến trình đơn hàng</span>
+                </Link>
               </li>
               {onOpenReview && (
                 <li>

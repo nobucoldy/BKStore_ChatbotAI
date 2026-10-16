@@ -11,7 +11,10 @@ import { CheckoutModal } from '@/components/CheckoutModal';
 import { OrderTrackingModal } from '@/components/OrderTrackingModal';
 import { ReviewModal } from '@/components/ReviewModal';
 import { ChatWidget } from '@/components/ChatWidget';
+import { AuthModal } from '@/components/AuthModal';
+import { MyOrdersModal } from '@/components/MyOrdersModal';
 import { Footer } from '@/components/Footer';
+import { useAuthStore } from '@/store/authStore';
 
 
 import { Brand, Category, Order, Product } from '@/types';
@@ -48,7 +51,8 @@ export default function HomePage() {
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
-
+  const openAuthModal = useAuthStore((state) => state.openAuthModal);
+  const [isMyOrdersOpen, setIsMyOrdersOpen] = useState(false);
 
   // Tracking pre-fill
   const [trackingInitialCode, setTrackingInitialCode] = useState<string>('');
@@ -56,6 +60,11 @@ export default function HomePage() {
 
   // Chat pre-fill prompt
   const [chatInitialPrompt, setChatInitialPrompt] = useState<string>('');
+
+  // Initialize auth
+  useEffect(() => {
+    useAuthStore.getState().initialize();
+  }, []);
 
   // Load initial Categories and Brands
   useEffect(() => {
@@ -216,6 +225,8 @@ export default function HomePage() {
         }}
         onOpenReview={() => setIsReviewOpen(true)}
         onOpenChat={() => setIsChatOpen((prev) => !prev)}
+        onOpenAuth={() => openAuthModal()}
+        onOpenMyOrders={() => setIsMyOrdersOpen(true)}
       />
 
 
@@ -537,6 +548,9 @@ export default function HomePage() {
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
         onOrderSuccess={handleOrderSuccess}
+        onRequireLogin={() => {
+          openAuthModal('Vui lòng đăng nhập tài khoản để tiến hành đặt hàng.');
+        }}
       />
 
       {/* Order Tracking Modal */}
@@ -556,6 +570,20 @@ export default function HomePage() {
       <ReviewModal
         isOpen={isReviewOpen}
         onClose={() => setIsReviewOpen(false)}
+      />
+
+      {/* My Orders Modal (User Order History) */}
+      <MyOrdersModal
+        isOpen={isMyOrdersOpen}
+        onClose={() => setIsMyOrdersOpen(false)}
+        onOpenTracking={(code, phone) => {
+          setTrackingInitialCode(code);
+          setTrackingInitialPhone(phone);
+          setIsTrackingOpen(true);
+        }}
+        onOpenReview={(code, phone) => {
+          setIsReviewOpen(true);
+        }}
       />
 
       {/* Floating BK-Bot Chat Widget */}
