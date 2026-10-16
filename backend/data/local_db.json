@@ -291,8 +291,8 @@
       "warrantyMonths": 18,
       "categoryName": "Điện thoại thông minh",
       "category_name": "Điện thoại thông minh",
-      "stockQuantity": 15,
-      "stock": 15
+      "stockQuantity": 14,
+      "stock": 14
     },
     {
       "id": "p1000000-0000-0000-0000-000000000011",
@@ -424,8 +424,34 @@
       "stock": 15
     }
   ],
-  "updatedAt": "2026-10-16T16:23:40.963Z",
+  "updatedAt": "2026-10-16T17:19:05.618Z",
   "orders": [
+    {
+      "id": "order-1792171122666",
+      "orderCode": "#BK-6162",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000001",
+      "branchName": "BK-Store Cầu Giấy (Hà Nội)",
+      "totalAmount": 27990000,
+      "paymentMethod": "COD",
+      "status": "delivered",
+      "trackingInfo": "Giao thành công: Khách hàng đã nhận máy và thanh toán hoàn tất.",
+      "createdAt": "2026-10-16T17:18:42.666Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000010",
+          "productSlug": "xiaomi-14-ultra-512gb",
+          "productName": "Xiaomi 14 Ultra 512GB (Ống kính nhiếp ảnh Leica)",
+          "quantity": 1,
+          "unitPrice": 27990000,
+          "price": 27990000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
     {
       "id": "order-1792163527867",
       "orderCode": "#BK-8254",
@@ -604,6 +630,18 @@
   ],
   "reviews": [
     {
+      "id": "rev-1792171145616",
+      "productId": "p1000000-0000-0000-0000-000000000010",
+      "productSlug": "xiaomi-14-ultra-512gb",
+      "orderId": "order-1792171122666",
+      "orderCode": "#BK-6162",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "rating": 5,
+      "comment": "siêu đỉnh",
+      "createdAt": "2026-10-16T17:19:05.616Z"
+    },
+    {
       "id": "rev-1792164215353",
       "productId": "p1000000-0000-0000-0000-000000000001",
       "productSlug": "macbook-air-m3-13-16gb-512gb",
@@ -767,7 +805,7 @@
     "p1000000-0000-0000-0000-000000000009:b1000000-0000-0000-0000-000000000001": 2,
     "p1000000-0000-0000-0000-000000000009:b1000000-0000-0000-0000-000000000002": 9,
     "p1000000-0000-0000-0000-000000000009:b1000000-0000-0000-0000-000000000003": 8,
-    "p1000000-0000-0000-0000-000000000010:b1000000-0000-0000-0000-000000000001": 5,
+    "p1000000-0000-0000-0000-000000000010:b1000000-0000-0000-0000-000000000001": 4,
     "p1000000-0000-0000-0000-000000000010:b1000000-0000-0000-0000-000000000002": 4,
     "p1000000-0000-0000-0000-000000000010:b1000000-0000-0000-0000-000000000003": 3,
     "p1000000-0000-0000-0000-000000000011:b1000000-0000-0000-0000-000000000001": 8,

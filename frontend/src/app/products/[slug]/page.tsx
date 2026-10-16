@@ -534,7 +534,13 @@ export default function ProductDetailPage() {
             </div>
 
             <button
-              onClick={() => setIsReviewOpen(true)}
+              onClick={() => {
+                if (!isAuthenticated) {
+                  openAuthModal('Vui lòng đăng nhập tài khoản để viết đánh giá sản phẩm.');
+                } else {
+                  setIsReviewOpen(true);
+                }
+              }}
               className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-bold text-xs shadow-md shadow-amber-500/20 flex items-center gap-2 self-start sm:self-center transition-all cursor-pointer"
             >
               <Star className="w-4 h-4 fill-white" />
@@ -784,6 +790,7 @@ export default function ProductDetailPage() {
         isOpen={isReviewOpen}
         onClose={() => setIsReviewOpen(false)}
         initialProductId={product.slug}
+        productName={product.name}
         onReviewSubmitted={() => {
           loadReviews(product.slug);
         }}

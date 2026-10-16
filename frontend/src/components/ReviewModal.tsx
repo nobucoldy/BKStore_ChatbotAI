@@ -1,21 +1,25 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   X,
   Star,
-  Search,
   CheckCircle2,
   AlertCircle,
   Package,
   ShieldCheck,
   Send,
-  MessageSquare,
   Sparkles,
+  Lock,
+  LogIn,
+  Truck,
+  Clock,
+  ShoppingBag,
 } from 'lucide-react';
-import { trackOrderApi, fetchOrderReviews, submitProductReview } from '@/lib/api';
+import { trackOrderApi, fetchOrderReviews, submitProductReview, fetchMyOrdersApi } from '@/lib/api';
 import { Order, OrderItem, Review } from '@/types';
 import { formatPrice } from '@/lib/utils';
+import { useAuthStore } from '@/store/authStore';
 
 interface ReviewModalProps {
   isOpen: boolean;
@@ -23,6 +27,7 @@ interface ReviewModalProps {
   initialOrderCode?: string;
   initialPhone?: string;
   initialProductId?: string;
+  productName?: string;
   onReviewSubmitted?: (review: Review) => void;
 }
 
@@ -40,14 +45,19 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   initialOrderCode = '',
   initialPhone = '',
   initialProductId = '',
+  productName = '',
   onReviewSubmitted,
 }) => {
-  const [orderCode, setOrderCode] = useState(initialOrderCode);
-  const [phone, setPhone] = useState(initialPhone);
+  const { user, isAuthenticated, openAuthModal } = useAuthStore();
+
   const [isLoadingOrder, setIsLoadingOrder] = useState(false);
   const [orderData, setOrderData] = useState<Order | null>(null);
   const [orderReviews, setOrderReviews] = useState<Review[]>([]);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Status flags for Phương án 1 (Tự động nhận diện tài khoản)
+  const [notPurchasedYet, setNotPurchasedYet] = useState(false);
+  const [pendingOrder, setPendingOrder] = useState<Order | null>(null);
 
   // Selected item being reviewed
   const [reviewingItem, setReviewingItem] = useState<OrderItem | null>(null);
@@ -58,8 +68,8 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState('');
 
-  // Strict helper to check if a review belongs to a given order item (never matching undefined === undefined)
-  const doesReviewMatchItem = React.useCallback((r: Review, item: OrderItem): boolean => {
+  // Strict helper to check if a review belongs to a given order item
+  const doesReviewMatchItem = useCallback((r: Review, item: OrderItem): boolean => {
     if (item.productId && r.productId && String(r.productId) === String(item.productId)) {
       return true;
     }
@@ -72,11 +82,40 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
     if (item.productSlug && r.productId && String(r.productId) === item.productSlug) {
       return true;
     }
+    if (item.productName && r.productSlug && item.productName.toLowerCase() === r.productSlug.toLowerCase()) {
+      return true;
+    }
     return false;
   }, []);
 
-  // Strict helper to check if two order items are the same product
-  const isSameOrderItem = React.useCallback((a: OrderItem | null, b: OrderItem | null): boolean => {
+  // Helper to match an item in an order with target product slug or name
+  const matchOrderItem = useCallback(
+    (it: OrderItem, targetProdId?: string, targetProdName?: string): boolean => {
+      if (!targetProdId && !targetProdName) return true;
+      const targetSlug = (targetProdId || '').trim().toLowerCase();
+      const targetName = (targetProdName || '').trim().toLowerCase();
+
+      const itSlug = (it.productSlug || '').trim().toLowerCase();
+      const itId = String(it.productId || '').trim().toLowerCase();
+      const itName = (it.productName || '').trim().toLowerCase();
+
+      if (targetSlug) {
+        if (itSlug && itSlug === targetSlug) return true;
+        if (itId && itId === targetSlug) return true;
+        if (itName && itName === targetSlug) return true;
+      }
+
+      if (targetName) {
+        if (itName && (itName.includes(targetName) || targetName.includes(itName))) return true;
+      }
+
+      return false;
+    },
+    []
+  );
+
+  // Helper to check if two order items are the same product
+  const isSameOrderItem = useCallback((a: OrderItem | null, b: OrderItem | null): boolean => {
     if (!a || !b) return false;
     if (a === b) return true;
     if (a.productId && b.productId) {
@@ -91,58 +130,55 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
     return false;
   }, []);
 
-  const loadOrderAndReviews = React.useCallback(
-    async (codeToSearch: string, phoneToSearch: string, targetProdId?: string) => {
+  // Load a specific order (when passed via props, e.g. from MyOrdersModal)
+  const loadOrderAndReviews = useCallback(
+    async (codeToSearch: string, phoneToSearch: string, targetProdId?: string, targetProdName?: string) => {
       setErrorMsg('');
       setSubmitSuccess('');
       setReviewingItem(null);
       setReviewingItemIdx(null);
-
-      if (!codeToSearch.trim()) {
-        setErrorMsg('Vui lòng nhập mã đơn hàng (ví dụ: BK-1024).');
-        return;
-      }
-      if (!phoneToSearch.trim()) {
-        setErrorMsg('Vui lòng nhập số điện thoại đặt hàng để xác thực.');
-        return;
-      }
+      setNotPurchasedYet(false);
+      setPendingOrder(null);
 
       setIsLoadingOrder(true);
       try {
         const res = await trackOrderApi(codeToSearch, phoneToSearch);
         if (res.success && res.data) {
-          setOrderData(res.data);
+          const ord = res.data;
+          if (ord.status !== 'delivered') {
+            setPendingOrder(ord);
+            setOrderData(ord);
+          } else {
+            setOrderData(ord);
 
-          // Fetch already reviewed items for this order
-          const reviews = await fetchOrderReviews(codeToSearch, phoneToSearch);
-          setOrderReviews(reviews);
+            // Fetch already reviewed items for this order
+            const reviews = await fetchOrderReviews(codeToSearch, phoneToSearch);
+            setOrderReviews(reviews);
 
-          // If target item specified and not yet reviewed, auto open form for it
-          if (targetProdId && res.data.items) {
-            const foundIdx = res.data.items.findIndex(
-              (it) =>
-                (Boolean(it.productId) && String(it.productId) === targetProdId) ||
-                (Boolean(it.productSlug) && it.productSlug === targetProdId) ||
-                (Boolean(it.productName) && it.productName === targetProdId)
-            );
-            if (foundIdx !== -1) {
-              const found = res.data.items[foundIdx];
-              const isAlreadyReviewed = reviews.some((r) => doesReviewMatchItem(r, found));
-              if (!isAlreadyReviewed) {
-                setReviewingItem(found);
-                setReviewingItemIdx(foundIdx);
+            // If target item specified and not yet reviewed, auto open form for it
+            if ((targetProdId || targetProdName) && ord.items) {
+              const foundIdx = ord.items.findIndex((it) =>
+                matchOrderItem(it, targetProdId, targetProdName)
+              );
+              if (foundIdx !== -1) {
+                const found = ord.items[foundIdx];
+                const isAlreadyReviewed = reviews.some((r) => doesReviewMatchItem(r, found));
+                if (!isAlreadyReviewed) {
+                  setReviewingItem(found);
+                  setReviewingItemIdx(foundIdx);
+                }
               }
-            }
-          } else if (res.data.items && res.data.items.length === 1) {
-            const singleItem = res.data.items[0];
-            const isAlreadyReviewed = reviews.some((r) => doesReviewMatchItem(r, singleItem));
-            if (!isAlreadyReviewed) {
-              setReviewingItem(singleItem);
-              setReviewingItemIdx(0);
+            } else if (ord.items && ord.items.length === 1) {
+              const singleItem = ord.items[0];
+              const isAlreadyReviewed = reviews.some((r) => doesReviewMatchItem(r, singleItem));
+              if (!isAlreadyReviewed) {
+                setReviewingItem(singleItem);
+                setReviewingItemIdx(0);
+              }
             }
           }
         } else {
-          setErrorMsg(res.error || 'Không tìm thấy đơn hàng khớp với mã đơn và số điện thoại đã nhập.');
+          setErrorMsg(res.error || 'Không tìm thấy đơn hàng khớp với thông tin đã nhập.');
           setOrderData(null);
         }
       } catch (err: any) {
@@ -152,30 +188,133 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
         setIsLoadingOrder(false);
       }
     },
-    [doesReviewMatchItem]
+    [doesReviewMatchItem, matchOrderItem]
   );
 
   useEffect(() => {
-    if (isOpen) {
-      if (initialOrderCode) setOrderCode(initialOrderCode);
-      if (initialPhone) setPhone(initialPhone);
-
-      if (initialOrderCode && initialPhone) {
-        loadOrderAndReviews(initialOrderCode, initialPhone, initialProductId);
-      }
-    } else {
+    if (!isOpen) {
       setSubmitSuccess('');
+      setErrorMsg('');
       setReviewingItem(null);
       setReviewingItemIdx(null);
+      setOrderData(null);
+      setPendingOrder(null);
+      setNotPurchasedYet(false);
+      return;
     }
-  }, [isOpen, initialOrderCode, initialPhone, initialProductId, loadOrderAndReviews]);
+
+    setSubmitSuccess('');
+    setErrorMsg('');
+    setReviewingItem(null);
+    setReviewingItemIdx(null);
+
+    // Case A: Pre-filled from an explicit order (e.g., from MyOrdersModal)
+    if (initialOrderCode && initialPhone) {
+      loadOrderAndReviews(initialOrderCode, initialPhone, initialProductId, productName);
+      return;
+    }
+
+    // Case B: Opened without explicit order (e.g. from Product Detail Page)
+    if (!isAuthenticated) {
+      setIsLoadingOrder(false);
+      setOrderData(null);
+      setPendingOrder(null);
+      setNotPurchasedYet(false);
+      return;
+    }
+
+    // Authenticated user: automatically inspect orders
+    let isCancelled = false;
+    const autoDetectOrder = async () => {
+      setIsLoadingOrder(true);
+      setNotPurchasedYet(false);
+      setPendingOrder(null);
+      setOrderData(null);
+
+      try {
+        const res = await fetchMyOrdersApi();
+        if (isCancelled) return;
+
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          const userOrders = res.data;
+
+          // 1. Check if user has a delivered order for this product
+          const deliveredOrder = userOrders.find(
+            (ord) =>
+              ord.status === 'delivered' &&
+              ord.items &&
+              ord.items.some((it) => matchOrderItem(it, initialProductId, productName))
+          );
+
+          if (deliveredOrder && deliveredOrder.items) {
+            setOrderData(deliveredOrder);
+            const reviews = await fetchOrderReviews(deliveredOrder.orderCode, deliveredOrder.phone);
+            if (isCancelled) return;
+            setOrderReviews(reviews);
+
+            // Auto-select the item for reviewing if not yet reviewed
+            const matchedIdx = deliveredOrder.items.findIndex((it) =>
+              matchOrderItem(it, initialProductId, productName)
+            );
+            if (matchedIdx !== -1) {
+              const matched = deliveredOrder.items[matchedIdx];
+              const isReviewed = reviews.some((r) => doesReviewMatchItem(r, matched));
+              if (!isReviewed) {
+                setReviewingItem(matched);
+                setReviewingItemIdx(matchedIdx);
+              }
+            }
+            return;
+          }
+
+          // 2. Check if user has an order that is pending/shipping/confirmed
+          const pendingOrd = userOrders.find(
+            (ord) =>
+              ord.status !== 'delivered' &&
+              ord.items &&
+              ord.items.some((it) => matchOrderItem(it, initialProductId, productName))
+          );
+
+          if (pendingOrd) {
+            setPendingOrder(pendingOrd);
+            return;
+          }
+
+          // 3. User has orders, but not this product
+          setNotPurchasedYet(true);
+        } else {
+          // User has zero orders
+          setNotPurchasedYet(true);
+        }
+      } catch (err: any) {
+        if (!isCancelled) {
+          setErrorMsg(err.message || 'Lỗi khi kiểm tra lịch sử đơn hàng của bạn.');
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingOrder(false);
+        }
+      }
+    };
+
+    autoDetectOrder();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    isOpen,
+    initialOrderCode,
+    initialPhone,
+    initialProductId,
+    productName,
+    isAuthenticated,
+    loadOrderAndReviews,
+    matchOrderItem,
+    doesReviewMatchItem,
+  ]);
 
   if (!isOpen) return null;
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    loadOrderAndReviews(orderCode, phone);
-  };
 
   const handleStartReview = (item: OrderItem, idx: number) => {
     setReviewingItem(item);
@@ -215,7 +354,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
       if (res.success && res.data) {
         setSubmitSuccess(
-          `Cảm ơn ${orderData.customerName}! Đánh giá ${rating} sao của bạn đã được ghi nhận thành công.`
+          `Cảm ơn ${orderData.customerName || user?.name || 'quý khách'}! Đánh giá ${rating} sao của bạn đã được ghi nhận thành công.`
         );
         setOrderReviews((prev) => [res.data!, ...prev]);
         setReviewingItem(null);
@@ -261,72 +400,50 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
           Chỉ khách hàng đã nhận hàng thành công mới có thể gửi đánh giá xác thực cho các sản phẩm trong đơn.
         </p>
 
-        {/* If prefilled from order: Show verified badge banner, no manual code/phone entry */}
-        {orderData ? (
-          <div className="bg-blue-50/80 border border-blue-200/90 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-sm font-bold text-blue-900 font-mono flex items-center gap-2">
-                  <span>{orderData.orderCode}</span>
-                  <span className="text-[10px] font-sans font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full">
-                    Đã hoàn thành
-                  </span>
-                </div>
-                <div className="text-xs text-slate-600 mt-0.5">
-                  Người nhận: <strong>{orderData.customerName}</strong> • {orderData.phone}
-                </div>
-              </div>
+        {/* 1. Unauthenticated state: Prompt user to log in */}
+        {!isAuthenticated && !initialOrderCode ? (
+          <div className="py-8 px-4 flex flex-col items-center justify-center text-center space-y-4 bg-slate-50/70 border border-slate-200/80 rounded-2xl mb-4">
+            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shadow-xs">
+              <Lock className="w-7 h-7" />
             </div>
-            <div className="text-[11px] text-blue-700 font-medium bg-white px-3 py-1.5 rounded-xl border border-blue-200">
-              Đánh giá xác thực (Verified Purchase)
+            <div className="max-w-md">
+              <h4 className="text-base font-bold text-slate-900 mb-1">
+                Vui lòng đăng nhập tài khoản
+              </h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Để đảm bảo tính xác thực của đánh giá (Verified Purchase), hệ thống BK-Store yêu cầu đăng nhập tài khoản để nhận diện đơn hàng bạn đã mua.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
+              >
+                Để sau
+              </button>
+              <button
+                onClick={() => {
+                  onClose();
+                  openAuthModal('Vui lòng đăng nhập tài khoản để viết đánh giá sản phẩm.');
+                }}
+                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all cursor-pointer"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Đăng nhập ngay</span>
+              </button>
             </div>
           </div>
-        ) : isLoadingOrder ? (
-          <div className="py-8 flex flex-col items-center justify-center text-slate-500 text-xs gap-2 mb-6">
-            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-            <span>Đang tải thông tin đơn hàng và sản phẩm...</span>
-          </div>
-        ) : !initialOrderCode ? (
-          /* Search Order Form: Only shown when opened standalone */
-          <form onSubmit={handleSearchSubmit} className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 mb-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Mã đơn hàng</label>
-                <input
-                  type="text"
-                  value={orderCode}
-                  onChange={(e) => setOrderCode(e.target.value)}
-                  placeholder="Ví dụ: BK-1024"
-                  className="w-full text-xs font-mono uppercase bg-white px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-500 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Số điện thoại đặt hàng</label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="0912345678"
-                  className="w-full text-xs font-mono bg-white px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-500 outline-none"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoadingOrder}
-              className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs shadow-sm shadow-blue-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
-            >
-              <Search className="w-3.5 h-3.5" />
-              <span>Xác thực đơn hàng & mở danh sách đánh giá</span>
-            </button>
-          </form>
         ) : null}
 
-        {/* Alerts */}
+        {/* 2. Loading state */}
+        {isLoadingOrder ? (
+          <div className="py-12 flex flex-col items-center justify-center text-slate-500 text-xs gap-3 mb-6 bg-slate-50/50 rounded-2xl border border-slate-100">
+            <div className="w-7 h-7 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <span className="font-medium text-slate-600">Đang tự động kiểm tra lịch sử mua hàng của bạn...</span>
+          </div>
+        ) : null}
+
+        {/* 3. Alerts */}
         {errorMsg && (
           <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -341,11 +458,104 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
           </div>
         )}
 
-        {/* Order Details & Items */}
+        {/* 4. Not Purchased Yet Notice */}
+        {!isLoadingOrder && notPurchasedYet && isAuthenticated && (
+          <div className="py-8 px-5 flex flex-col items-center text-center space-y-4 bg-gradient-to-b from-blue-50/40 to-slate-50 border border-blue-100 rounded-2xl mb-4">
+            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shadow-xs">
+              <ShieldCheck className="w-7 h-7" />
+            </div>
+            <div className="max-w-md space-y-1.5">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                <span>Tiêu chuẩn Verified Purchase</span>
+              </div>
+              <h4 className="text-base font-bold text-slate-900 pt-1">
+                Chưa có đơn hàng cho sản phẩm này
+              </h4>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Tài khoản <strong className="text-slate-800">{user?.name || user?.email}</strong> chưa có đơn hàng giao thành công cho sản phẩm {productName ? <strong>&ldquo;{productName}&rdquo;</strong> : 'này'}.
+              </p>
+              <p className="text-[11px] text-slate-500 leading-relaxed pt-1">
+                Để bảo vệ quyền lợi cộng đồng và cam kết 100% đánh giá thực tế từ người dùng, chỉ những khách hàng đã sở hữu máy tại BK-Store mới có quyền gửi nhận xét.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={onClose}
+                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all cursor-pointer"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>Đặt mua sản phẩm ngay</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 5. Pending / In-transit Order Notice */}
+        {!isLoadingOrder && pendingOrder && !orderData && (
+          <div className="py-8 px-5 flex flex-col items-center text-center space-y-4 bg-amber-50/60 border border-amber-200/90 rounded-2xl mb-4">
+            <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 border border-amber-300 flex items-center justify-center shadow-xs">
+              <Truck className="w-7 h-7" />
+            </div>
+            <div className="max-w-md space-y-1.5">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-200/70 text-amber-900 border border-amber-300">
+                <Clock className="w-3.5 h-3.5 text-amber-700" />
+                <span>Đơn hàng đang xử lý ({pendingOrder.orderCode})</span>
+              </div>
+              <h4 className="text-base font-bold text-slate-900 pt-1">
+                Sản phẩm đang trên đường đến tay bạn!
+              </h4>
+              <p className="text-xs text-slate-700 leading-relaxed">
+                Đơn hàng <strong className="font-mono text-slate-900">{pendingOrder.orderCode}</strong> của bạn hiện ở trạng thái{' '}
+                <span className="font-bold text-amber-800 uppercase">
+                  {pendingOrder.status === 'shipping'
+                    ? 'Đang vận chuyển'
+                    : pendingOrder.status === 'confirmed'
+                    ? 'Đã xác nhận'
+                    : 'Đang chuẩn bị hàng'}
+                </span>.
+              </p>
+              <p className="text-[11px] text-slate-600 leading-relaxed pt-1">
+                Theo chính sách <strong>Verified Purchase</strong> của BK-Store, chức năng đánh giá sẽ tự động được mở ngay sau khi shipper giao hàng thành công đến bạn.
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-colors cursor-pointer"
+            >
+              Đã hiểu, quay lại xem sản phẩm
+            </button>
+          </div>
+        )}
+
+        {/* 6. Matched Delivered Order: Verified Purchase details & review form */}
         {orderData && (
           <div className="space-y-6">
-            {/* Order status banner */}
-            {orderData.status !== 'delivered' ? (
+            {/* Order Verified Badge */}
+            <div className="bg-blue-50/80 border border-blue-200/90 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-blue-900 font-mono flex items-center gap-2">
+                    <span>{orderData.orderCode}</span>
+                    <span className="text-[10px] font-sans font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full">
+                      Đã hoàn thành
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-600 mt-0.5">
+                    Người nhận: <strong>{orderData.customerName}</strong> • {orderData.phone}
+                  </div>
+                </div>
+              </div>
+              <div className="text-[11px] text-blue-700 font-medium bg-white px-3 py-1.5 rounded-xl border border-blue-200">
+                Đánh giá xác thực (Verified Purchase)
+              </div>
+            </div>
+
+            {/* If order is not delivered, warn user */}
+            {orderData.status !== 'delivered' && (
               <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1.5">
                 <div className="font-bold flex items-center gap-1.5 text-amber-800">
                   <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
@@ -358,7 +568,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                   Để đảm bảo tính khách quan và uy tín của cộng đồng BK-Store, bạn chỉ có thể đánh giá sản phẩm sau khi đơn hàng được giao thành công đến tay bạn.
                 </p>
               </div>
-            ) : null}
+            )}
 
             {/* List of Products in the Order */}
             {orderData.items && orderData.items.length > 0 && (
@@ -435,7 +645,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                           </div>
                         </div>
 
-                        {/* If existing review, display small preview */}
+                        {/* If existing review, display preview */}
                         {existingRev && (
                           <div className="mt-3 pt-2.5 border-t border-slate-100 text-xs text-slate-600 bg-slate-50/70 p-2.5 rounded-xl">
                             <div className="flex items-center gap-1 text-amber-500 mb-1">
@@ -531,7 +741,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                 <div className="text-xs text-slate-500 flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
                   <span>
-                    Người đánh giá: <strong className="text-slate-800">{orderData.customerName}</strong>{' '}
+                    Người đánh giá: <strong className="text-slate-800">{orderData.customerName || user?.name}</strong>{' '}
                     (Đơn hàng #{orderData.orderCode.replace(/^#/, '')})
                   </span>
                 </div>

@@ -58,6 +58,11 @@ export default function HomePage() {
   const [trackingInitialCode, setTrackingInitialCode] = useState<string>('');
   const [trackingInitialPhone, setTrackingInitialPhone] = useState<string>('');
 
+  // Review pre-fill
+  const [reviewInitialCode, setReviewInitialCode] = useState<string>('');
+  const [reviewInitialPhone, setReviewInitialPhone] = useState<string>('');
+  const [reviewInitialProductId, setReviewInitialProductId] = useState<string>('');
+
   // Chat pre-fill prompt
   const [chatInitialPrompt, setChatInitialPrompt] = useState<string>('');
 
@@ -562,6 +567,9 @@ export default function HomePage() {
         initialPhone={trackingInitialPhone}
         onOpenReviewModal={(code, phone, prodId) => {
           setIsTrackingOpen(false);
+          setReviewInitialCode(code);
+          setReviewInitialPhone(phone);
+          if (prodId) setReviewInitialProductId(prodId);
           setIsReviewOpen(true);
         }}
       />
@@ -569,7 +577,15 @@ export default function HomePage() {
       {/* Order Review Modal */}
       <ReviewModal
         isOpen={isReviewOpen}
-        onClose={() => setIsReviewOpen(false)}
+        onClose={() => {
+          setIsReviewOpen(false);
+          setReviewInitialCode('');
+          setReviewInitialPhone('');
+          setReviewInitialProductId('');
+        }}
+        initialOrderCode={reviewInitialCode}
+        initialPhone={reviewInitialPhone}
+        initialProductId={reviewInitialProductId}
       />
 
       {/* My Orders Modal (User Order History) */}
@@ -582,6 +598,8 @@ export default function HomePage() {
           setIsTrackingOpen(true);
         }}
         onOpenReview={(code, phone) => {
+          setReviewInitialCode(code || '');
+          setReviewInitialPhone(phone || '');
           setIsReviewOpen(true);
         }}
       />
