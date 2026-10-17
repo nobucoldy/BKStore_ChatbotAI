@@ -27,9 +27,9 @@ const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
 // Danh sách các model ưu tiên thử nghiệm (fallback nếu gặp 503/429 tạm thời)
 const CANDIDATE_MODELS = [
-  'gemini-2.5-flash',
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
+  'gemini-3.8-flash',
+  'gemini-flash-latest',
+  'gemini-3.5-flash',
 ];
 
 const unavailableModels = new Set<string>();
@@ -1400,10 +1400,9 @@ class ChatService {
 
 Hãy đưa ra câu trả lời trực tiếp cho khách hàng (chỉ xuất lời thoại tư vấn, tuyệt đối không in bất kỳ dòng checklist hoặc siêu dữ liệu tự kiểm tra nào):`;
 
-    // 4. Gọi Gemini để tổng hợp câu trả lời
     const startLlm = performance.now();
     let replyText = '';
-    let usedModel = 'gemini-2.5-flash';
+    let usedModel = 'gemini-3.8-flash';
 
     try {
       const genResult = await this.generateWithFallback(userPromptWithData, SYSTEM_INSTRUCTION);
