@@ -24,9 +24,7 @@
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.0",
     "pg": "^8.13.3",
-    "zod": "^3.24.2"
-  },
-  "devDependencies": {
+    "zod": "^3.24.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
@@ -34,8 +32,10 @@
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.13.9",
     "@types/pg": "^8.11.11",
-    "tsx": "^4.19.3",
     "typescript": "^5.8.2"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.3"
   },
   "keywords": [
     "express",
