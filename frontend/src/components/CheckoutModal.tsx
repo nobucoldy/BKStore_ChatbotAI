@@ -22,12 +22,21 @@ import {
   Truck,
   Sparkles,
   ShieldCheck,
+  QrCode,
+  AlertCircle,
+  XCircle,
+  ArrowLeft,
 } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
 import { formatPrice } from '@/lib/utils';
-import { createOrderApi, fetchInventoryOverview, fetchMyOrdersApi } from '@/lib/api';
-import { Order, Branch, Product, ProductInventoryItem } from '@/types';
+import {
+  createOrderApi,
+  fetchInventoryOverview,
+  fetchMyOrdersApi,
+  updateOrderStatusApi,
+} from '@/lib/api';
+import { Order, Branch, Product, ProductInventoryItem, CartItem } from '@/types';
 
 const DEFAULT_BRANCHES: Branch[] = [
   {
@@ -89,9 +98,36 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
   const [isCopied, setIsCopied] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isWaitingQrPayment, setIsWaitingQrPayment] = useState(false);
+  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+  const [countdownSeconds, setCountdownSeconds] = useState(15 * 60);
+  const [copiedField, setCopiedField] = useState<'code' | 'account' | null>(null);
 
   const selectedBranchObj =
     branches.find((b) => b.id === selectedBranchId) || DEFAULT_BRANCHES[0];
+
+  // 15-minute countdown timer for QR payment step
+  useEffect(() => {
+    if (isWaitingQrPayment) {
+      setCountdownSeconds(15 * 60);
+      const timer = setInterval(() => {
+        setCountdownSeconds((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [isWaitingQrPayment]);
+
+  const formatCountdown = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Auto fill user details when available & ensure no field is empty
   useEffect(() => {
@@ -167,6 +203,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setCreatedOrder(null);
+      setIsWaitingQrPayment(false);
+      setIsVerifyingPayment(false);
+      setCopiedField(null);
       setErrorMsg('');
       setIsLoading(false);
       setIsCopied(false);
@@ -271,6 +310,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       return;
     }
 
+    // If QR_PAY is selected: DO NOT create order yet! Switch directly to the QR payment step
+    if (paymentMethod === 'QR_PAY') {
+      setIsConfirmOpen(false);
+      setIsWaitingQrPayment(true);
+      return;
+    }
+
+    // COD flow: directly create order in backend
     setIsLoading(true);
     setErrorMsg('');
 
@@ -281,7 +328,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         address: address.trim(),
         note: note.trim() || undefined,
         branchId: selectedBranchId,
-        paymentMethod,
+        paymentMethod: 'COD' as const,
         userId: user.id,
         items: effectiveItems.map((i) => ({
           productId: i.product.id,
@@ -289,7 +336,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         })),
       };
 
-      // Ensure smooth deliberate loading feedback (~900ms) to prevent double-clicks & show system processing
       const [res] = await Promise.all([
         createOrderApi(payload),
         new Promise((resolve) => setTimeout(resolve, 900)),
@@ -318,6 +364,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   const handleClose = () => {
     setCreatedOrder(null);
+    setIsWaitingQrPayment(false);
+    setIsVerifyingPayment(false);
+    setCopiedField(null);
     setErrorMsg('');
     setIsLoading(false);
     setIsCopied(false);
@@ -325,11 +374,102 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     onClose();
   };
 
+  const handleCancelQrStep = () => {
+    // Returns back to previous checkout form step!
+    // No order was created in DB, no cart items were removed!
+    setIsWaitingQrPayment(false);
+  };
+
+  const handleCompleteQrPayment = async () => {
+    if (!isAuthenticated || !user) {
+      setErrorMsg('Vui lòng đăng nhập tài khoản trước khi hoàn tất đặt hàng.');
+      setIsWaitingQrPayment(false);
+      return;
+    }
+
+    setIsVerifyingPayment(true);
+    setErrorMsg('');
+
+    try {
+      const payload = {
+        customerName: customerName.trim(),
+        phone: phone.trim(),
+        address: address.trim(),
+        note: note.trim() || undefined,
+        branchId: selectedBranchId,
+        paymentMethod: 'QR_PAY' as const,
+        userId: user.id,
+        items: effectiveItems.map((i) => ({
+          productId: i.product.id,
+          quantity: i.quantity,
+        })),
+      };
+
+      // Smooth deliberate delay (~1200ms) simulating bank verification + backend order creation
+      const [res] = await Promise.all([
+        createOrderApi(payload),
+        new Promise((resolve) => setTimeout(resolve, 1200)),
+      ]);
+
+      if (res.success && res.data) {
+        // Also update order status to confirmed on backend
+        try {
+          await updateOrderStatusApi(
+            res.data.orderCode,
+            'confirmed',
+            `Đã nhận thanh toán chuyển khoản VietQR thành công (${formatPrice(
+              effectiveTotalPrice
+            )}). Đơn hàng đã được chuyển sang trạng thái chờ chuẩn bị hàng.`
+          );
+          res.data.status = 'confirmed';
+        } catch {}
+
+        setIsWaitingQrPayment(false);
+        setCreatedOrder(res.data);
+
+        if (selectedItems.length > 0) {
+          removeSelectedItems();
+        } else {
+          useCartStore.getState().clearCart();
+        }
+      } else {
+        setIsWaitingQrPayment(false);
+        setErrorMsg(res.error || 'Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại.');
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi kết nối máy chủ.';
+      setIsWaitingQrPayment(false);
+      setErrorMsg(msg);
+    } finally {
+      setIsVerifyingPayment(false);
+    }
+  };
+
   const handleCopyCode = () => {
     if (!createdOrder) return;
     navigator.clipboard.writeText(createdOrder.orderCode);
+    setCopiedField('code');
     setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
+    setTimeout(() => {
+      setCopiedField(null);
+      setIsCopied(false);
+    }, 2000);
+  };
+
+  const handleCopyAccount = () => {
+    navigator.clipboard.writeText('0987654321');
+    setCopiedField('account');
+    setTimeout(() => {
+      setCopiedField(null);
+    }, 2000);
+  };
+
+  const handleCopyQrNote = () => {
+    navigator.clipboard.writeText(`BK ${phone.trim()}`);
+    setCopiedField('code');
+    setTimeout(() => {
+      setCopiedField(null);
+    }, 2000);
   };
 
   const handleTrackCreatedOrder = () => {
@@ -347,23 +487,34 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col p-6 md:p-8">
         {/* Close Button */}
         <button
-          onClick={handleClose}
+          onClick={isWaitingQrPayment ? handleCancelQrStep : handleClose}
           className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* ORDER SUCCESS VIEW */}
+        {/* ORDER SUCCESS / QR PAYMENT / CHECKOUT FORM VIEW */}
         {createdOrder ? (
+          /* SUCCESS VIEW: ĐẶT HÀNG / THANH TOÁN THÀNH CÔNG */
           <div className="flex flex-col py-2 space-y-5">
             {/* Success Header */}
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3 shadow-inner">
                 <CheckCircle className="w-9 h-9" />
               </div>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Đặt hàng thành công!</h3>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                {createdOrder.paymentMethod === 'QR_PAY' ? 'Thanh toán & Đặt hàng thành công!' : 'Đặt hàng thành công!'}
+              </h3>
               <p className="text-xs text-slate-500 mt-1 max-w-md">
-                Cảm ơn <strong>{createdOrder.customerName}</strong>! Đơn hàng của bạn đã được ghi nhận vào hệ thống BK-Store và đang được chuyển đến bộ phận chuẩn bị hàng.
+                {createdOrder.paymentMethod === 'QR_PAY' ? (
+                  <>
+                    Hệ thống đã nhận được thanh toán <strong>{formatPrice(createdOrder.totalAmount)}</strong> qua VietQR từ bạn. Đơn hàng <strong>{createdOrder.orderCode}</strong> đã được chuyển sang trạng thái chờ chuẩn bị hàng.
+                  </>
+                ) : (
+                  <>
+                    Cảm ơn <strong>{createdOrder.customerName}</strong>! Đơn hàng của bạn đã được ghi nhận vào hệ thống BK-Store và sẽ được thanh toán bằng tiền mặt khi giao hàng (COD).
+                  </>
+                )}
               </p>
             </div>
 
@@ -378,9 +529,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   <Clock className="w-3.5 h-3.5 text-blue-500" />
                   <span>{new Date(createdOrder.createdAt).toLocaleString('vi-VN')}</span>
                   <span>•</span>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                    Chờ duyệt kho (Pending)
-                  </span>
+                  {createdOrder.paymentMethod === 'QR_PAY' ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      Đã thanh toán (Paid) • Chờ xuất kho
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                      Chờ duyệt kho & Giao hàng (COD)
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -474,53 +631,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </div>
             )}
 
-            {/* If QR_PAY is selected -> Display VietQR Bank Transfer Card */}
-            {createdOrder.paymentMethod === 'QR_PAY' && (
-              <div className="p-5 rounded-2xl bg-slate-900 text-white w-full flex flex-col items-center shadow-md">
-                <div className="flex items-center gap-2 mb-2">
-                  <CreditCard className="w-5 h-5 text-cyan-400" />
-                  <h4 className="text-sm font-bold text-slate-100">Quét mã VietQR để thanh toán</h4>
-                </div>
-                <p className="text-[11px] text-slate-400 text-center mb-3">
-                  Quét mã bằng ứng dụng ngân hàng bất kỳ để hệ thống tự động xác nhận đơn trong 1 phút.
-                </p>
-
-                {/* QR Image Mock */}
-                <div className="bg-white p-3 rounded-2xl shadow-lg my-1">
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
-                      `STK: 0987654321|MBBANK|BK-STORE|SO TIEN: ${createdOrder.totalAmount}|NOI DUNG: ${createdOrder.orderCode}`
-                    )}`}
-                    alt="VietQR Payment"
-                    className="w-44 h-44 rounded-lg"
-                  />
-                </div>
-
-                <div className="w-full text-left text-xs space-y-1.5 mt-3 pt-3 border-t border-slate-800 font-mono">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Ngân hàng:</span>
-                    <span className="font-bold text-white">MB Bank (Quân Đội)</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Số tài khoản:</span>
-                    <span className="font-bold text-cyan-300">0987 654 321</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Chủ tài khoản:</span>
-                    <span className="font-bold text-white">BK-STORE VIETNAM</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Số tiền:</span>
-                    <span className="font-bold text-amber-400">{formatPrice(createdOrder.totalAmount)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Nội dung CK:</span>
-                    <span className="font-bold text-emerald-400">{createdOrder.orderCode}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Recipient summary */}
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left text-xs space-y-2 text-slate-600">
               <div className="font-bold text-slate-800 pb-1 border-b border-slate-200/80 flex items-center gap-1.5">
@@ -535,7 +645,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <div>
                   <span className="text-slate-400">Phương thức:</span>{' '}
                   <strong className="text-slate-800">
-                    {createdOrder.paymentMethod === 'COD' ? 'Thanh toán tiền mặt (COD)' : 'Chuyển khoản VietQR'}
+                    {createdOrder.paymentMethod === 'COD'
+                      ? 'Thanh toán tiền mặt (COD)'
+                      : 'Chuyển khoản VietQR (Đã thanh toán)'}
                   </strong>
                 </div>
                 <div className="sm:col-span-2">
@@ -577,6 +689,190 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 className="py-3 px-4 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 font-semibold text-xs transition-colors cursor-pointer"
               >
                 Đóng & Mua sắm
+              </button>
+            </div>
+          </div>
+        ) : isWaitingQrPayment ? (
+          /* VIEW B: BƯỚC QUÉT MÃ VIETQR (CHƯA TẠO ĐƠN HÀNG) */
+          <div className="flex flex-col py-2 space-y-4">
+            {/* Header */}
+            <div className="flex flex-col items-center text-center">
+              <div className="relative w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3 shadow-inner border border-blue-100">
+                <QrCode className="w-9 h-9" />
+                <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-4 w-4 bg-amber-500"></span>
+                </span>
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Vui lòng quét mã VietQR để thanh toán</h3>
+              <p className="text-xs text-slate-500 mt-1 max-w-md">
+                Quét mã chuyển khoản chính xác số tiền bên dưới. Sau khi chuyển khoản thành công, nhấn nút &ldquo;Tôi đã chuyển khoản xong&rdquo; để hệ thống xác nhận và tạo đơn hàng.
+              </p>
+            </div>
+
+            {/* Status & Countdown Banner */}
+            <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="flex items-center gap-2.5">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                  <span>Chờ thanh toán (QR VietQR)</span>
+                </span>
+                <span className="text-xs text-slate-500">
+                  Người nhận: <strong className="text-slate-800 font-bold">{customerName}</strong>
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white border border-amber-200 text-xs font-mono font-bold text-amber-900 shadow-2xs">
+                <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+                <span>Hết hạn sau: {formatCountdown(countdownSeconds)}</span>
+              </div>
+            </div>
+
+            {/* VietQR Bank Transfer Card */}
+            <div className="p-5 rounded-3xl bg-slate-900 text-white w-full flex flex-col items-center shadow-lg border border-slate-800">
+              <div className="flex items-center gap-2 mb-1.5">
+                <CreditCard className="w-5 h-5 text-cyan-400" />
+                <h4 className="text-sm font-bold text-slate-100">Quét mã bằng App Ngân hàng hoặc Ví điện tử</h4>
+              </div>
+              <p className="text-[11px] text-slate-400 text-center mb-3">
+                Hỗ trợ hơn 40 ngân hàng (MB, Vietcombank, Techcombank, VPBank...) & MoMo, ZaloPay
+              </p>
+
+              {/* QR Image Box */}
+              <div className="bg-white p-3 rounded-2xl shadow-xl my-1 relative group">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+                    `STK: 0987654321|MBBANK|BK-STORE|SO TIEN: ${effectiveTotalPrice}|NOI DUNG: BK ${phone.trim()}`
+                  )}`}
+                  alt="VietQR Payment"
+                  className="w-48 h-48 rounded-lg"
+                />
+                <div className="text-center mt-1.5 text-[10px] font-mono font-bold text-slate-600 uppercase tracking-wider">
+                  Mã QR tự động điền STK & Số tiền
+                </div>
+              </div>
+
+              {/* Bank Details Table */}
+              <div className="w-full text-xs space-y-2 mt-4 pt-3.5 border-t border-slate-800 font-mono">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Ngân hàng:</span>
+                  <span className="font-bold text-white">MB Bank (Quân Đội)</span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Số tài khoản:</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-cyan-300 text-sm">0987 654 321</span>
+                    <button
+                      type="button"
+                      onClick={handleCopyAccount}
+                      className="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[10px] text-cyan-400 border border-slate-700 flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      {copiedField === 'account' ? (
+                        <>
+                          <Check className="w-3 h-3 text-emerald-400" />
+                          <span>Đã chép</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          <span>Chép</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Chủ tài khoản:</span>
+                  <span className="font-bold text-white">BK-STORE VIETNAM</span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Số tiền thanh toán:</span>
+                  <span className="font-bold text-amber-400 text-base">{formatPrice(effectiveTotalPrice)}</span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Nội dung chuyển khoản:</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-emerald-400 text-sm bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/80">
+                      BK {phone.trim()}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCopyQrNote}
+                      className="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[10px] text-emerald-400 border border-slate-700 flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      {copiedField === 'code' ? (
+                        <>
+                          <Check className="w-3 h-3 text-emerald-400" />
+                          <span>Đã chép</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          <span>Chép</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-3 pt-2 border-t border-slate-800/80 w-full text-center text-[11px] text-slate-400 flex items-center justify-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>Vui lòng chuyển đúng số tiền & nội dung để hệ thống tự động xác nhận đơn.</span>
+              </div>
+            </div>
+
+            {/* Order recipient mini preview */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-1">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Người nhận:</span>
+                <span className="font-bold text-slate-800">{customerName} ({phone})</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Địa chỉ giao:</span>
+                <span className="font-medium text-slate-800 text-right">{address}</span>
+              </div>
+              {selectedBranchObj?.name && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Kho xuất hàng:</span>
+                  <span className="font-semibold text-blue-700">{selectedBranchObj.name}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons for QR waiting */}
+            <div className="flex flex-col sm:flex-row gap-3 w-full pt-1">
+              <button
+                type="button"
+                disabled={isVerifyingPayment}
+                onClick={handleCancelQrStep}
+                className="py-3.5 px-5 rounded-xl border border-slate-300 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 shadow-2xs"
+              >
+                <ArrowLeft className="w-4 h-4 text-slate-600" />
+                <span>Hủy & Quay lại</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={isVerifyingPayment}
+                onClick={handleCompleteQrPayment}
+                className="flex-1 py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-600/25 transition-all cursor-pointer disabled:opacity-70"
+              >
+                {isVerifyingPayment ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Đang kiểm tra chuyển khoản & tạo đơn...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4" />
+                    <span>Giả lập chuyển khoản</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -1033,7 +1329,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   ) : (
                     <>
                       <Check className="w-4 h-4" />
-                      <span>Xác nhận đặt hàng</span>
+                      <span>{paymentMethod === 'QR_PAY' ? 'Tiến hành quét mã QR' : 'Xác nhận đặt hàng'}</span>
                     </>
                   )}
                 </button>

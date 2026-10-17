@@ -120,6 +120,23 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: (redirectToHome = false) => {
+        const currentUser = get().user;
+        if (currentUser?.id && typeof window !== 'undefined') {
+          // Lưu lại giỏ hàng hiện tại của user vào localStorage theo user ID để không bị mất khi đăng nhập lại
+          try {
+            const rawCart = localStorage.getItem('bkstore-cart-storage');
+            if (rawCart) {
+              const parsed = JSON.parse(rawCart);
+              if (Array.isArray(parsed?.state?.items)) {
+                localStorage.setItem(
+                  `bkstore-cart-user-${currentUser.id}`,
+                  JSON.stringify(parsed.state.items)
+                );
+              }
+            }
+          } catch {}
+        }
+
         removeAuthToken();
         if (typeof window !== 'undefined') {
           try {

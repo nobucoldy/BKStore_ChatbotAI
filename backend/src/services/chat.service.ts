@@ -18,7 +18,7 @@ import {
   ProductDetailResult,
   ProductReviewsResult,
 } from './ai-tools.service';
-import { getOrdersByUserId } from './order.service';
+import { getOrdersByUserId, getOrdersByPhone } from './order.service';
 
 dotenv.config();
 
@@ -91,7 +91,14 @@ VAI TRÒ & PHONG CÁCH:
 NGUYÊN TẮC BẮT BUỘC:
 1. DỮ LIỆU ĐƯỢC CUNG CẤP: Dựa trên NGỮ CẢNH TRI THỨC (Chính sách, Cẩm nang) và DỮ LIỆU THỰC TẾ (Tồn kho, Đơn hàng, Danh mục) được hệ thống chuyển đến bên dưới. Tuyệt đối không tự bịa đặt thông tin không có trong tài liệu.
 2. TƯ VẤN CẤU HÌNH: Giải thích vì sao cấu hình đó phù hợp với nhu cầu của khách (ví dụ: sinh viên kinh tế cần mỏng nhẹ pin trâu; AI/Data Science cần 32GB RAM + GPU CUDA; gaming cần tần số quét cao).
-3. ĐƠN HÀNG: Thông báo rõ mã đơn, trạng thái hiện tại, lộ trình vận chuyển và số tiền.
+3. ĐƠN HÀNG & TÌNH TRẠNG DUYỆT ĐƠN:
+- Khi khách hàng hỏi về số lượng hoặc danh sách đơn hàng chưa được xác nhận, chưa được duyệt đơn:
+  + Dựa vào "unconfirmedCount" trong DỮ LIỆU THỜI GIAN THỰC (LIVE DATA) để trả lời chính xác số lượng đơn hàng đang chờ duyệt.
+  + Nếu unconfirmedCount > 0: Chỉ trả lời một câu thông báo ngắn gọn súc tích:
+    "Dạ em chào anh/chị [Tên]! Em đã kiểm tra trên hệ thống thì trong tổng số [M] đơn hàng của mình tại BK-Store, hiện có [N] đơn hàng chưa được xác nhận / duyệt đơn (đang chờ quản trị viên duyệt kho):"
+    Do giao diện thẻ phía dưới câu trả lời đã hiển thị đầy đủ danh sách các đơn hàng này, TUYỆT ĐỐI KHÔNG liệt kê lặp lại toàn bộ danh sách các đơn hàng trong nội dung tin nhắn.
+  + Nếu unconfirmedCount = 0: Trả lời rõ ràng rằng tài khoản của khách hiện KHÔNG CÓ đơn hàng nào chưa được xác nhận / duyệt đơn (0 đơn chờ duyệt), và tóm tắt nhanh số lượng đơn đã xác nhận / đang giao / đã giao thành công nếu có.
+- Khi khách hỏi tra cứu lịch sử đơn hàng nói chung: Báo rõ tổng số đơn hàng, số đơn ở từng trạng thái và thông tin chi tiết đơn hàng gần nhất.
 4. TỒN KHO: Nói rõ chi nhánh nào còn bao nhiêu máy, địa chỉ showroom để khách ghé trải nghiệm.
 5. GỢI Ý HÀNH ĐỘNG: Ở cuối câu trả lời, hãy gợi ý nhẹ nhàng bước tiếp theo (ví dụ: đặt giữ máy, ghé chi nhánh xem thực tế, hoặc liên hệ hotline 1800 6868 miễn phí).
 6. TRÌNH BÀY TỰ NHIÊN: Khi trích xuất tài liệu từ RAG, luôn diễn giải thành văn phong tư vấn ân cần, tự nhiên, dễ hiểu.
@@ -387,6 +394,23 @@ class ChatService {
     return { category, brand, minPrice, maxPrice, useCase };
   }
 
+  public getOrderStatusLabel(status: string): string {
+    switch ((status || '').toLowerCase()) {
+      case 'pending':
+        return 'Chờ xác nhận (Chờ duyệt đơn)';
+      case 'confirmed':
+        return 'Đã xác nhận đơn';
+      case 'shipping':
+        return 'Đang vận chuyển';
+      case 'delivered':
+        return 'Giao hàng thành công';
+      case 'cancelled':
+        return 'Đã hủy đơn';
+      default:
+        return 'Chờ xác nhận';
+    }
+  }
+
   /**
    * Phân tích ý định người dùng để tiền xử lý công cụ (Deterministic Intent Parser)
    */
@@ -427,7 +451,20 @@ class ChatService {
       (norm.includes('don') || norm.includes('kien hang')) &&
       (norm.includes('kho') || norm.includes('chi nhanh') || norm.includes('xuat tu') || norm.includes('lay tu'));
 
+    // Kiểm tra câu hỏi về đơn hàng chưa xác nhận / chưa duyệt
+    const isAskingUnconfirmedOrders =
+      (norm.includes('chua duoc xac nhan') ||
+       norm.includes('chua xac nhan') ||
+       norm.includes('chua duyet') ||
+       norm.includes('chua duoc duyet') ||
+       norm.includes('cho xac nhan') ||
+       norm.includes('cho duyet') ||
+       norm.includes('chua xu ly') ||
+       norm.includes('cho xu ly')) &&
+      (norm.includes('don') || norm.includes('kien hang') || norm.includes('hang'));
+
     const isAskingMyOrders =
+      isAskingUnconfirmedOrders ||
       norm.includes('don hang cua toi') ||
       norm.includes('don cua toi') ||
       norm.includes('don cua minh') ||
@@ -437,7 +474,7 @@ class ChatService {
       norm.includes('da mua nhung may gi') ||
       norm.includes('da mua may nao') ||
       norm.includes('cac don da dat') ||
-      (norm.includes('don') && (norm.includes('cua toi') || norm.includes('cua minh') || norm.includes('cua em')));
+      (norm.includes('don') && (norm.includes('cua toi') || norm.includes('cua minh') || norm.includes('cua em') || norm.includes('toi co') || norm.includes('minh co') || norm.includes('bao nhieu don') || norm.includes('may don') || norm.includes('danh sach don')));
 
     const isOrderKeyword =
       isAskingMyOrders ||
@@ -574,6 +611,7 @@ class ChatService {
             orderCode: finalCode,
             phone: finalPhone,
             isAskingMyOrders,
+            isAskingUnconfirmedOrders,
             userId: currentUser.id,
             userName: currentUser.name,
           },
@@ -581,11 +619,32 @@ class ChatService {
       }
 
       // Khách vãng lai / chưa đăng nhập
+      if (!finalCode && finalPhone) {
+        if (isAskingMyOrders || isAskingUnconfirmedOrders) {
+          return {
+            intent: 'track_order',
+            extracted: {
+              phone: finalPhone,
+              isAskingMyOrders: true,
+              isAskingUnconfirmedOrders,
+            },
+          };
+        }
+        return {
+          intent: 'clarify_order_tracking',
+          extracted: {
+            phone: finalPhone,
+            missingSlots: ['orderCode'],
+          },
+        };
+      }
+
       if (!finalCode && !finalPhone) {
         return {
           intent: 'clarify_order_tracking',
           extracted: {
-            missingSlots: ['orderCode', 'phone'],
+            missingSlots: ['authOrPhone'],
+            isAskingUnconfirmedOrders,
           },
         };
       }
@@ -600,21 +659,12 @@ class ChatService {
         };
       }
 
-      if (!finalCode && finalPhone) {
-        return {
-          intent: 'clarify_order_tracking',
-          extracted: {
-            phone: finalPhone,
-            missingSlots: ['orderCode'],
-          },
-        };
-      }
-
       return {
         intent: 'track_order',
         extracted: {
           orderCode: finalCode,
           phone: finalPhone,
+          isAskingUnconfirmedOrders,
         },
       };
     }
@@ -1115,32 +1165,86 @@ class ChatService {
       suggestions = ['Xem thông số chi tiết', 'Chính sách 1 đổi 1 30 ngày', 'Tư vấn trả góp 0%'];
     } else if (detected.intent === 'track_order') {
       toolUsed = 'trackOrder';
-      if (options.currentUser && (detected.extracted?.isAskingMyOrders || (!detected.extracted?.orderCode && !detected.extracted?.phone))) {
-        const userOrders = await getOrdersByUserId(options.currentUser.id, options.currentUser.phone);
+      const isAskingUserSummary =
+        detected.extracted?.isAskingMyOrders ||
+        detected.extracted?.isAskingUnconfirmedOrders ||
+        (!detected.extracted?.orderCode && !detected.extracted?.phone);
+
+      let userOrders: any[] = [];
+      if (options.currentUser && isAskingUserSummary) {
+        userOrders = await getOrdersByUserId(options.currentUser.id, options.currentUser.phone);
+      } else if (!options.currentUser && detected.extracted?.phone && isAskingUserSummary) {
+        userOrders = await getOrdersByPhone(detected.extracted.phone);
+      }
+
+      if (isAskingUserSummary && (options.currentUser || (detected.extracted?.phone && userOrders.length > 0))) {
         if (userOrders.length > 0) {
-          const latest = userOrders[0];
+          const pendingOrders = userOrders.filter(
+            (o) => (o.status || '').toLowerCase() === 'pending' || (o.status || '').toLowerCase() === 'chờ xác nhận'
+          );
+          const confirmedOrders = userOrders.filter(
+            (o) => (o.status || '').toLowerCase() === 'confirmed' || (o.status || '').toLowerCase() === 'đã xác nhận'
+          );
+          const shippingOrders = userOrders.filter(
+            (o) => (o.status || '').toLowerCase() === 'shipping' || (o.status || '').toLowerCase() === 'đang vận chuyển'
+          );
+          const deliveredOrders = userOrders.filter(
+            (o) => (o.status || '').toLowerCase() === 'delivered' || (o.status || '').toLowerCase() === 'giao hàng thành công'
+          );
+          const cancelledOrders = userOrders.filter(
+            (o) => (o.status || '').toLowerCase() === 'cancelled' || (o.status || '').toLowerCase() === 'đã hủy'
+          );
+
+          const primaryOrder = pendingOrders.length > 0 ? pendingOrders[0] : userOrders[0];
+          const custName = options.currentUser?.name || userOrders[0]?.customerName || 'Quý khách';
+
           toolResultData = {
             found: true,
-            orderCode: latest.orderCode,
-            customerName: latest.customerName || options.currentUser.name,
-            totalAmount: latest.totalAmount,
-            formattedTotal: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(latest.totalAmount)),
-            status: latest.status,
-            statusLabel:
-              latest.status === 'delivered'
-                ? 'Giao hàng thành công'
-                : latest.status === 'shipping'
-                ? 'Đang vận chuyển'
-                : latest.status === 'confirmed'
-                ? 'Đã xác nhận đơn'
-                : latest.status === 'cancelled'
-                ? 'Đã hủy đơn'
-                : 'Chờ xác nhận',
-            trackingInfo: latest.trackingInfo,
-            branchName: latest.branchName || 'BK-Store Cầu Giấy (Hà Nội)',
-            deliveryAddress: latest.address,
+            isUserOrderSummary: true,
+            isAskingUnconfirmedOrders: Boolean(detected.extracted?.isAskingUnconfirmedOrders),
+            customerName: custName,
             userOrdersCount: userOrders.length,
-            message: `Tìm thấy ${userOrders.length} đơn hàng của khách hàng ${options.currentUser.name}.`,
+            unconfirmedCount: pendingOrders.length,
+            confirmedCount: confirmedOrders.length,
+            shippingCount: shippingOrders.length,
+            deliveredCount: deliveredOrders.length,
+            cancelledCount: cancelledOrders.length,
+            pendingOrders: pendingOrders.map((o) => ({
+              orderCode: o.orderCode,
+              customerName: o.customerName || custName,
+              totalAmount: o.totalAmount,
+              formattedTotal: formatVND(Number(o.totalAmount)),
+              status: o.status,
+              statusLabel: 'Chờ xác nhận (Chờ duyệt đơn)',
+              createdAt: o.createdAt,
+              trackingInfo: o.trackingInfo,
+              branchName: o.branchName || 'BK-Store Cầu Giấy (Hà Nội)',
+              deliveryAddress: o.address,
+              paymentMethod: o.paymentMethod === 'COD' ? 'Thanh toán tiền mặt khi nhận hàng (COD)' : 'Chuyển khoản VietQR',
+              itemsSummary: (o.items || [])
+                .map((it: any) => `${it.productName || it.productSlug || 'Thiết bị'} (x${it.quantity || 1})`)
+                .join(', ') || 'Thiết bị công nghệ',
+            })),
+            latestOrder: {
+              orderCode: primaryOrder.orderCode,
+              customerName: primaryOrder.customerName || custName,
+              totalAmount: primaryOrder.totalAmount,
+              formattedTotal: formatVND(Number(primaryOrder.totalAmount)),
+              status: primaryOrder.status,
+              statusLabel: this.getOrderStatusLabel(primaryOrder.status),
+              trackingInfo: primaryOrder.trackingInfo,
+              branchName: primaryOrder.branchName || 'BK-Store Cầu Giấy (Hà Nội)',
+              deliveryAddress: primaryOrder.address,
+            },
+            orderCode: primaryOrder.orderCode,
+            totalAmount: primaryOrder.totalAmount,
+            formattedTotal: formatVND(Number(primaryOrder.totalAmount)),
+            status: primaryOrder.status,
+            statusLabel: this.getOrderStatusLabel(primaryOrder.status),
+            trackingInfo: primaryOrder.trackingInfo,
+            branchName: primaryOrder.branchName || 'BK-Store Cầu Giấy (Hà Nội)',
+            deliveryAddress: primaryOrder.address,
+            message: `Tìm thấy ${userOrders.length} đơn hàng của khách hàng ${custName}.`,
           };
           cardPayload = {
             type: 'order',
@@ -1149,13 +1253,19 @@ class ChatService {
         } else {
           toolResultData = {
             found: false,
-            message: `Dạ em kiểm tra trên hệ thống thì tài khoản của anh/chị ${options.currentUser.name} hiện chưa có đơn hàng nào tại BK-Store. Anh/chị cần em hỗ trợ tư vấn dòng máy nào không ạ?`,
+            isUserOrderSummary: true,
+            isAskingUnconfirmedOrders: Boolean(detected.extracted?.isAskingUnconfirmedOrders),
+            customerName: options.currentUser?.name || 'Quý khách',
+            message: `Dạ em kiểm tra trên hệ thống thì tài khoản của anh/chị ${options.currentUser?.name || 'mình'} hiện chưa có đơn hàng nào tại BK-Store. Anh/chị cần em hỗ trợ tư vấn dòng máy nào không ạ?`,
           };
         }
       } else if (!options.currentUser && !detected.extracted?.orderCode && !detected.extracted?.phone) {
         toolResultData = {
           found: false,
-          message: 'Dạ để tra cứu đơn hàng cá nhân, anh/chị có thể đăng nhập tài khoản bằng nút "Đăng nhập" ở góc trên màn hình để xem toàn bộ lịch sử đơn. Hoặc cung cấp giúp em Mã đơn hàng (#BK-xxxx) và Số điện thoại đã dùng khi đặt hàng để em tra cứu bảo mật ngay cho mình nhé ạ!',
+          isAskingUnconfirmedOrders: Boolean(detected.extracted?.isAskingUnconfirmedOrders),
+          message: detected.extracted?.isAskingUnconfirmedOrders
+            ? 'Dạ để kiểm tra xem tài khoản của mình có bao nhiêu đơn hàng chưa được xác nhận / duyệt đơn, anh/chị vui lòng bấm nút "Đăng nhập" ở góc trên màn hình để hệ thống tự động kiểm tra, hoặc cung cấp Số điện thoại đã đặt hàng để em tra cứu bảo mật ngay nhé ạ!'
+            : 'Dạ để tra cứu đơn hàng cá nhân, anh/chị có thể đăng nhập tài khoản bằng nút "Đăng nhập" ở góc trên màn hình để xem toàn bộ lịch sử đơn. Hoặc cung cấp giúp em Mã đơn hàng (#BK-xxxx) và Số điện thoại đã dùng khi đặt hàng để em tra cứu bảo mật ngay cho mình nhé ạ!',
         };
       } else {
         const ord = await trackOrder(detected.extracted);
@@ -1167,7 +1277,9 @@ class ChatService {
           };
         }
       }
-      suggestions = ['Xem chi tiết sản phẩm', 'Chính sách bảo hành', 'Hotline 1800 6868'];
+      suggestions = detected.extracted?.isAskingUnconfirmedOrders
+        ? ['Đơn hàng của tôi', 'Chính sách bảo hành', 'Hotline 1800 6868']
+        : ['Xem chi tiết sản phẩm', 'Chính sách bảo hành', 'Hotline 1800 6868'];
     } else if (detected.intent === 'filter_products') {
       toolUsed = 'filterProducts';
       const missingSlots = detected.extracted?.missingSlots || [];
@@ -1310,7 +1422,11 @@ Hãy đưa ra câu trả lời trực tiếp cho khách hàng (chỉ xuất lờ
             `Anh/chị có thể bấm nhanh vào các nút gợi ý bên dưới hoặc nhắn trực tiếp cho em nhé! Em có gửi trước 2 mẫu máy nổi bật bên dưới để anh/chị tham khảo trước ạ.`;
         } else if (toolUsed === 'clarifyOrderTracking') {
           const missing = toolResultData.missingSlots || [];
-          if (missing.includes('orderCode') && missing.includes('phone')) {
+          if (toolResultData.isAskingUnconfirmedOrders || missing.includes('authOrPhone')) {
+            replyText = `Dạ chào anh/chị! Để em có thể kiểm tra xem tài khoản của mình hiện có bao nhiêu đơn hàng chưa được xác nhận / duyệt đơn tại BK-Store, anh/chị vui lòng:\n\n` +
+              `• **Đăng nhập tài khoản:** Bấm nút **"Đăng nhập"** ở góc trên màn hình để hệ thống tự động kiểm tra và hiển thị toàn bộ lịch sử đơn hàng của mình.\n` +
+              `• **Hoặc cung cấp Số điện thoại:** Nhắn số điện thoại đã dùng khi đặt hàng tại BK-Store để em tra cứu bảo mật ngay cho mình nhé ạ!`;
+          } else if (missing.includes('orderCode') && missing.includes('phone')) {
             replyText = `Dạ chào anh/chị! Để tra cứu tiến trình đơn hàng và kho xuất hàng tại BK-Store, anh/chị có thể:\n\n` +
               `• **Đăng nhập tài khoản:** Bấm nút **"Đăng nhập"** ở góc trên màn hình để hệ thống tự động tải toàn bộ lịch sử đơn hàng của mình.\n` +
               `• **Tra cứu nhanh:** Cung cấp giúp em **Mã đơn hàng** (dạng *#BK-xxxx*) và **Số điện thoại** đã dùng khi đặt hàng để em tra cứu bảo mật ngay cho mình nhé ạ!`;
@@ -1399,8 +1515,34 @@ Hãy đưa ra câu trả lời trực tiếp cho khách hàng (chỉ xuất lờ
           replyText += `\n\nAnh/chị có muốn em giữ máy trước tại chi nhánh gần mình không ạ?`;
         } else if (toolUsed === 'trackOrder') {
           if (toolResultData.found) {
-            if (toolResultData.userOrdersCount) {
-              replyText = `Dạ em chào anh/chị **${toolResultData.customerName}**! Em đã tra cứu thấy tài khoản của mình hiện có **${toolResultData.userOrdersCount} đơn hàng** tại BK-Store. Đơn hàng gần nhất là **${toolResultData.orderCode}**:\n\n• **Mã đơn:** ${toolResultData.orderCode}\n• **Trạng thái:** ${toolResultData.statusLabel}\n• **Kho xuất hàng:** **${toolResultData.branchName || 'BK-Store Cầu Giấy (Hà Nội)'}**\n• **Tổng thanh toán:** ${toolResultData.formattedTotal}\n• **Lộ trình:** ${toolResultData.trackingInfo || 'Đang chuẩn bị giao hàng'}\n\nAnh/chị có thể xem thẻ chi tiết đơn hàng ngay bên dưới hoặc mở mục **"Đơn hàng của tôi"** trên menu để xem toàn bộ danh sách nhé ạ!`;
+            if (toolResultData.isUserOrderSummary) {
+              const name = toolResultData.customerName || 'anh/chị';
+              if (toolResultData.isAskingUnconfirmedOrders) {
+                if (toolResultData.unconfirmedCount === 0) {
+                  replyText = `Dạ em chào anh/chị **${name}**! Em đã kiểm tra hệ thống thì trong tổng số **${toolResultData.userOrdersCount} đơn hàng** của mình tại BK-Store, hiện tại **không có đơn hàng nào chưa được xác nhận / duyệt đơn** (0 đơn chờ duyệt).\n\n` +
+                    `Tất cả các đơn hàng của anh/chị đều đã được duyệt và đang trong các tiến trình tiếp theo:\n` +
+                    (toolResultData.confirmedCount > 0 ? `• **Đã xác nhận (đã duyệt):** ${toolResultData.confirmedCount} đơn\n` : '') +
+                    (toolResultData.shippingCount > 0 ? `• **Đang vận chuyển:** ${toolResultData.shippingCount} đơn\n` : '') +
+                    (toolResultData.deliveredCount > 0 ? `• **Giao hàng thành công:** ${toolResultData.deliveredCount} đơn\n` : '') +
+                    (toolResultData.cancelledCount > 0 ? `• **Đã hủy:** ${toolResultData.cancelledCount} đơn\n` : '') +
+                    `\nAnh/chị có thể xem thẻ chi tiết đơn hàng bên dưới hoặc mở mục **"Đơn hàng của tôi"** trên thanh menu Header để xem chi tiết nhé ạ!`;
+                } else {
+                  replyText = `Dạ em chào anh/chị **${name}**! Em đã kiểm tra trên hệ thống thì trong tổng số **${toolResultData.userOrdersCount} đơn hàng** của mình tại BK-Store, hiện có **${toolResultData.unconfirmedCount} đơn hàng chưa được xác nhận / duyệt đơn** (đang chờ quản trị viên duyệt kho):`;
+                }
+              } else {
+                replyText = `Dạ em chào anh/chị **${name}**! Em đã tra cứu thấy tài khoản của mình hiện có tổng cộng **${toolResultData.userOrdersCount} đơn hàng** tại BK-Store:\n` +
+                  (toolResultData.unconfirmedCount > 0 ? `• **Chờ xác nhận (chưa duyệt):** **${toolResultData.unconfirmedCount}** đơn\n` : '') +
+                  (toolResultData.confirmedCount > 0 ? `• **Đã xác nhận:** ${toolResultData.confirmedCount} đơn\n` : '') +
+                  (toolResultData.shippingCount > 0 ? `• **Đang vận chuyển:** ${toolResultData.shippingCount} đơn\n` : '') +
+                  (toolResultData.deliveredCount > 0 ? `• **Giao hàng thành công:** ${toolResultData.deliveredCount} đơn\n` : '') +
+                  `\nĐơn hàng gần nhất là **${toolResultData.orderCode}**:\n` +
+                  `• **Mã đơn:** ${toolResultData.orderCode}\n` +
+                  `• **Trạng thái:** ${toolResultData.statusLabel}\n` +
+                  `• **Kho xuất hàng:** **${toolResultData.branchName}**\n` +
+                  `• **Tổng thanh toán:** ${toolResultData.formattedTotal}\n` +
+                  `• **Lộ trình:** ${toolResultData.trackingInfo || 'Đang chuẩn bị giao hàng'}\n\n` +
+                  `Anh/chị có thể xem thẻ chi tiết đơn hàng ngay bên dưới hoặc mở mục **"Đơn hàng của tôi"** trên menu để xem toàn bộ danh sách nhé ạ!`;
+              }
             } else {
               replyText = `Dạ chào anh/chị! BK-Bot xin gửi thông tin chi tiết đơn hàng:\n\n• **Mã đơn:** ${toolResultData.orderCode}\n• **Khách hàng:** ${toolResultData.customerName || 'Quý khách'}\n• **Kho xuất hàng:** **${toolResultData.branchName || 'BK-Store Cầu Giấy (Hà Nội)'}**\n• **Địa chỉ nhận:** ${toolResultData.deliveryAddress || 'Giao hàng tận nơi'}\n• **Trạng thái:** ${toolResultData.statusLabel}\n• **Tiến trình:** ${toolResultData.trackingInfo}\n• **Tổng thanh toán:** ${toolResultData.formattedTotal}\n\nĐơn hàng đang được BK-Store xử lý đúng tiến độ ạ!`;
             }
@@ -1480,7 +1622,15 @@ Hãy đưa ra câu trả lời trực tiếp cho khách hàng (chỉ xuất lờ
     }
     const llmGenerationMs = Math.max(1, Math.round((performance.now() - startLlm) * 100) / 100);
 
-    const cleanedReply = sanitizeChatReply(replyText);
+    let cleanedReply = sanitizeChatReply(replyText);
+
+    // Khi khách hàng hỏi về đơn hàng chưa xác nhận/duyệt đơn và có đơn chờ duyệt:
+    // Vì thẻ hiển thị phía dưới đã có đầy đủ danh sách các đơn hàng này,
+    // câu trả lời dạng văn bản chỉ cần câu thông báo súc tích theo đúng yêu cầu người dùng
+    if (toolResultData?.isAskingUnconfirmedOrders && toolResultData.unconfirmedCount > 0) {
+      const name = toolResultData.customerName || 'anh/chị';
+      cleanedReply = `Dạ em chào anh/chị **${name}**! Em đã kiểm tra trên hệ thống thì trong tổng số **${toolResultData.userOrdersCount} đơn hàng** của mình tại BK-Store, hiện có **${toolResultData.unconfirmedCount} đơn hàng chưa được xác nhận / duyệt đơn** (đang chờ quản trị viên duyệt kho):`;
+    }
     const totalResponseTimeMs = Math.max(1, Math.round((performance.now() - startTotal) * 100) / 100);
 
     const metrics: ChatPerformanceMetrics = {

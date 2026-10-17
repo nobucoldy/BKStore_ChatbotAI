@@ -78,10 +78,10 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   const openAuthModal = useAuthStore((state) => state.openAuthModal);
 
   const quickPrompts = [
+    'Có bao nhiêu đơn hàng của tôi chưa được duyệt?',
     'Tư vấn laptop AI & Lập trình 30-50 triệu',
     'MacBook Air M3 ở Cầu Giấy còn hàng không?',
     'Đánh giá thực tế về MacBook Air M3',
-    'Làm sao để đánh giá sản phẩm đã mua?',
   ];
 
   const handleAddToCart = (e: React.MouseEvent, prod: any) => {
@@ -455,42 +455,96 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                   {msg.cards?.type === 'order' && msg.cards.data && (
                     <div className="bg-white border border-blue-200 rounded-xl p-3 shadow-xs space-y-2">
                       <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
-                        <div className="flex items-center gap-1.5">
-                          <PackageCheck className="w-4 h-4 text-blue-600" />
-                          <span className="font-bold text-slate-900">{msg.cards.data.orderCode}</span>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <PackageCheck className={`w-4 h-4 shrink-0 ${msg.cards.data.isAskingUnconfirmedOrders ? 'text-amber-600' : 'text-blue-600'}`} />
+                          <span className="font-bold text-slate-900 truncate">
+                            {msg.cards.data.isUserOrderSummary
+                              ? msg.cards.data.isAskingUnconfirmedOrders
+                                ? `Đơn hàng chưa duyệt (${msg.cards.data.unconfirmedCount}/${msg.cards.data.userOrdersCount})`
+                                : `Lịch sử đơn hàng (${msg.cards.data.userOrdersCount} đơn)`
+                              : msg.cards.data.orderCode}
+                          </span>
                         </div>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                          {msg.cards.data.statusLabel}
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                          msg.cards.data.isAskingUnconfirmedOrders
+                            ? msg.cards.data.unconfirmedCount > 0
+                              ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                              : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            : 'bg-blue-50 text-blue-700 border border-blue-200'
+                        }`}>
+                          {msg.cards.data.isAskingUnconfirmedOrders
+                            ? msg.cards.data.unconfirmedCount > 0
+                              ? `Chờ duyệt: ${msg.cards.data.unconfirmedCount} đơn`
+                              : '0 đơn chờ duyệt'
+                            : msg.cards.data.statusLabel}
                         </span>
                       </div>
-                      <div className="text-[11px] space-y-1 text-slate-600">
+                      <div className="text-[11px] space-y-1.5 text-slate-600">
                         <div className="flex justify-between">
                           <span>Khách hàng:</span>
                           <span className="font-semibold text-slate-800">{msg.cards.data.customerName || 'Quý khách'}</span>
                         </div>
-                        {msg.cards.data.branchName && (
-                          <div className="flex justify-between">
-                            <span>Kho xuất hàng:</span>
-                            <span className="font-bold text-blue-700">{msg.cards.data.branchName}</span>
+
+                        {/* List of pending orders if user asked about unconfirmed */}
+                        {msg.cards.data.isAskingUnconfirmedOrders && msg.cards.data.pendingOrders && msg.cards.data.pendingOrders.length > 0 ? (
+                          <div className="space-y-1.5 pt-1 max-h-56 overflow-y-auto pr-1">
+                            {msg.cards.data.pendingOrders.map((pOrd: any, pIdx: number) => (
+                              <div key={pIdx} className="p-2 rounded-lg bg-amber-50/70 border border-amber-200/80 text-[10px] space-y-0.5">
+                                <div className="flex justify-between font-bold">
+                                  <span className="text-amber-900 font-mono">{pOrd.orderCode}</span>
+                                  <span className="text-amber-800">{pOrd.formattedTotal}</span>
+                                </div>
+                                <div className="text-slate-600 truncate">{pOrd.itemsSummary}</div>
+                                <div className="flex justify-between text-slate-500 text-[9px]">
+                                  <span>{pOrd.branchName}</span>
+                                  <span className="font-semibold text-amber-700">Chờ duyệt đơn</span>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        )}
-                        {msg.cards.data.formattedTotal && (
-                          <div className="flex justify-between">
-                            <span>Tổng tiền:</span>
-                            <span className="font-bold text-blue-600">{msg.cards.data.formattedTotal}</span>
+                        ) : msg.cards.data.isAskingUnconfirmedOrders && msg.cards.data.unconfirmedCount === 0 ? (
+                          <div className="p-2 rounded-lg bg-emerald-50 text-emerald-800 text-[10px] font-semibold flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>Tất cả các đơn hàng của bạn đều đã được duyệt & đang xử lý!</span>
                           </div>
+                        ) : (
+                          <>
+                            {msg.cards.data.branchName && (
+                              <div className="flex justify-between">
+                                <span>Kho xuất hàng:</span>
+                                <span className="font-bold text-blue-700">{msg.cards.data.branchName}</span>
+                              </div>
+                            )}
+                            {msg.cards.data.formattedTotal && (
+                              <div className="flex justify-between">
+                                <span>Tổng tiền:</span>
+                                <span className="font-bold text-blue-600">{msg.cards.data.formattedTotal}</span>
+                              </div>
+                            )}
+                            {msg.cards.data.trackingInfo && (
+                              <div className="bg-slate-50 p-2 rounded-lg text-[10px] text-slate-700 mt-1 border border-slate-100">
+                                <span className="font-semibold">Lộ trình:</span> {msg.cards.data.trackingInfo}
+                              </div>
+                            )}
+                          </>
                         )}
-                        {msg.cards.data.trackingInfo && (
-                          <div className="bg-slate-50 p-2 rounded-lg text-[10px] text-slate-700 mt-1 border border-slate-100">
-                            <span className="font-semibold">Lộ trình:</span> {msg.cards.data.trackingInfo}
-                          </div>
-                        )}
+
                         {msg.cards.data.canReview && (
                           <div className="bg-amber-50 border border-amber-200/80 p-2 rounded-lg text-[10px] text-amber-900 flex items-center justify-between mt-1">
                             <span className="flex items-center gap-1 font-semibold">
                               <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" /> Đủ điều kiện đánh giá sản phẩm (Verified)
                             </span>
                           </div>
+                        )}
+
+                        {msg.cards.data.isUserOrderSummary && (
+                          <Link
+                            href="/orders"
+                            className="flex items-center justify-center gap-1.5 w-full py-1.5 px-3 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-[10px] font-bold border border-blue-200 transition-colors mt-2"
+                          >
+                            <PackageCheck className="w-3.5 h-3.5" />
+                            <span>Xem tất cả tại mục &ldquo;Đơn hàng của tôi&rdquo;</span>
+                          </Link>
                         )}
                       </div>
                     </div>

@@ -86,8 +86,8 @@
       "warrantyMonths": 24,
       "categoryName": "Laptop & Máy tính xách tay",
       "category_name": "Laptop & Máy tính xách tay",
-      "stockQuantity": 2,
-      "stock": 2
+      "stockQuantity": 1,
+      "stock": 1
     },
     {
       "id": "p1000000-0000-0000-0000-000000000004",
@@ -115,8 +115,8 @@
       "warrantyMonths": 12,
       "categoryName": "Laptop & Máy tính xách tay",
       "category_name": "Laptop & Máy tính xách tay",
-      "stockQuantity": 12,
-      "stock": 12
+      "stockQuantity": 10,
+      "stock": 10
     },
     {
       "id": "p1000000-0000-0000-0000-000000000005",
@@ -232,8 +232,8 @@
       "warrantyMonths": 12,
       "categoryName": "Điện thoại thông minh",
       "category_name": "Điện thoại thông minh",
-      "stockQuantity": 15,
-      "stock": 15
+      "stockQuantity": 14,
+      "stock": 14
     },
     {
       "id": "p1000000-0000-0000-0000-000000000009",
@@ -369,8 +369,8 @@
       "warrantyMonths": 12,
       "categoryName": "Phụ kiện & Thiết bị ngoại vi",
       "category_name": "Phụ kiện & Thiết bị ngoại vi",
-      "stockQuantity": 15,
-      "stock": 15
+      "stockQuantity": 12,
+      "stock": 12
     },
     {
       "id": "p1000000-0000-0000-0000-000000000014",
@@ -420,12 +420,192 @@
       "warrantyMonths": 18,
       "categoryName": "Phụ kiện & Thiết bị ngoại vi",
       "category_name": "Phụ kiện & Thiết bị ngoại vi",
-      "stockQuantity": 15,
-      "stock": 15
+      "stockQuantity": 13,
+      "stock": 13
     }
   ],
-  "updatedAt": "2026-10-17T09:12:39.313Z",
+  "updatedAt": "2026-10-17T13:32:35.955Z",
   "orders": [
+    {
+      "id": "order-1792242964494",
+      "orderCode": "#BK-1979",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000001",
+      "branchName": "BK-Store Cầu Giấy (Hà Nội)",
+      "totalAmount": 1980000,
+      "paymentMethod": "QR_PAY",
+      "status": "confirmed",
+      "trackingInfo": "Đã nhận thanh toán chuyển khoản VietQR thành công (1.980.000 ₫). Đơn hàng đã được chuyển sang trạng thái chờ chuẩn bị hàng.",
+      "createdAt": "2026-10-17T13:16:04.494Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000015",
+          "productSlug": "anker-prime-67w-gan-charger",
+          "productName": "Củ sạc nhanh Anker Prime 67W GaN (3 cổng 2C1A)",
+          "productThumbnail": "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&q=80",
+          "quantity": 2,
+          "unitPrice": 990000,
+          "price": 990000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
+    {
+      "id": "order-1792242927426",
+      "orderCode": "#BK-8783",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000001",
+      "branchName": "BK-Store Cầu Giấy (Hà Nội)",
+      "totalAmount": 2090000,
+      "paymentMethod": "QR_PAY",
+      "status": "delivered",
+      "trackingInfo": "Giao thành công: Khách hàng đã nhận máy và thanh toán hoàn tất.",
+      "createdAt": "2026-10-17T13:15:27.426Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000013",
+          "productSlug": "logitech-mx-master-3s",
+          "productName": "Chuột không dây công thái học Logitech MX Master 3S (Xám Graphite)",
+          "productThumbnail": "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800&q=80",
+          "quantity": 1,
+          "unitPrice": 2090000,
+          "price": 2090000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
+    {
+      "id": "order-1792241760579",
+      "orderCode": "#BK-9617",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000001",
+      "branchName": "BK-Store Cầu Giấy (Hà Nội)",
+      "totalAmount": 2090000,
+      "paymentMethod": "QR_PAY",
+      "status": "cancelled",
+      "trackingInfo": "Khách hàng đã hủy đơn trong quá trình thanh toán qua VietQR.",
+      "createdAt": "2026-10-17T12:56:00.579Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000013",
+          "productSlug": "logitech-mx-master-3s",
+          "productName": "Chuột không dây công thái học Logitech MX Master 3S (Xám Graphite)",
+          "productThumbnail": "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800&q=80",
+          "quantity": 1,
+          "unitPrice": 2090000,
+          "price": 2090000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
+    {
+      "id": "order-1792241390391",
+      "orderCode": "#BK-6943",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000002",
+      "branchName": "BK-Store Quận 1 (TP. Hồ Chí Minh)",
+      "totalAmount": 46990000,
+      "paymentMethod": "QR_PAY",
+      "status": "confirmed",
+      "trackingInfo": "Đã nhận thanh toán chuyển khoản VietQR thành công (46.990.000 ₫). Đơn hàng đã được chuyển sang trạng thái chờ chuẩn bị hàng.",
+      "createdAt": "2026-10-17T12:49:50.391Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000003",
+          "productSlug": "asus-rog-zephyrus-g14-2024",
+          "productName": "ASUS ROG Zephyrus G14 OLED (Ryzen 9 8945HS, RTX 4060 8GB, 16GB)",
+          "productThumbnail": "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80",
+          "quantity": 1,
+          "unitPrice": 46990000,
+          "price": 46990000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
+    {
+      "id": "order-1792241305848",
+      "orderCode": "#BK-1903",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000002",
+      "branchName": "BK-Store Quận 1 (TP. Hồ Chí Minh)",
+      "totalAmount": 42490000,
+      "paymentMethod": "QR_PAY",
+      "status": "pending",
+      "trackingInfo": "Đơn hàng mới tạo — Xuất kho từ chi nhánh BK-Store Quận 1 (TP. Hồ Chí Minh), đang chờ quản trị viên duyệt kho.",
+      "createdAt": "2026-10-17T12:48:25.848Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000004",
+          "productSlug": "dell-xps-13-9340-intel-core-ultra-7",
+          "productName": "Dell XPS 13 9340 (Intel Core Ultra 7 155H, 16GB RAM, 512GB SSD)",
+          "productThumbnail": "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=800&q=80",
+          "quantity": 1,
+          "unitPrice": 42490000,
+          "price": 42490000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
+    {
+      "id": "order-1792240708344",
+      "orderCode": "#BK-1343",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "giao nhanh nhé",
+      "branchId": "b1000000-0000-0000-0000-000000000001",
+      "branchName": "BK-Store Cầu Giấy (Hà Nội)",
+      "totalAmount": 63570000,
+      "paymentMethod": "QR_PAY",
+      "status": "pending",
+      "trackingInfo": "Đơn hàng mới tạo — Xuất kho từ chi nhánh BK-Store Cầu Giấy (Hà Nội), đang chờ quản trị viên duyệt kho.",
+      "createdAt": "2026-10-17T12:38:28.344Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000008",
+          "productSlug": "iphone-15-128gb",
+          "productName": "Apple iPhone 15 128GB (Hồng Pastel)",
+          "productThumbnail": "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&q=80",
+          "quantity": 1,
+          "unitPrice": 18990000,
+          "price": 18990000
+        },
+        {
+          "productId": "p1000000-0000-0000-0000-000000000004",
+          "productSlug": "dell-xps-13-9340-intel-core-ultra-7",
+          "productName": "Dell XPS 13 9340 (Intel Core Ultra 7 155H, 16GB RAM, 512GB SSD)",
+          "productThumbnail": "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=800&q=80",
+          "quantity": 1,
+          "unitPrice": 42490000,
+          "price": 42490000
+        },
+        {
+          "productId": "p1000000-0000-0000-0000-000000000013",
+          "productSlug": "logitech-mx-master-3s",
+          "productName": "Chuột không dây công thái học Logitech MX Master 3S (Xám Graphite)",
+          "productThumbnail": "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800&q=80",
+          "quantity": 1,
+          "unitPrice": 2090000,
+          "price": 2090000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
     {
       "id": "order-1792228359310",
       "orderCode": "#BK-4667",
@@ -437,8 +617,8 @@
       "branchName": "BK-Store Cầu Giấy (Hà Nội)",
       "totalAmount": 49990000,
       "paymentMethod": "COD",
-      "status": "pending",
-      "trackingInfo": "Đơn hàng mới tạo — Xuất kho từ chi nhánh BK-Store Cầu Giấy (Hà Nội), đang chờ quản trị viên duyệt kho.",
+      "status": "confirmed",
+      "trackingInfo": "Đã duyệt đơn: Nhân viên BK-Store đã xác nhận và chuẩn bị xuất kho.",
       "createdAt": "2026-10-17T09:12:39.310Z",
       "items": [
         {
@@ -464,8 +644,8 @@
       "branchName": "BK-Store Cầu Giấy (Hà Nội)",
       "totalAmount": 42490000,
       "paymentMethod": "COD",
-      "status": "pending",
-      "trackingInfo": "Đơn hàng mới tạo — Xuất kho từ chi nhánh BK-Store Cầu Giấy (Hà Nội), đang chờ quản trị viên duyệt kho.",
+      "status": "confirmed",
+      "trackingInfo": "Đã duyệt đơn: Nhân viên BK-Store đã xác nhận và chuẩn bị xuất kho.",
       "createdAt": "2026-10-17T08:58:11.464Z",
       "items": [
         {
@@ -1155,6 +1335,16 @@
   ],
   "users": [
     {
+      "id": "u-1792243955947-166",
+      "name": "Khách Mới 1235",
+      "email": "newuser1235@gmail.com",
+      "passwordHash": "$2b$10$7IECAlBZrJbJw6ARv8GxTOlk3mqUsIaBfq1btx54m434iW4Pe9/RK",
+      "phone": "0912356789",
+      "address": "",
+      "role": "customer",
+      "createdAt": "2026-10-17T13:32:35.947Z"
+    },
+    {
       "id": "u-1792165359474-30",
       "name": "Nguyễn Quế Bắc",
       "email": "nguyenqb@gmail.com",
@@ -1193,10 +1383,10 @@
     "p1000000-0000-0000-0000-000000000002:b1000000-0000-0000-0000-000000000002": 3,
     "p1000000-0000-0000-0000-000000000002:b1000000-0000-0000-0000-000000000003": 3,
     "p1000000-0000-0000-0000-000000000003:b1000000-0000-0000-0000-000000000001": 0,
-    "p1000000-0000-0000-0000-000000000003:b1000000-0000-0000-0000-000000000002": 3,
+    "p1000000-0000-0000-0000-000000000003:b1000000-0000-0000-0000-000000000002": 2,
     "p1000000-0000-0000-0000-000000000003:b1000000-0000-0000-0000-000000000003": 6,
-    "p1000000-0000-0000-0000-000000000004:b1000000-0000-0000-0000-000000000001": 1,
-    "p1000000-0000-0000-0000-000000000004:b1000000-0000-0000-0000-000000000002": 2,
+    "p1000000-0000-0000-0000-000000000004:b1000000-0000-0000-0000-000000000001": 0,
+    "p1000000-0000-0000-0000-000000000004:b1000000-0000-0000-0000-000000000002": 1,
     "p1000000-0000-0000-0000-000000000004:b1000000-0000-0000-0000-000000000003": 9,
     "p1000000-0000-0000-0000-000000000005:b1000000-0000-0000-0000-000000000001": 6,
     "p1000000-0000-0000-0000-000000000005:b1000000-0000-0000-0000-000000000002": 5,
@@ -1207,7 +1397,7 @@
     "p1000000-0000-0000-0000-000000000007:b1000000-0000-0000-0000-000000000001": 4,
     "p1000000-0000-0000-0000-000000000007:b1000000-0000-0000-0000-000000000002": 3,
     "p1000000-0000-0000-0000-000000000007:b1000000-0000-0000-0000-000000000003": 2,
-    "p1000000-0000-0000-0000-000000000008:b1000000-0000-0000-0000-000000000001": 7,
+    "p1000000-0000-0000-0000-000000000008:b1000000-0000-0000-0000-000000000001": 6,
     "p1000000-0000-0000-0000-000000000008:b1000000-0000-0000-0000-000000000002": 6,
     "p1000000-0000-0000-0000-000000000008:b1000000-0000-0000-0000-000000000003": 5,
     "p1000000-0000-0000-0000-000000000009:b1000000-0000-0000-0000-000000000001": 2,
@@ -1222,13 +1412,13 @@
     "p1000000-0000-0000-0000-000000000012:b1000000-0000-0000-0000-000000000001": 3,
     "p1000000-0000-0000-0000-000000000012:b1000000-0000-0000-0000-000000000002": 2,
     "p1000000-0000-0000-0000-000000000012:b1000000-0000-0000-0000-000000000003": 9,
-    "p1000000-0000-0000-0000-000000000013:b1000000-0000-0000-0000-000000000001": 6,
+    "p1000000-0000-0000-0000-000000000013:b1000000-0000-0000-0000-000000000001": 3,
     "p1000000-0000-0000-0000-000000000013:b1000000-0000-0000-0000-000000000002": 5,
     "p1000000-0000-0000-0000-000000000013:b1000000-0000-0000-0000-000000000003": 4,
     "p1000000-0000-0000-0000-000000000014:b1000000-0000-0000-0000-000000000001": 9,
     "p1000000-0000-0000-0000-000000000014:b1000000-0000-0000-0000-000000000002": 8,
     "p1000000-0000-0000-0000-000000000014:b1000000-0000-0000-0000-000000000003": 7,
-    "p1000000-0000-0000-0000-000000000015:b1000000-0000-0000-0000-000000000001": 4,
+    "p1000000-0000-0000-0000-000000000015:b1000000-0000-0000-0000-000000000001": 2,
     "p1000000-0000-0000-0000-000000000015:b1000000-0000-0000-0000-000000000002": 3,
     "p1000000-0000-0000-0000-000000000015:b1000000-0000-0000-0000-000000000003": 2
   }

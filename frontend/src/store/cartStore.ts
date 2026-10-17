@@ -15,6 +15,33 @@ export interface UpdateQuantityResult {
   clamped?: boolean;
 }
 
+const getUserCartStorageKey = (userId: string) => `bkstore-cart-user-${userId}`;
+
+export const getStoredCartForUser = (userId: string): CartItem[] | null => {
+  if (typeof window === 'undefined' || !userId) return null;
+  try {
+    const raw = localStorage.getItem(getUserCartStorageKey(userId));
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return null;
+};
+
+export const persistCartForUser = (userId: string, items: CartItem[]) => {
+  if (typeof window === 'undefined' || !userId) return;
+  try {
+    localStorage.setItem(getUserCartStorageKey(userId), JSON.stringify(items));
+    localStorage.setItem(
+      'bkstore-cart-storage',
+      JSON.stringify({ state: { items }, version: 0 })
+    );
+  } catch {}
+};
+
+let isClearingForLogout = false;
+
 interface CartState {
   items: CartItem[];
   addItem: (product: Product, quantity?: number) => AddItemResult;
@@ -26,6 +53,8 @@ interface CartState {
   selectOnlyItem: (productId: string) => void;
   removeSelectedItems: () => void;
   clearCart: () => void;
+  clearCartForLogout: () => void;
+  loadUserCart: (userId: string) => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
   getSelectedItems: () => CartItem[];
@@ -188,7 +217,61 @@ export const useCartStore = create<CartState>()(
         }));
       },
 
-      clearCart: () => set({ items: [] }),
+      clearCart: () => {
+        set({ items: [] });
+        const user = useAuthStore.getState().user;
+        if (user?.id) {
+          persistCartForUser(user.id, []);
+        }
+      },
+
+      clearCartForLogout: () => {
+        isClearingForLogout = true;
+        set({ items: [] });
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.removeItem('bkstore-cart-storage');
+          } catch {}
+        }
+        setTimeout(() => {
+          isClearingForLogout = false;
+        }, 150);
+      },
+
+      loadUserCart: (userId: string) => {
+        if (!userId) return;
+        const storedItems = getStoredCartForUser(userId);
+        if (storedItems !== null) {
+          set({ items: storedItems });
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem(
+                'bkstore-cart-storage',
+                JSON.stringify({ state: { items: storedItems }, version: 0 })
+              );
+            } catch {}
+          }
+          return;
+        }
+
+        // Tương thích ngược: Nếu tài khoản chưa có key riêng nhưng trong bkstore-cart-storage có sản phẩm
+        if (typeof window !== 'undefined') {
+          try {
+            const legacyRaw = localStorage.getItem('bkstore-cart-storage');
+            if (legacyRaw) {
+              const parsed = JSON.parse(legacyRaw);
+              const legacyItems = parsed?.state?.items;
+              if (Array.isArray(legacyItems) && legacyItems.length > 0) {
+                set({ items: legacyItems });
+                persistCartForUser(userId, legacyItems);
+                return;
+              }
+            }
+          } catch {}
+        }
+
+        set({ items: [] });
+      },
 
       getTotalItems: () => {
         return get().items.reduce((total, item) => total + item.quantity, 0);
@@ -228,6 +311,48 @@ export const useCartStore = create<CartState>()(
     {
       name: 'bkstore-cart-storage',
       storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => () => {
+        if (typeof window === 'undefined') return;
+        try {
+          const authRaw = localStorage.getItem('bkstore-auth-storage');
+          if (authRaw) {
+            const parsed = JSON.parse(authRaw);
+            const user = parsed?.state?.user;
+            if (user?.id) {
+              const userItems = getStoredCartForUser(user.id);
+              if (userItems !== null) {
+                useCartStore.setState({ items: userItems });
+              }
+            }
+          }
+        } catch {}
+      },
     }
   )
 );
+
+if (typeof window !== 'undefined') {
+  // Tự động lưu giỏ hàng cho tài khoản đang đăng nhập mỗi khi giỏ hàng có thay đổi
+  useCartStore.subscribe((state) => {
+    if (isClearingForLogout) return;
+    try {
+      const user = useAuthStore.getState().user;
+      if (user?.id) {
+        localStorage.setItem(getUserCartStorageKey(user.id), JSON.stringify(state.items));
+      }
+    } catch {}
+  });
+
+  // Tự động chuyển đổi giỏ hàng khi người dùng đăng nhập hoặc đổi tài khoản
+  useAuthStore.subscribe((state, prevState) => {
+    const currentUserId = state.user?.id;
+    const prevUserId = prevState?.user?.id;
+
+    if (currentUserId && currentUserId !== prevUserId) {
+      useCartStore.getState().loadUserCart(currentUserId);
+    } else if (!currentUserId && prevUserId) {
+      useCartStore.getState().clearCartForLogout();
+    }
+  });
+}
+
