@@ -239,7 +239,7 @@ export default function HomePage() {
       <Hero
         onExploreClick={handleExploreClick}
         onOpenChat={() => {
-          setChatInitialPrompt('Chào BK-Bot! Bạn có thể tư vấn cho tôi một chiếc laptop tốt không?');
+          setChatInitialPrompt('Chào BK-Bot! Bạn có thể tư vấn cho tôi một chiếc laptop tốt được không?');
           setIsChatOpen(true);
         }}
       />
@@ -562,7 +562,11 @@ export default function HomePage() {
       <OrderTrackingModal
         key={`${trackingInitialCode}-${trackingInitialPhone}-${isTrackingOpen ? 'open' : 'closed'}`}
         isOpen={isTrackingOpen}
-        onClose={() => setIsTrackingOpen(false)}
+        onClose={() => {
+          setIsTrackingOpen(false);
+          setTrackingInitialCode('');
+          setTrackingInitialPhone('');
+        }}
         initialOrderCode={trackingInitialCode}
         initialPhone={trackingInitialPhone}
         onOpenReviewModal={(code, phone, prodId) => {

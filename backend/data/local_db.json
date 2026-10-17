@@ -27,8 +27,8 @@
       "warrantyMonths": 12,
       "categoryName": "Laptop & Máy tính xách tay",
       "category_name": "Laptop & Máy tính xách tay",
-      "stockQuantity": 15,
-      "stock": 15
+      "stockQuantity": 13,
+      "stock": 13
     },
     {
       "id": "p1000000-0000-0000-0000-000000000002",
@@ -57,8 +57,8 @@
       "warrantyMonths": 12,
       "categoryName": "Laptop & Máy tính xách tay",
       "category_name": "Laptop & Máy tính xách tay",
-      "stockQuantity": 13,
-      "stock": 13
+      "stockQuantity": 11,
+      "stock": 11
     },
     {
       "id": "p1000000-0000-0000-0000-000000000003",
@@ -86,8 +86,8 @@
       "warrantyMonths": 24,
       "categoryName": "Laptop & Máy tính xách tay",
       "category_name": "Laptop & Máy tính xách tay",
-      "stockQuantity": 13,
-      "stock": 13
+      "stockQuantity": 2,
+      "stock": 2
     },
     {
       "id": "p1000000-0000-0000-0000-000000000004",
@@ -115,8 +115,8 @@
       "warrantyMonths": 12,
       "categoryName": "Laptop & Máy tính xách tay",
       "category_name": "Laptop & Máy tính xách tay",
-      "stockQuantity": 14,
-      "stock": 14
+      "stockQuantity": 12,
+      "stock": 12
     },
     {
       "id": "p1000000-0000-0000-0000-000000000005",
@@ -424,8 +424,416 @@
       "stock": 15
     }
   ],
-  "updatedAt": "2026-10-16T17:19:05.618Z",
+  "updatedAt": "2026-10-17T09:12:39.313Z",
   "orders": [
+    {
+      "id": "order-1792228359310",
+      "orderCode": "#BK-4667",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000001",
+      "branchName": "BK-Store Cầu Giấy (Hà Nội)",
+      "totalAmount": 49990000,
+      "paymentMethod": "COD",
+      "status": "pending",
+      "trackingInfo": "Đơn hàng mới tạo — Xuất kho từ chi nhánh BK-Store Cầu Giấy (Hà Nội), đang chờ quản trị viên duyệt kho.",
+      "createdAt": "2026-10-17T09:12:39.310Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000002",
+          "productSlug": "macbook-pro-14-m3-pro-18gb-512gb",
+          "productName": "Apple MacBook Pro 14 M3 Pro (18GB RAM, 512GB SSD)",
+          "productThumbnail": "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&q=80",
+          "quantity": 1,
+          "unitPrice": 49990000,
+          "price": 49990000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
+    {
+      "id": "order-1792227491464",
+      "orderCode": "#BK-2065",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000001",
+      "branchName": "BK-Store Cầu Giấy (Hà Nội)",
+      "totalAmount": 42490000,
+      "paymentMethod": "COD",
+      "status": "pending",
+      "trackingInfo": "Đơn hàng mới tạo — Xuất kho từ chi nhánh BK-Store Cầu Giấy (Hà Nội), đang chờ quản trị viên duyệt kho.",
+      "createdAt": "2026-10-17T08:58:11.464Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000004",
+          "productSlug": "dell-xps-13-9340-intel-core-ultra-7",
+          "productName": "Dell XPS 13 9340 (Intel Core Ultra 7 155H, 16GB RAM, 512GB SSD)",
+          "productThumbnail": "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=800&q=80",
+          "quantity": 1,
+          "unitPrice": 42490000,
+          "price": 42490000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
+    {
+      "id": "order-1792227471938",
+      "orderCode": "#BK-9003",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000002",
+      "branchName": "BK-Store Quận 1 (TP. Hồ Chí Minh)",
+      "totalAmount": 46990000,
+      "paymentMethod": "COD",
+      "status": "pending",
+      "trackingInfo": "Đơn hàng mới tạo — Xuất kho từ chi nhánh BK-Store Quận 1 (TP. Hồ Chí Minh), đang chờ quản trị viên duyệt kho.",
+      "createdAt": "2026-10-17T08:57:51.938Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000003",
+          "productSlug": "asus-rog-zephyrus-g14-2024",
+          "productName": "ASUS ROG Zephyrus G14 OLED (Ryzen 9 8945HS, RTX 4060 8GB, 16GB)",
+          "productThumbnail": "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80",
+          "quantity": 1,
+          "unitPrice": 46990000,
+          "price": 46990000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
+    {
+      "id": "order-1792227225386",
+      "orderCode": "#BK-4919",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000001",
+      "branchName": "BK-Store Cầu Giấy (Hà Nội)",
+      "totalAmount": 81980000,
+      "paymentMethod": "COD",
+      "status": "pending",
+      "trackingInfo": "Đơn hàng mới tạo — Xuất kho từ chi nhánh BK-Store Cầu Giấy (Hà Nội), đang chờ quản trị viên duyệt kho.",
+      "createdAt": "2026-10-17T08:53:45.386Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000002",
+          "productSlug": "macbook-pro-14-m3-pro-18gb-512gb",
+          "productName": "Apple MacBook Pro 14 M3 Pro (18GB RAM, 512GB SSD)",
+          "productThumbnail": "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&q=80",
+          "quantity": 1,
+          "unitPrice": 49990000,
+          "price": 49990000
+        },
+        {
+          "productId": "p1000000-0000-0000-0000-000000000001",
+          "productSlug": "macbook-air-m3-13-16gb-512gb",
+          "productName": "Apple MacBook Air 13 M3 (16GB RAM, 512GB SSD)",
+          "productThumbnail": "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&q=80",
+          "quantity": 1,
+          "unitPrice": 31990000,
+          "price": 31990000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
+    {
+      "id": "order-1792227195868",
+      "orderCode": "#BK-5981",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000001",
+      "branchName": "BK-Store Cầu Giấy (Hà Nội)",
+      "totalAmount": 46990000,
+      "paymentMethod": "COD",
+      "status": "pending",
+      "trackingInfo": "Đơn hàng mới tạo — Xuất kho từ chi nhánh BK-Store Cầu Giấy (Hà Nội), đang chờ quản trị viên duyệt kho.",
+      "createdAt": "2026-10-17T08:53:15.868Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000003",
+          "productSlug": "asus-rog-zephyrus-g14-2024",
+          "productName": "ASUS ROG Zephyrus G14 OLED (Ryzen 9 8945HS, RTX 4060 8GB, 16GB)",
+          "productThumbnail": "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80",
+          "quantity": 1,
+          "unitPrice": 46990000,
+          "price": 46990000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
+    {
+      "id": "order-1792227164770",
+      "orderCode": "#BK-7749",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000001",
+      "branchName": "BK-Store Cầu Giấy (Hà Nội)",
+      "totalAmount": 42490000,
+      "paymentMethod": "COD",
+      "status": "pending",
+      "trackingInfo": "Đơn hàng mới tạo — Xuất kho từ chi nhánh BK-Store Cầu Giấy (Hà Nội), đang chờ quản trị viên duyệt kho.",
+      "createdAt": "2026-10-17T08:52:44.770Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000004",
+          "productSlug": "dell-xps-13-9340-intel-core-ultra-7",
+          "productName": "Dell XPS 13 9340 (Intel Core Ultra 7 155H, 16GB RAM, 512GB SSD)",
+          "productThumbnail": "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=800&q=80",
+          "quantity": 1,
+          "unitPrice": 42490000,
+          "price": 42490000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
+    {
+      "id": "order-1792227155611",
+      "orderCode": "#BK-5468",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000002",
+      "branchName": "BK-Store Quận 1 (TP. Hồ Chí Minh)",
+      "totalAmount": 93980000,
+      "paymentMethod": "COD",
+      "status": "pending",
+      "trackingInfo": "Đơn hàng mới tạo — Xuất kho từ chi nhánh BK-Store Quận 1 (TP. Hồ Chí Minh), đang chờ quản trị viên duyệt kho.",
+      "createdAt": "2026-10-17T08:52:35.611Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000003",
+          "productSlug": "asus-rog-zephyrus-g14-2024",
+          "productName": "ASUS ROG Zephyrus G14 OLED (Ryzen 9 8945HS, RTX 4060 8GB, 16GB)",
+          "productThumbnail": "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80",
+          "quantity": 2,
+          "unitPrice": 46990000,
+          "price": 46990000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
+    {
+      "id": "order-1792227134597",
+      "orderCode": "#BK-1750",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000001",
+      "branchName": "BK-Store Cầu Giấy (Hà Nội)",
+      "totalAmount": 46990000,
+      "paymentMethod": "QR_PAY",
+      "status": "pending",
+      "trackingInfo": "Đơn hàng mới tạo — Xuất kho từ chi nhánh BK-Store Cầu Giấy (Hà Nội), đang chờ quản trị viên duyệt kho.",
+      "createdAt": "2026-10-17T08:52:14.597Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000003",
+          "productSlug": "asus-rog-zephyrus-g14-2024",
+          "productName": "ASUS ROG Zephyrus G14 OLED (Ryzen 9 8945HS, RTX 4060 8GB, 16GB)",
+          "productThumbnail": "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80",
+          "quantity": 1,
+          "unitPrice": 46990000,
+          "price": 46990000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
+    {
+      "id": "order-1792227119893",
+      "orderCode": "#BK-9680",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000001",
+      "branchName": "BK-Store Cầu Giấy (Hà Nội)",
+      "totalAmount": 46990000,
+      "paymentMethod": "COD",
+      "status": "pending",
+      "trackingInfo": "Đơn hàng mới tạo — Xuất kho từ chi nhánh BK-Store Cầu Giấy (Hà Nội), đang chờ quản trị viên duyệt kho.",
+      "createdAt": "2026-10-17T08:51:59.893Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000003",
+          "productSlug": "asus-rog-zephyrus-g14-2024",
+          "productName": "ASUS ROG Zephyrus G14 OLED (Ryzen 9 8945HS, RTX 4060 8GB, 16GB)",
+          "productThumbnail": "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80",
+          "quantity": 1,
+          "unitPrice": 46990000,
+          "price": 46990000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
+    {
+      "id": "order-1792225994324",
+      "orderCode": "#BK-2538",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000001",
+      "branchName": "BK-Store Cầu Giấy (Hà Nội)",
+      "totalAmount": 46990000,
+      "paymentMethod": "COD",
+      "status": "pending",
+      "trackingInfo": "Đơn hàng mới tạo — Xuất kho từ chi nhánh BK-Store Cầu Giấy (Hà Nội), đang chờ quản trị viên duyệt kho.",
+      "createdAt": "2026-10-17T08:33:14.324Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000003",
+          "productSlug": "asus-rog-zephyrus-g14-2024",
+          "productName": "ASUS ROG Zephyrus G14 OLED (Ryzen 9 8945HS, RTX 4060 8GB, 16GB)",
+          "quantity": 1,
+          "unitPrice": 46990000,
+          "price": 46990000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
+    {
+      "id": "order-1792225963615",
+      "orderCode": "#BK-2808",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000001",
+      "branchName": "BK-Store Cầu Giấy (Hà Nội)",
+      "totalAmount": 46990000,
+      "paymentMethod": "COD",
+      "status": "pending",
+      "trackingInfo": "Đơn hàng mới tạo — Xuất kho từ chi nhánh BK-Store Cầu Giấy (Hà Nội), đang chờ quản trị viên duyệt kho.",
+      "createdAt": "2026-10-17T08:32:43.615Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000003",
+          "productSlug": "asus-rog-zephyrus-g14-2024",
+          "productName": "ASUS ROG Zephyrus G14 OLED (Ryzen 9 8945HS, RTX 4060 8GB, 16GB)",
+          "quantity": 1,
+          "unitPrice": 46990000,
+          "price": 46990000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
+    {
+      "id": "order-1792225955539",
+      "orderCode": "#BK-1006",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000001",
+      "branchName": "BK-Store Cầu Giấy (Hà Nội)",
+      "totalAmount": 46990000,
+      "paymentMethod": "COD",
+      "status": "pending",
+      "trackingInfo": "Đơn hàng mới tạo — Xuất kho từ chi nhánh BK-Store Cầu Giấy (Hà Nội), đang chờ quản trị viên duyệt kho.",
+      "createdAt": "2026-10-17T08:32:35.539Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000003",
+          "productSlug": "asus-rog-zephyrus-g14-2024",
+          "productName": "ASUS ROG Zephyrus G14 OLED (Ryzen 9 8945HS, RTX 4060 8GB, 16GB)",
+          "quantity": 1,
+          "unitPrice": 46990000,
+          "price": 46990000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
+    {
+      "id": "order-1792224161058",
+      "orderCode": "#BK-1056",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000001",
+      "branchName": "BK-Store Cầu Giấy (Hà Nội)",
+      "totalAmount": 31990000,
+      "paymentMethod": "COD",
+      "status": "pending",
+      "trackingInfo": "Đơn hàng mới tạo — Xuất kho từ chi nhánh BK-Store Cầu Giấy (Hà Nội), đang chờ quản trị viên duyệt kho.",
+      "createdAt": "2026-10-17T08:02:41.058Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000001",
+          "productSlug": "macbook-air-m3-13-16gb-512gb",
+          "productName": "Apple MacBook Air 13 M3 (16GB RAM, 512GB SSD)",
+          "quantity": 1,
+          "unitPrice": 31990000,
+          "price": 31990000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
+    {
+      "id": "order-1792224145030",
+      "orderCode": "#BK-6340",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000001",
+      "branchName": "BK-Store Cầu Giấy (Hà Nội)",
+      "totalAmount": 46990000,
+      "paymentMethod": "COD",
+      "status": "pending",
+      "trackingInfo": "Đơn hàng mới tạo — Xuất kho từ chi nhánh BK-Store Cầu Giấy (Hà Nội), đang chờ quản trị viên duyệt kho.",
+      "createdAt": "2026-10-17T08:02:25.030Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000003",
+          "productSlug": "asus-rog-zephyrus-g14-2024",
+          "productName": "ASUS ROG Zephyrus G14 OLED (Ryzen 9 8945HS, RTX 4060 8GB, 16GB)",
+          "quantity": 1,
+          "unitPrice": 46990000,
+          "price": 46990000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
+    {
+      "id": "order-1792224127090",
+      "orderCode": "#BK-1785",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000001",
+      "branchName": "BK-Store Cầu Giấy (Hà Nội)",
+      "totalAmount": 46990000,
+      "paymentMethod": "COD",
+      "status": "pending",
+      "trackingInfo": "Đơn hàng mới tạo — Xuất kho từ chi nhánh BK-Store Cầu Giấy (Hà Nội), đang chờ quản trị viên duyệt kho.",
+      "createdAt": "2026-10-17T08:02:07.090Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000003",
+          "productSlug": "asus-rog-zephyrus-g14-2024",
+          "productName": "ASUS ROG Zephyrus G14 OLED (Ryzen 9 8945HS, RTX 4060 8GB, 16GB)",
+          "quantity": 1,
+          "unitPrice": 46990000,
+          "price": 46990000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
     {
       "id": "order-1792171122666",
       "orderCode": "#BK-6162",
@@ -778,16 +1186,16 @@
     }
   ],
   "inventory": {
-    "p1000000-0000-0000-0000-000000000001:b1000000-0000-0000-0000-000000000001": 2,
+    "p1000000-0000-0000-0000-000000000001:b1000000-0000-0000-0000-000000000001": 0,
     "p1000000-0000-0000-0000-000000000001:b1000000-0000-0000-0000-000000000002": 9,
     "p1000000-0000-0000-0000-000000000001:b1000000-0000-0000-0000-000000000003": 8,
-    "p1000000-0000-0000-0000-000000000002:b1000000-0000-0000-0000-000000000001": 5,
+    "p1000000-0000-0000-0000-000000000002:b1000000-0000-0000-0000-000000000001": 3,
     "p1000000-0000-0000-0000-000000000002:b1000000-0000-0000-0000-000000000002": 3,
     "p1000000-0000-0000-0000-000000000002:b1000000-0000-0000-0000-000000000003": 3,
-    "p1000000-0000-0000-0000-000000000003:b1000000-0000-0000-0000-000000000001": 8,
-    "p1000000-0000-0000-0000-000000000003:b1000000-0000-0000-0000-000000000002": 6,
+    "p1000000-0000-0000-0000-000000000003:b1000000-0000-0000-0000-000000000001": 0,
+    "p1000000-0000-0000-0000-000000000003:b1000000-0000-0000-0000-000000000002": 3,
     "p1000000-0000-0000-0000-000000000003:b1000000-0000-0000-0000-000000000003": 6,
-    "p1000000-0000-0000-0000-000000000004:b1000000-0000-0000-0000-000000000001": 3,
+    "p1000000-0000-0000-0000-000000000004:b1000000-0000-0000-0000-000000000001": 1,
     "p1000000-0000-0000-0000-000000000004:b1000000-0000-0000-0000-000000000002": 2,
     "p1000000-0000-0000-0000-000000000004:b1000000-0000-0000-0000-000000000003": 9,
     "p1000000-0000-0000-0000-000000000005:b1000000-0000-0000-0000-000000000001": 6,

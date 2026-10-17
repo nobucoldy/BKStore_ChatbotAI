@@ -49,11 +49,6 @@ export const useAuthStore = create<AuthState>()(
       initialize: async () => {
         const storedToken = getAuthToken() || get().token;
         if (!storedToken) {
-          if (typeof window !== 'undefined') {
-            try {
-              localStorage.removeItem('bkstore-cart-storage');
-            } catch {}
-          }
           set({ user: null, token: null, isAuthenticated: false, isLoading: false });
           return;
         }

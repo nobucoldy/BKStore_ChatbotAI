@@ -1,11 +1,32 @@
 'use client';
 
-import React, { useState } from 'react';
-import { X, CheckCircle, Copy, Check, CreditCard, Banknote, ShieldAlert, ArrowRight, Warehouse, MapPin, Lock, LogIn, UserCheck, ShoppingBag } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import {
+  X,
+  CheckCircle,
+  Copy,
+  Check,
+  CreditCard,
+  Banknote,
+  ShieldAlert,
+  ArrowRight,
+  Warehouse,
+  MapPin,
+  Lock,
+  LogIn,
+  UserCheck,
+  ShoppingBag,
+  Package,
+  Clock,
+  Truck,
+  Sparkles,
+  ShieldCheck,
+} from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
 import { formatPrice } from '@/lib/utils';
-import { createOrderApi, fetchInventoryOverview } from '@/lib/api';
+import { createOrderApi, fetchInventoryOverview, fetchMyOrdersApi } from '@/lib/api';
 import { Order, Branch, Product, ProductInventoryItem } from '@/types';
 
 const DEFAULT_BRANCHES: Branch[] = [
@@ -45,9 +66,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   onOrderSuccess,
   onRequireLogin,
 }) => {
-  const { items, removeSelectedItems } = useCartStore();
+  const { items, removeSelectedItems, selectAllItems } = useCartStore();
   const selectedItems = items.filter((item) => item.selected !== false);
-  const selectedTotalPrice = selectedItems.reduce(
+  const effectiveItems = selectedItems.length > 0 ? selectedItems : items;
+  const effectiveTotalPrice = effectiveItems.reduce(
     (total, item) => total + item.product.price * item.quantity,
     0
   );
@@ -66,18 +88,57 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
   const [isCopied, setIsCopied] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  // Auto fill user details when available
-  React.useEffect(() => {
-    if (isOpen && user) {
-      const displayName = user.name || user.fullName || '';
-      if (displayName) setCustomerName(displayName);
-      if (user.phone) setPhone(user.phone);
-      if (user.address) setAddress(user.address);
+  const selectedBranchObj =
+    branches.find((b) => b.id === selectedBranchId) || DEFAULT_BRANCHES[0];
+
+  // Auto fill user details when available & ensure no field is empty
+  useEffect(() => {
+    if (isOpen && !createdOrder) {
+      // 1. Recipient Name
+      const fallbackName = user?.name || user?.fullName || 'Nguyễn Văn An';
+      setCustomerName((prev) => (prev.trim() ? prev : fallbackName));
+
+      // 2. Phone
+      const fallbackPhone = user?.phone || '0912345678';
+      setPhone((prev) => (prev.trim() ? prev : fallbackPhone));
+
+      // 3. Address
+      const fallbackAddress =
+        user?.address && user.address.trim()
+          ? user.address.trim()
+          : 'Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội';
+      setAddress((prev) => (prev.trim() ? prev : fallbackAddress));
+
+      // Auto-select all items in cart store if cart has items but none marked selected
+      if (items.length > 0 && selectedItems.length === 0) {
+        selectAllItems(true);
+      }
+
+      // If user is authenticated, query previous orders to pre-fill their real phone/address if available
+      if (isAuthenticated) {
+        fetchMyOrdersApi()
+          .then((res) => {
+            if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+              const latestOrder = res.data[0];
+              if (latestOrder.phone && !user?.phone) {
+                setPhone(latestOrder.phone);
+              }
+              if (latestOrder.address && (!user?.address || !user.address.trim())) {
+                setAddress(latestOrder.address);
+              }
+              if (latestOrder.customerName && !user?.name) {
+                setCustomerName(latestOrder.customerName);
+              }
+            }
+          })
+          .catch(() => {});
+      }
     }
-  }, [isOpen, user]);
+  }, [isOpen, user, isAuthenticated, items.length, selectedItems.length, selectAllItems, createdOrder]);
 
-  const getBranchStockForProduct = React.useCallback(
+  const getBranchStockForProduct = useCallback(
     (product: Product, branchId: string): number => {
       const invItem = inventoryItems.find(
         (it) => it.productId === product.id || it.productSlug === product.slug
@@ -102,13 +163,20 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     [inventoryItems]
   );
 
-  React.useEffect(() => {
+  // Initialize modal state on fresh open
+  useEffect(() => {
     if (isOpen) {
       setCreatedOrder(null);
       setErrorMsg('');
       setIsLoading(false);
       setIsCopied(false);
+      setIsConfirmOpen(false);
+    }
+  }, [isOpen]);
 
+  // Load branch stock overview
+  useEffect(() => {
+    if (isOpen && !createdOrder) {
       fetchInventoryOverview()
         .then((data) => {
           if (data.branches && data.branches.length > 0) {
@@ -116,10 +184,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           }
           if (data.items) {
             setInventoryItems(data.items);
-            // Automatically pick the first branch that has enough stock for all cart items
+            const currentItems = useCartStore.getState().items;
             const availBranches = data.branches?.length ? data.branches : DEFAULT_BRANCHES;
             const firstValid = availBranches.find((b) =>
-              items.every(({ product, quantity }) => {
+              currentItems.every(({ product, quantity }) => {
                 const invProd = data.items.find(
                   (it) => it.productId === product.id || it.productSlug === product.slug
                 );
@@ -133,15 +201,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             }
           }
         })
-        .catch(() => {
-          // Ignore error and use fallback
-        });
+        .catch(() => {});
     }
-  }, [isOpen, items]);
+  }, [isOpen, createdOrder]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleOpenConfirm = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -162,15 +228,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       return;
     }
 
-    if (selectedItems.length === 0) {
-      setErrorMsg('Không có món nào được chọn trong giỏ hàng! Vui lòng quay lại giỏ và tích chọn sản phẩm bạn muốn mua.');
+    if (effectiveItems.length === 0) {
+      setErrorMsg('Không có món nào trong giỏ hàng để đặt! Vui lòng chọn sản phẩm vào giỏ.');
       return;
     }
 
-    const selectedBranchObj = branches.find((b) => b.id === selectedBranchId) || DEFAULT_BRANCHES[0];
-
-    // Client-side inventory validation (total + selected branch) only for selected items
-    for (const item of selectedItems) {
+    // Client-side inventory validation (total + selected branch) only for effective items
+    for (const item of effectiveItems) {
       const maxStock = item.product.stock ?? item.product.stock_quantity ?? 0;
       if (maxStock <= 0) {
         setErrorMsg(`Sản phẩm "${item.product.name}" hiện đã hết hàng trong kho. Vui lòng quay lại giỏ hàng để bỏ chọn hoặc gỡ bỏ.`);
@@ -197,7 +261,18 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       return;
     }
 
+    setIsConfirmOpen(true);
+  };
+
+  const handleConfirmOrder = async () => {
+    if (!isAuthenticated || !user) {
+      setErrorMsg('Vui lòng đăng nhập tài khoản trước khi tiến hành đặt hàng.');
+      setIsConfirmOpen(false);
+      return;
+    }
+
     setIsLoading(true);
+    setErrorMsg('');
 
     try {
       const payload = {
@@ -208,22 +283,33 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         branchId: selectedBranchId,
         paymentMethod,
         userId: user.id,
-        items: selectedItems.map((i) => ({
+        items: effectiveItems.map((i) => ({
           productId: i.product.id,
           quantity: i.quantity,
         })),
       };
 
-      const res = await createOrderApi(payload);
+      // Ensure smooth deliberate loading feedback (~900ms) to prevent double-clicks & show system processing
+      const [res] = await Promise.all([
+        createOrderApi(payload),
+        new Promise((resolve) => setTimeout(resolve, 900)),
+      ]);
 
       if (res.success && res.data) {
+        setIsConfirmOpen(false);
         setCreatedOrder(res.data);
-        removeSelectedItems();
+        if (selectedItems.length > 0) {
+          removeSelectedItems();
+        } else {
+          useCartStore.getState().clearCart();
+        }
       } else {
+        setIsConfirmOpen(false);
         setErrorMsg(res.error || 'Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại.');
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi kết nối máy chủ.';
+      setIsConfirmOpen(false);
       setErrorMsg(msg);
     } finally {
       setIsLoading(false);
@@ -235,6 +321,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     setErrorMsg('');
     setIsLoading(false);
     setIsCopied(false);
+    setIsConfirmOpen(false);
     onClose();
   };
 
@@ -258,36 +345,48 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col p-6 md:p-8">
-        
         {/* Close Button */}
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors"
+          className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* ORDER SUCCESS VIEW */}
         {createdOrder ? (
-          <div className="flex flex-col items-center text-center py-4">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4">
-              <CheckCircle className="w-10 h-10" />
+          <div className="flex flex-col py-2 space-y-5">
+            {/* Success Header */}
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3 shadow-inner">
+                <CheckCircle className="w-9 h-9" />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Đặt hàng thành công!</h3>
+              <p className="text-xs text-slate-500 mt-1 max-w-md">
+                Cảm ơn <strong>{createdOrder.customerName}</strong>! Đơn hàng của bạn đã được ghi nhận vào hệ thống BK-Store và đang được chuyển đến bộ phận chuẩn bị hàng.
+              </p>
             </div>
 
-            <h3 className="text-2xl font-bold text-slate-900">Đặt hàng thành công!</h3>
-            <p className="text-sm text-slate-500 mt-1">
-              Cảm ơn bạn đã tin tưởng mua sắm tại hệ thống BK-Store.
-            </p>
-
-            {/* Order Code Box */}
-            <div className="mt-5 p-4 rounded-2xl bg-blue-50/80 border border-blue-200 w-full flex items-center justify-between">
-              <div className="text-left">
-                <div className="text-xs text-blue-600 font-medium">Mã đơn hàng của bạn:</div>
-                <div className="text-xl font-mono font-bold text-blue-900">{createdOrder.orderCode}</div>
+            {/* Order Code & Status Banner */}
+            <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-blue-700 font-semibold">Mã đơn hàng:</span>
+                  <span className="text-lg font-mono font-black text-blue-900">{createdOrder.orderCode}</span>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] text-slate-500 font-mono">
+                  <Clock className="w-3.5 h-3.5 text-blue-500" />
+                  <span>{new Date(createdOrder.createdAt).toLocaleString('vi-VN')}</span>
+                  <span>•</span>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                    Chờ duyệt kho (Pending)
+                  </span>
+                </div>
               </div>
+
               <button
                 onClick={handleCopyCode}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-blue-200 text-xs font-semibold text-blue-700 hover:bg-blue-50 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-blue-200 text-xs font-semibold text-blue-700 hover:bg-blue-50 active:bg-blue-100 transition-colors cursor-pointer shadow-2xs"
               >
                 {isCopied ? (
                   <>
@@ -296,29 +395,104 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   </>
                 ) : (
                   <>
-                    <Copy className="w-4 h-4" />
-                    <span>Sao chép</span>
+                    <Copy className="w-4 h-4 text-blue-600" />
+                    <span>Sao chép mã đơn</span>
                   </>
                 )}
               </button>
             </div>
 
+            {/* List of Ordered Products */}
+            {createdOrder.items && createdOrder.items.length > 0 && (
+              <div className="border border-slate-200/90 rounded-2xl p-4 bg-slate-50/40">
+                <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200/80">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                    <Package className="w-4 h-4 text-blue-600" />
+                    <span>Chi tiết sản phẩm đã đặt ({createdOrder.items.length}):</span>
+                  </span>
+                  <span className="text-xs font-mono text-slate-500">
+                    Tổng cộng: <strong>{createdOrder.items.reduce((sum, it) => sum + it.quantity, 0)}</strong> máy
+                  </span>
+                </div>
+
+                <div className="space-y-2.5 max-h-52 overflow-y-auto pr-1">
+                  {createdOrder.items.map((item, idx) => {
+                    const itemUnitPrice = Number(item.unitPrice ?? item.price ?? 0);
+                    const itemQty = Number(item.quantity ?? 1);
+                    const itemTotal = itemUnitPrice * itemQty;
+                    const displayName =
+                      item.productName || item.productSlug || item.productId || 'Thiết bị công nghệ';
+
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white border border-slate-200/70 shadow-2xs"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          {item.productThumbnail ? (
+                            <img
+                              src={item.productThumbnail}
+                              alt={displayName}
+                              className="w-10 h-10 object-contain rounded-lg bg-slate-50 border border-slate-200 p-0.5 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+                              <Package className="w-5 h-5" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <h5 className="font-bold text-xs text-slate-900 truncate" title={displayName}>
+                              {displayName}
+                            </h5>
+                            <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                              x{itemQty} • {formatPrice(itemUnitPrice)}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="font-mono font-bold text-sm text-slate-900 shrink-0">
+                          {formatPrice(itemTotal)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Total breakdown */}
+                <div className="mt-3 pt-3 border-t border-slate-200 text-xs space-y-1.5 font-medium">
+                  <div className="flex justify-between text-slate-600">
+                    <span>Phí vận chuyển:</span>
+                    <span className="text-emerald-600 font-bold">Miễn phí toàn quốc</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm font-bold text-slate-900 pt-1 border-t border-dashed border-slate-200">
+                    <span>Tổng tiền thanh toán:</span>
+                    <span className="text-lg text-blue-700 font-mono font-black">
+                      {formatPrice(createdOrder.totalAmount)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* If QR_PAY is selected -> Display VietQR Bank Transfer Card */}
             {createdOrder.paymentMethod === 'QR_PAY' && (
-              <div className="mt-5 p-5 rounded-2xl bg-slate-900 text-white w-full flex flex-col items-center">
-                <div className="flex items-center gap-2 mb-3">
+              <div className="p-5 rounded-2xl bg-slate-900 text-white w-full flex flex-col items-center shadow-md">
+                <div className="flex items-center gap-2 mb-2">
                   <CreditCard className="w-5 h-5 text-cyan-400" />
                   <h4 className="text-sm font-bold text-slate-100">Quét mã VietQR để thanh toán</h4>
                 </div>
+                <p className="text-[11px] text-slate-400 text-center mb-3">
+                  Quét mã bằng ứng dụng ngân hàng bất kỳ để hệ thống tự động xác nhận đơn trong 1 phút.
+                </p>
 
-                {/* QR Image Mock (VietQR quick link format) */}
-                <div className="bg-white p-3 rounded-xl shadow-md my-2">
+                {/* QR Image Mock */}
+                <div className="bg-white p-3 rounded-2xl shadow-lg my-1">
                   <img
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
                       `STK: 0987654321|MBBANK|BK-STORE|SO TIEN: ${createdOrder.totalAmount}|NOI DUNG: ${createdOrder.orderCode}`
                     )}`}
                     alt="VietQR Payment"
-                    className="w-44 h-44"
+                    className="w-44 h-44 rounded-lg"
                   />
                 </div>
 
@@ -348,29 +522,61 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             )}
 
             {/* Recipient summary */}
-            <div className="mt-4 w-full p-4 rounded-xl bg-slate-50 border border-slate-200 text-left text-xs space-y-1.5 text-slate-600">
-              <div><strong className="text-slate-800">Người nhận:</strong> {createdOrder.customerName} ({createdOrder.phone})</div>
-              <div><strong className="text-slate-800">Giao đến:</strong> {createdOrder.address}</div>
-              {createdOrder.branchName && (
-                <div><strong className="text-slate-800">Kho xuất hàng:</strong> <span className="text-blue-700 font-semibold">{createdOrder.branchName}</span></div>
-              )}
-              <div><strong className="text-slate-800">Phương thức:</strong> {createdOrder.paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng (COD)' : 'Chuyển khoản QR'}</div>
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left text-xs space-y-2 text-slate-600">
+              <div className="font-bold text-slate-800 pb-1 border-b border-slate-200/80 flex items-center gap-1.5">
+                <Truck className="w-4 h-4 text-blue-600" />
+                <span>Thông tin giao nhận & vận chuyển:</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
+                <div>
+                  <span className="text-slate-400">Người nhận:</span>{' '}
+                  <strong className="text-slate-800">{createdOrder.customerName}</strong> ({createdOrder.phone})
+                </div>
+                <div>
+                  <span className="text-slate-400">Phương thức:</span>{' '}
+                  <strong className="text-slate-800">
+                    {createdOrder.paymentMethod === 'COD' ? 'Thanh toán tiền mặt (COD)' : 'Chuyển khoản VietQR'}
+                  </strong>
+                </div>
+                <div className="sm:col-span-2">
+                  <span className="text-slate-400">Địa chỉ giao:</span>{' '}
+                  <span className="text-slate-800 font-medium">{createdOrder.address}</span>
+                </div>
+                {createdOrder.branchName && (
+                  <div className="sm:col-span-2">
+                    <span className="text-slate-400">Kho xuất hàng:</span>{' '}
+                    <span className="text-blue-700 font-bold">{createdOrder.branchName}</span>
+                  </div>
+                )}
+                {createdOrder.note && (
+                  <div className="sm:col-span-2 text-[11px] text-slate-500 italic">
+                    Ghi chú: &ldquo;{createdOrder.note}&rdquo;
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Actions */}
-            <div className="mt-6 flex flex-col sm:flex-row gap-3 w-full">
+            <div className="flex flex-col sm:flex-row gap-3 w-full pt-1">
               <button
                 onClick={handleTrackCreatedOrder}
-                className="flex-1 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-md shadow-blue-500/20"
+                className="flex-1 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-blue-500/20 transition-all cursor-pointer"
               >
                 <span>Tra cứu tiến trình đơn hàng</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
+              <Link
+                href="/orders"
+                onClick={handleClose}
+                className="py-3 px-4 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-xs text-center transition-colors"
+              >
+                Xem tất cả đơn hàng
+              </Link>
               <button
                 onClick={handleClose}
-                className="py-3 px-5 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 font-semibold text-sm"
+                className="py-3 px-4 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 font-semibold text-xs transition-colors cursor-pointer"
               >
-                Đóng & Tiếp tục mua sắm
+                Đóng & Mua sắm
               </button>
             </div>
           </div>
@@ -435,23 +641,25 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </div>
             )}
 
-            {selectedItems.length === 0 ? (
+            {effectiveItems.length === 0 ? (
               <div className="py-12 flex flex-col items-center justify-center text-center">
-                <ShoppingBag className="w-16 h-16 text-slate-300 stroke-1 mb-3" />
-                <h4 className="text-base font-bold text-slate-800">Chưa có sản phẩm nào được chọn</h4>
-                <p className="text-xs text-slate-500 mt-1 max-w-xs">
-                  Vui lòng quay lại giỏ hàng và tích chọn các món bạn muốn đặt mua.
+                <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center mb-3">
+                  <ShoppingBag className="w-8 h-8 stroke-1.5" />
+                </div>
+                <h4 className="text-base font-bold text-slate-800">Giỏ hàng của bạn đang trống</h4>
+                <p className="text-xs text-slate-500 mt-1 max-w-xs leading-relaxed">
+                  Vui lòng thêm sản phẩm vào giỏ hàng hoặc chọn nút &ldquo;Mua ngay&rdquo; để tiến hành đặt đơn.
                 </p>
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="mt-5 px-6 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors cursor-pointer"
+                  className="mt-5 px-6 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors cursor-pointer shadow-md shadow-blue-500/20"
                 >
-                  Quay lại giỏ hàng
+                  Khám phá sản phẩm ngay
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleOpenConfirm} className="space-y-4">
                 {/* Customer Name */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -462,7 +670,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     required
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Ví dụ: Nguyễn Quế Bắc"
+                    placeholder="Ví dụ: Nguyễn Văn An"
                     className="w-full text-sm px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none"
                   />
                 </div>
@@ -506,7 +714,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   <div className="grid grid-cols-1 gap-2.5">
                     {branches.map((branch) => {
                       const isSelected = selectedBranchId === branch.id;
-                      const itemStocks = selectedItems.map(({ product, quantity }) => {
+                      const itemStocks = effectiveItems.map(({ product, quantity }) => {
                         const avail = getBranchStockForProduct(product, branch.id);
                         return {
                           productName: product.name,
@@ -571,7 +779,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                                     : 'bg-rose-50 border-rose-200 text-rose-700 font-semibold'
                                 }`}
                               >
-                                {selectedItems.length > 1 ? `${st.productName.split('(')[0].trim()}: ` : 'Tồn kho tại nhánh: '}
+                                {effectiveItems.length > 1 ? `${st.productName.split('(')[0].trim()}: ` : 'Tồn kho tại nhánh: '}
                                 <strong>{st.avail}</strong> máy (cần {st.needed})
                               </span>
                             ))}
@@ -605,7 +813,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setPaymentMethod('COD')}
-                      className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all ${
+                      className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
                         paymentMethod === 'COD'
                           ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-500/10'
                           : 'border-slate-200 hover:border-slate-300 text-slate-700'
@@ -621,7 +829,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setPaymentMethod('QR_PAY')}
-                      className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all ${
+                      className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
                         paymentMethod === 'QR_PAY'
                           ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-500/10'
                           : 'border-slate-200 hover:border-slate-300 text-slate-700'
@@ -639,13 +847,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 {/* Selected Products Preview */}
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
                   <div className="text-xs font-bold text-slate-700 mb-2 flex items-center justify-between">
-                    <span>Sản phẩm đặt mua ({selectedItems.length}):</span>
+                    <span>Sản phẩm đặt mua ({effectiveItems.length}):</span>
                     <span className="text-[11px] font-normal text-slate-500">
-                      {selectedItems.reduce((s, i) => s + i.quantity, 0)} món
+                      {effectiveItems.reduce((s, i) => s + i.quantity, 0)} món
                     </span>
                   </div>
                   <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
-                    {selectedItems.map(({ product, quantity }) => (
+                    {effectiveItems.map(({ product, quantity }) => (
                       <div
                         key={product.id}
                         className="flex items-center gap-2.5 text-xs bg-white p-2 rounded-lg border border-slate-100"
@@ -674,7 +882,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   <div className="flex justify-between text-slate-600 mb-1">
                     <span>Tổng số lượng:</span>
                     <span className="font-semibold text-slate-800">
-                      {selectedItems.reduce((s, i) => s + i.quantity, 0)} món
+                      {effectiveItems.reduce((s, i) => s + i.quantity, 0)} món
                     </span>
                   </div>
                   <div className="flex justify-between text-slate-600 mb-1">
@@ -683,7 +891,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   </div>
                   <div className="flex justify-between items-center text-sm font-bold text-slate-900 pt-2 border-t border-slate-200 mt-2">
                     <span>Tổng thanh toán:</span>
-                    <span className="text-lg text-blue-700 font-mono">{formatPrice(selectedTotalPrice)}</span>
+                    <span className="text-lg text-blue-700 font-mono font-black">{formatPrice(effectiveTotalPrice)}</span>
                   </div>
                 </div>
 
@@ -691,19 +899,148 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 disabled:opacity-70 transition-all cursor-pointer"
+                  className="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-sm shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 disabled:opacity-70 transition-all cursor-pointer"
                 >
-                  {isLoading ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <span>Xác nhận đặt hàng</span>
-                  )}
+                  <span>Tiến hành đặt đơn</span>
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </form>
             )}
           </div>
         )}
 
+        {/* CONFIRMATION POP-UP DIALOG */}
+        {isConfirmOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/65 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col p-6 md:p-7 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+              {/* Dialog Header */}
+              <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+                    <ShieldCheck className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900">Xác nhận thông tin đặt hàng</h4>
+                    <p className="text-xs text-slate-500">Vui lòng kiểm tra lại đơn hàng trước khi gửi</p>
+                  </div>
+                </div>
+                {!isLoading && (
+                  <button
+                    type="button"
+                    onClick={() => setIsConfirmOpen(false)}
+                    className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Dialog Body */}
+              <div className="py-4 space-y-3.5 text-xs text-slate-600">
+                {/* Recipient Details */}
+                <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 space-y-2">
+                  <div className="flex justify-between items-center text-slate-700">
+                    <span className="text-slate-500">Người nhận:</span>
+                    <span className="font-bold text-slate-900">{customerName}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-700">
+                    <span className="text-slate-500">Số điện thoại:</span>
+                    <span className="font-bold font-mono text-slate-900">{phone}</span>
+                  </div>
+                  <div className="flex justify-between items-start text-slate-700 gap-4">
+                    <span className="text-slate-500 shrink-0">Địa chỉ:</span>
+                    <span className="font-medium text-slate-900 text-right leading-tight">{address}</span>
+                  </div>
+                  <div className="flex justify-between items-start text-slate-700 gap-4 pt-1.5 border-t border-slate-200/60">
+                    <span className="text-slate-500 shrink-0">Kho xuất hàng:</span>
+                    <span className="font-semibold text-blue-700 text-right">{selectedBranchObj.name}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-700">
+                    <span className="text-slate-500">Thanh toán:</span>
+                    <span className="font-semibold text-slate-800">
+                      {paymentMethod === 'COD' ? 'Tiền mặt khi nhận hàng (COD)' : 'Chuyển khoản VietQR'}
+                    </span>
+                  </div>
+                  {note.trim() && (
+                    <div className="flex justify-between items-start text-slate-700 gap-4 pt-1.5 border-t border-slate-200/60">
+                      <span className="text-slate-500 shrink-0">Ghi chú:</span>
+                      <span className="italic text-slate-600 text-right">&ldquo;{note}&rdquo;</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Products Summary */}
+                <div>
+                  <div className="flex items-center justify-between font-semibold text-slate-800 mb-2">
+                    <span>Sản phẩm đặt mua ({effectiveItems.reduce((s, i) => s + i.quantity, 0)} món):</span>
+                    <span className="text-emerald-600 text-[11px] font-bold">Freeship toàn quốc</span>
+                  </div>
+                  <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
+                    {effectiveItems.map(({ product, quantity }) => (
+                      <div
+                        key={product.id}
+                        className="flex items-center gap-2.5 p-2 bg-slate-50/80 rounded-xl border border-slate-100"
+                      >
+                        <img
+                          src={product.thumbnail}
+                          alt={product.name}
+                          className="w-9 h-9 object-contain rounded-lg border border-slate-200 p-0.5 bg-white shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-slate-800 truncate text-xs">{product.name}</div>
+                          <div className="text-[11px] text-slate-500 font-mono">
+                            {formatPrice(product.price)} × {quantity}
+                          </div>
+                        </div>
+                        <div className="font-mono font-bold text-slate-800 shrink-0 text-xs">
+                          {formatPrice(product.price * quantity)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Total Price */}
+                <div className="p-3.5 bg-blue-50/70 rounded-2xl border border-blue-100 flex items-center justify-between">
+                  <span className="font-bold text-slate-800 text-sm">Tổng thanh toán:</span>
+                  <span className="font-mono font-black text-xl text-blue-700">
+                    {formatPrice(effectiveTotalPrice)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Dialog Actions */}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  onClick={() => setIsConfirmOpen(false)}
+                  className="px-5 py-3 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  Kiểm tra lại
+                </button>
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  onClick={handleConfirmOrder}
+                  className="flex-1 py-3 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-75"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Đang tạo đơn & kiểm kho...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Xác nhận đặt hàng</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

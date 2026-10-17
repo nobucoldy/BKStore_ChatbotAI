@@ -56,6 +56,8 @@ export default function CategoryDetailPage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
+  const [trackingInitialCode, setTrackingInitialCode] = useState('');
+  const [trackingInitialPhone, setTrackingInitialPhone] = useState('');
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInitialPrompt, setChatInitialPrompt] = useState<string>('');
 
@@ -354,13 +356,24 @@ export default function CategoryDetailPage() {
         key={`checkout-${isCheckoutOpen ? 'open' : 'closed'}`}
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
-        onOrderSuccess={() => {}}
+        onOrderSuccess={(order) => {
+          setTrackingInitialCode(order.orderCode);
+          setTrackingInitialPhone(order.phone);
+          setIsCheckoutOpen(false);
+          setIsTrackingOpen(true);
+        }}
       />
 
       <OrderTrackingModal
-        key={`tracking-${isTrackingOpen ? 'open' : 'closed'}`}
+        key={`tracking-${trackingInitialCode}-${trackingInitialPhone}-${isTrackingOpen ? 'open' : 'closed'}`}
         isOpen={isTrackingOpen}
-        onClose={() => setIsTrackingOpen(false)}
+        onClose={() => {
+          setIsTrackingOpen(false);
+          setTrackingInitialCode('');
+          setTrackingInitialPhone('');
+        }}
+        initialOrderCode={trackingInitialCode}
+        initialPhone={trackingInitialPhone}
       />
 
       <ChatWidget

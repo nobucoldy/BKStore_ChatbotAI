@@ -57,6 +57,8 @@ export default function ProductDetailPage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
+  const [trackingInitialCode, setTrackingInitialCode] = useState('');
+  const [trackingInitialPhone, setTrackingInitialPhone] = useState('');
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInitialPrompt, setChatInitialPrompt] = useState('');
 
@@ -770,6 +772,8 @@ export default function ProductDetailPage() {
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
         onOrderSuccess={(order) => {
+          setTrackingInitialCode(order.orderCode);
+          setTrackingInitialPhone(order.phone);
           setIsCheckoutOpen(false);
           setIsTrackingOpen(true);
         }}
@@ -777,8 +781,15 @@ export default function ProductDetailPage() {
 
       {/* Order Tracking Modal */}
       <OrderTrackingModal
+        key={`tracking-${trackingInitialCode}-${trackingInitialPhone}-${isTrackingOpen ? 'open' : 'closed'}`}
         isOpen={isTrackingOpen}
-        onClose={() => setIsTrackingOpen(false)}
+        onClose={() => {
+          setIsTrackingOpen(false);
+          setTrackingInitialCode('');
+          setTrackingInitialPhone('');
+        }}
+        initialOrderCode={trackingInitialCode}
+        initialPhone={trackingInitialPhone}
         onOpenReviewModal={() => {
           setIsTrackingOpen(false);
           setIsReviewOpen(true);

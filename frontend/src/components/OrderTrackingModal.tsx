@@ -1,11 +1,26 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { X, Search, ShieldCheck, AlertCircle, Package, Truck, CheckCircle2, Clock, XCircle, Star, Sparkles } from 'lucide-react';
-import { trackOrderApi } from '@/lib/api';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  X,
+  Search,
+  ShieldCheck,
+  AlertCircle,
+  Package,
+  Truck,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  Star,
+  Sparkles,
+  RotateCcw,
+  UserCheck,
+} from 'lucide-react';
+import { trackOrderApi, fetchMyOrdersApi } from '@/lib/api';
 import { Order, OrderItem, OrderStatus } from '@/types';
 import { formatPrice } from '@/lib/utils';
 import { ReviewModal } from './ReviewModal';
+import { useAuthStore } from '@/store/authStore';
 
 interface OrderTrackingModalProps {
   isOpen: boolean;
@@ -22,6 +37,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
   initialPhone = '',
   onOpenReviewModal,
 }) => {
+  const { user, isAuthenticated } = useAuthStore();
   const [orderCode, setOrderCode] = useState(initialOrderCode);
   const [phone, setPhone] = useState(initialPhone);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,11 +45,10 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
   const [orderData, setOrderData] = useState<Order | null>(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [reviewTargetProdId, setReviewTargetProdId] = useState('');
+  const [showSearchForm, setShowSearchForm] = useState(false);
 
-  const handleSearch = React.useCallback(async (codeToSearch: string, phoneToSearch: string) => {
+  const handleSearch = useCallback(async (codeToSearch: string, phoneToSearch: string) => {
     setErrorMsg('');
-    setOrderData(null);
-
 
     if (!codeToSearch.trim()) {
       setErrorMsg('Vui lòng nhập mã đơn hàng (ví dụ: BK-1024).');
@@ -51,32 +66,71 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
       const res = await trackOrderApi(codeToSearch, phoneToSearch);
       if (res.success && res.data) {
         setOrderData(res.data);
+        setShowSearchForm(false);
       } else {
         setErrorMsg(res.error || 'Không tìm thấy đơn hàng khớp với mã đơn và số điện thoại đã nhập.');
+        setOrderData(null);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi kết nối máy chủ.';
       setErrorMsg(msg);
+      setOrderData(null);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    if (!isOpen) {
+      setOrderData(null);
+      setErrorMsg('');
+      setIsLoading(false);
+      setShowSearchForm(false);
+      return;
+    }
+
+    setErrorMsg('');
+
+    // Case 1: An explicit order code and phone were passed (e.g. from checkout or order action)
     if (initialOrderCode && initialPhone) {
+      setOrderCode(initialOrderCode);
+      setPhone(initialPhone);
+      handleSearch(initialOrderCode, initialPhone);
+      return;
+    }
+
+    // Case 2: Opened standalone, user is authenticated -> auto-load latest order
+    if (isAuthenticated) {
       let ignore = false;
-      trackOrderApi(initialOrderCode, initialPhone)
+      setIsLoading(true);
+      fetchMyOrdersApi()
         .then((res) => {
-          if (!ignore && res.success && res.data) {
-            setOrderData(res.data);
+          if (ignore) return;
+          if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+            const latest = res.data[0];
+            setOrderData(latest);
+            setOrderCode(latest.orderCode);
+            setPhone(latest.phone);
+            setShowSearchForm(false);
+          } else {
+            setShowSearchForm(true);
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          if (!ignore) setShowSearchForm(true);
+        })
+        .finally(() => {
+          if (!ignore) setIsLoading(false);
+        });
+
       return () => {
         ignore = true;
       };
     }
-  }, [initialOrderCode, initialPhone]);
+
+    // Case 3: Unauthenticated and no props -> show manual search form
+    setShowSearchForm(true);
+  }, [isOpen, initialOrderCode, initialPhone, isAuthenticated, handleSearch]);
 
   if (!isOpen) return null;
 
@@ -116,64 +170,83 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors"
+          className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Modal Title */}
-        <div className="flex items-center gap-2 mb-1">
-          <Truck className="w-6 h-6 text-blue-600" />
-          <h3 className="text-xl font-bold text-slate-900">Tra cứu vận đơn bảo mật</h3>
-        </div>
-        <p className="text-xs text-slate-500 mb-6">
-          Theo tiêu chuẩn NFR-03, vui lòng nhập cả <strong>Mã đơn hàng</strong> và <strong>Số điện thoại</strong> để bảo mật thông tin đơn hàng.
-        </p>
-
-        {/* Search Form */}
-        <form onSubmit={onSubmit} className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Mã đơn hàng</label>
-              <input
-                type="text"
-                value={orderCode}
-                onChange={(e) => setOrderCode(e.target.value)}
-                placeholder="Ví dụ: BK-1024"
-                className="w-full text-xs font-mono uppercase bg-white px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-500 outline-none"
-              />
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+              <Truck className="w-5 h-5" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Số điện thoại đặt hàng</label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="0912345678"
-                className="w-full text-xs font-mono bg-white px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-500 outline-none"
-              />
+              <h3 className="text-xl font-bold text-slate-900">Tiến trình vận đơn</h3>
+              <p className="text-xs text-slate-500">
+                Theo dõi hành trình đóng gói, xuất kho và vận chuyển thực tế từ BK-Store.
+              </p>
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs shadow-sm shadow-blue-500/20 flex items-center justify-center gap-2 transition-all"
-          >
-            {isLoading ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            ) : (
-              <>
-                <Search className="w-3.5 h-3.5" />
-                <span>Kiểm tra trạng thái đơn hàng</span>
-              </>
-            )}
-          </button>
-        </form>
+          {orderData && (
+            <button
+              onClick={() => setShowSearchForm((prev) => !prev)}
+              className="text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl transition-colors cursor-pointer mr-8 sm:mr-0"
+            >
+              {showSearchForm ? 'Đóng tra cứu' : 'Tra cứu đơn khác'}
+            </button>
+          )}
+        </div>
+
+        {/* Search Form (collapsible if orderData already exists) */}
+        {(showSearchForm || !orderData) && !isLoading && (
+          <form onSubmit={onSubmit} className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 my-4 animate-in fade-in">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Mã đơn hàng</label>
+                <input
+                  type="text"
+                  value={orderCode}
+                  onChange={(e) => setOrderCode(e.target.value)}
+                  placeholder="Ví dụ: BK-1024"
+                  className="w-full text-xs font-mono uppercase bg-white px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Số điện thoại đặt hàng</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="0912345678"
+                  className="w-full text-xs font-mono bg-white px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-500 outline-none"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm shadow-blue-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
+            >
+              <Search className="w-3.5 h-3.5" />
+              <span>Kiểm tra trạng thái đơn hàng</span>
+            </button>
+          </form>
+        )}
+
+        {/* Loading Spinner */}
+        {isLoading && (
+          <div className="py-12 flex flex-col items-center justify-center text-slate-500 text-xs gap-3 my-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+            <div className="w-7 h-7 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <span className="font-medium text-slate-600">Đang tra cứu tiến trình đơn hàng...</span>
+          </div>
+        )}
 
         {/* Error Alert */}
         {errorMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+          <div className="my-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
@@ -181,12 +254,15 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
 
         {/* Order Result Details */}
         {orderData && (
-          <div className="border border-slate-200 rounded-2xl p-5 space-y-5">
+          <div className="border border-slate-200 rounded-2xl p-5 space-y-5 my-3 bg-white shadow-2xs animate-in fade-in">
             {/* Header info */}
             <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
-              <div>
+              <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-500 font-medium">Mã đơn hàng:</span>
-                <span className="text-base font-bold text-blue-700 font-mono ml-2">{orderData.orderCode}</span>
+                <span className="text-base font-bold text-blue-700 font-mono">{orderData.orderCode}</span>
+                <span className="text-[10px] font-sans font-bold bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full uppercase">
+                  {orderData.status}
+                </span>
               </div>
               <div className="text-xs text-slate-400 font-mono">
                 {new Date(orderData.createdAt).toLocaleString('vi-VN')}
@@ -261,7 +337,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                    Danh sách sản phẩm trong đơn:
+                    Danh sách sản phẩm trong đơn ({orderData.items.length}):
                   </h5>
                   {orderData.status === 'delivered' && (
                     <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
@@ -328,7 +404,6 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
             </div>
           </div>
         )}
-
       </div>
 
       {/* Review Modal embedded */}
@@ -344,4 +419,3 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
     </div>
   );
 };
-
