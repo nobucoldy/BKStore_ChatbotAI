@@ -18,8 +18,26 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://bk-store-chatbot-71mz0sirp-nobu7.vercel.app'),
   title: 'BK-Store — Smart Tech Commerce & AI Chatbot',
   description: 'Hệ thống bán lẻ thiết bị công nghệ cao cấp chính hãng tích hợp trợ lý AI thông minh BK-Bot tư vấn cấu hình và tra cứu vận đơn 24/7.',
+  icons: {
+    icon: '/logo-bkstore.png',
+    shortcut: '/logo-bkstore.png',
+    apple: '/logo-bkstore.png',
+  },
+  openGraph: {
+    title: 'BK-Store — Smart Tech Commerce & AI Chatbot',
+    description: 'Hệ thống bán lẻ thiết bị công nghệ cao cấp chính hãng tích hợp trợ lý AI thông minh BK-Bot tư vấn cấu hình và tra cứu vận đơn 24/7.',
+    images: [
+      {
+        url: '/logo-bkstore.png',
+        width: 800,
+        height: 600,
+        alt: 'BK-Store Logo',
+      },
+    ],
+  },
 };
 
 export default function RootLayout({

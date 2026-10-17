@@ -69,9 +69,11 @@ export default function AdminLayout({
         {/* Brand Area */}
         <div className="p-5 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-lg shadow-md shadow-blue-500/20">
-              BK
-            </div>
+            <img
+              src="/logo-bkstore.png"
+              alt="BK-Store Admin"
+              className="w-9 h-9 rounded-xl object-contain bg-white/10 p-0.5"
+            />
             <div>
               <div className="text-sm font-extrabold text-white tracking-tight flex items-center gap-1.5">
                 <span>BK-STORE</span>

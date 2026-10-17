@@ -67,9 +67,11 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTracking, onOpenReview }) 
           {/* Col 1: About BK-Store */}
           <div className="md:col-span-5 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-lg">
-                BK
-              </div>
+              <img
+                src="/logo-bkstore.png"
+                alt="BK-Store Logo"
+                className="w-9 h-9 rounded-xl object-contain bg-white/10 p-0.5"
+              />
               <div className="flex flex-col">
                 <span className="text-base font-extrabold text-white">BK-STORE</span>
                 <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">
