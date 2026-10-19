@@ -96,25 +96,25 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
+    <header className="sticky top-0 z-50 w-full bg-blue-600 border-b border-blue-700 shadow-md">
       {/* Top Ambient Ticker */}
-      <div className="bg-slate-900 text-slate-300 text-xs py-1.5 px-4">
+      <div className="bg-blue-950 text-blue-200 text-xs py-1.5 px-4 border-b border-blue-900/60">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2 overflow-hidden">
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <p className="truncate">
+            <p className="truncate text-blue-100">
               🚀 Trợ lý ảo AI BK-Bot tư vấn cấu hình chuẩn 24/7 | Miễn phí giao hàng toàn quốc cho đơn từ 1.000.000₫
             </p>
           </div>
-          <div className="hidden md:flex items-center gap-6 font-mono text-[11px] text-slate-400">
+          <div className="hidden md:flex items-center gap-6 font-mono text-[11px] text-blue-300">
             <a href="tel:18006868" className="hover:text-white flex items-center gap-1.5 transition-colors">
-              <Phone className="w-3 h-3 text-blue-400" />
+              <Phone className="w-3 h-3 text-cyan-400" />
               <span>Hotline: 1800 6868</span>
             </a>
-            <span className="text-slate-700">|</span>
+            <span className="text-blue-800">|</span>
             <button
               onClick={onOpenChat}
-              className="flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 transition-colors"
+              className="flex items-center gap-1.5 text-cyan-300 hover:text-cyan-100 transition-colors cursor-pointer"
             >
               <Sparkles className="w-3 h-3 animate-spin" style={{ animationDuration: '4s' }} />
               <span>BK-Bot AI Live</span>
@@ -133,10 +133,10 @@ export const Header: React.FC<HeaderProps> = ({
             className="w-11 h-11 rounded-xl object-contain shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform"
           />
           <div className="flex flex-col">
-            <span className="text-xl font-extrabold tracking-tight text-slate-900 group-hover:text-blue-600 transition-colors">
+            <span className="text-xl font-extrabold tracking-tight text-white group-hover:text-blue-100 transition-colors">
               BK-STORE
             </span>
-            <span className="text-[10px] font-mono font-medium uppercase tracking-wider text-slate-500">
+            <span className="text-[10px] font-mono font-medium uppercase tracking-wider text-blue-200">
               Smart Tech Commerce
             </span>
           </div>
@@ -144,23 +144,19 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Center: Brand Dropdown & Search Bar */}
         <div className="flex-1 max-w-2xl hidden md:flex items-center gap-2.5">
-          {/* Brand Dropdown Menu (Dạng trượt xuống) */}
+          {/* Brand Dropdown Menu (Không nền, không viền) */}
           <div className="relative" ref={brandDropdownRef}>
             <button
               type="button"
               onClick={() => setIsBrandOpen((prev) => !prev)}
-              className={`flex items-center gap-2 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all border shrink-0 cursor-pointer ${
-                isBrandOpen
-                  ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/25 ring-2 ring-blue-400/40'
-                  : 'bg-slate-100 hover:bg-slate-200/80 text-slate-700 border-slate-200/80 hover:border-slate-300'
-              }`}
+              className="flex items-center gap-1.5 px-2.5 py-2 text-xs font-bold text-white hover:bg-white/10 rounded-xl transition-colors shrink-0 cursor-pointer"
               title="Danh mục thương hiệu chính hãng"
             >
-              <Layers className={`w-3.5 h-3.5 ${isBrandOpen ? 'text-white' : 'text-blue-600'}`} />
+              <Layers className="w-4 h-4 text-white" />
               <span>Thương hiệu</span>
               <ChevronDown
-                className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                  isBrandOpen ? 'rotate-180 text-white' : 'text-slate-400'
+                className={`w-3.5 h-3.5 transition-transform duration-200 text-blue-200 ${
+                  isBrandOpen ? 'rotate-180' : ''
                 }`}
               />
             </button>
@@ -168,8 +164,6 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Slide-Down Menu Panel */}
             {isBrandOpen && (
               <div className="absolute top-full left-0 mt-2.5 w-80 bg-white rounded-3xl shadow-2xl border border-slate-200/90 p-3.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-               
-
                 <div className="grid grid-cols-2 gap-1.5">
                   {brands.map((b) => (
                     <Link
@@ -178,8 +172,12 @@ export const Header: React.FC<HeaderProps> = ({
                       onClick={() => setIsBrandOpen(false)}
                       className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-blue-50/80 hover:border-blue-200 border border-transparent transition-all group"
                     >
-                      <div className="w-8 h-8 rounded-xl bg-slate-100 group-hover:bg-blue-600 text-slate-700 group-hover:text-white flex items-center justify-center text-xs font-bold font-mono transition-colors shrink-0 shadow-2xs">
-                        {b.name.slice(0, 2).toUpperCase()}
+                      <div className="w-8 h-8 rounded-xl bg-slate-50 group-hover:bg-white border border-slate-200/80 group-hover:border-blue-300 flex items-center justify-center p-1.5 transition-all shrink-0 shadow-2xs">
+                        <img
+                          src={b.logo || `/brands/${b.slug.toLowerCase()}.svg`}
+                          alt={b.name}
+                          className="w-full h-full object-contain group-hover:scale-110 transition-transform"
+                        />
                       </div>
                       <div className="flex flex-col min-w-0">
                         <span className="text-xs font-bold text-slate-800 group-hover:text-blue-600 truncate transition-colors">
@@ -206,7 +204,7 @@ export const Header: React.FC<HeaderProps> = ({
                 if (e.target.value === '') onSearchChange('');
               }}
               placeholder="Tìm kiếm MacBook, iPhone, bàn phím cơ, chip M3, RTX 4060..."
-              className="w-full bg-slate-100 hover:bg-slate-100/80 focus:bg-white text-sm text-slate-800 placeholder-slate-400 rounded-full pl-11 pr-10 py-2.5 border border-transparent focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+              className="w-full bg-white hover:bg-blue-50/20 focus:bg-white text-sm text-slate-800 placeholder-slate-400 rounded-full pl-11 pr-10 py-2.5 shadow-sm border border-transparent focus:border-white focus:ring-4 focus:ring-white/20 transition-all outline-none"
             />
             <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
             {localSearch && (
@@ -223,20 +221,20 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Actions */}
         <div className="flex items-center gap-2.5">
-          {/* 1. Cart Button with text (on left of Avatar) */}
+          {/* 1. Cart Button with text (Cùng màu nền với navbar, icon và chữ màu trắng) */}
           <button
             onClick={onOpenCart}
             aria-label="Giỏ hàng"
             title={`Giỏ hàng (${totalItems} món)`}
-            className={`relative flex items-center gap-2 px-3.5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl shadow-sm shadow-blue-500/25 transition-all cursor-pointer ${
-              isCartJumping ? 'animate-cart-jump ring-4 ring-blue-400/40 shadow-blue-500/50' : ''
+            className={`relative flex items-center gap-2 px-3.5 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-2xl transition-all cursor-pointer ${
+              isCartJumping ? 'animate-cart-jump ring-2 ring-white/60' : ''
             }`}
           >
             <div className="relative">
-              <ShoppingBag className={`w-5 h-5 transition-transform ${isCartJumping ? 'scale-125 text-amber-300' : ''}`} />
+              <ShoppingBag className={`w-5 h-5 text-white transition-transform ${isCartJumping ? 'scale-125 text-amber-300' : ''}`} />
               {totalItems > 0 && (
                 <span
-                  className={`absolute -top-2 -right-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full border-2 border-white transition-all ${
+                  className={`absolute -top-2 -right-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-black rounded-full bg-rose-500 text-white border-2 border-blue-600 transition-all ${
                     isCartJumping
                       ? 'scale-125 bg-amber-400 text-slate-950 font-black'
                       : 'bg-rose-500 text-white'
@@ -253,17 +251,19 @@ export const Header: React.FC<HeaderProps> = ({
           {!isAuthenticated ? (
             <button
               onClick={() => (onOpenAuth ? onOpenAuth() : openAuthModal())}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-slate-700 hover:text-blue-600 bg-slate-100/80 hover:bg-blue-50 rounded-xl transition-all cursor-pointer"
+              className="flex items-center gap-2 px-2.5 py-1.5 text-sm font-semibold text-white hover:bg-white/10 rounded-2xl transition-all cursor-pointer"
               title="Đăng nhập hoặc Đăng ký tài khoản"
             >
-              <UserIcon className="w-4 h-4 text-slate-500" />
+              <div className="w-8 h-8 rounded-full bg-blue-700 text-white flex items-center justify-center border border-white/30 shadow-xs">
+                <UserIcon className="w-4 h-4 text-white" />
+              </div>
               <span className="hidden sm:inline">Đăng nhập</span>
             </button>
           ) : (
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-500 text-white flex items-center justify-center text-sm font-bold shadow-xs hover:scale-105 hover:ring-2 hover:ring-blue-400/50 transition-all cursor-pointer border border-white/20"
+                className="w-9 h-9 rounded-full bg-blue-700 hover:bg-blue-800 text-white flex items-center justify-center text-sm font-black shadow-sm hover:scale-105 hover:ring-2 hover:ring-white/50 transition-all cursor-pointer border border-white/30"
                 title={`${user?.name} (${user?.email})`}
                 aria-label="Tài khoản người dùng"
               >
@@ -338,15 +338,11 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={() => setIsMobileBrandOpen((prev) => !prev)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border shrink-0 ${
-              isMobileBrandOpen
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-slate-100 text-slate-700 border-slate-200'
-            }`}
+            className="flex items-center gap-1.5 px-2 py-2 text-xs font-bold text-white shrink-0 cursor-pointer"
           >
-            <Layers className="w-3.5 h-3.5" />
+            <Layers className="w-3.5 h-3.5 text-white" />
             <span>Hãng</span>
-            <ChevronDown className={`w-3 h-3 ${isMobileBrandOpen ? 'rotate-180 text-white' : 'text-slate-400'}`} />
+            <ChevronDown className={`w-3 h-3 text-blue-200 transition-transform ${isMobileBrandOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {isMobileBrandOpen && (
@@ -359,8 +355,12 @@ export const Header: React.FC<HeaderProps> = ({
                     onClick={() => setIsMobileBrandOpen(false)}
                     className="flex items-center gap-2 p-2 rounded-lg hover:bg-blue-50 text-xs font-bold text-slate-800"
                   >
-                    <span className="w-6 h-6 rounded bg-slate-100 text-slate-700 flex items-center justify-center text-[10px] font-mono">
-                      {b.name.slice(0, 2).toUpperCase()}
+                    <span className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-200/80 p-1 flex items-center justify-center shrink-0">
+                      <img
+                        src={b.logo || `/brands/${b.slug.toLowerCase()}.svg`}
+                        alt={b.name}
+                        className="w-full h-full object-contain"
+                      />
                     </span>
                     <span className="truncate">{b.name}</span>
                   </Link>
@@ -380,7 +380,7 @@ export const Header: React.FC<HeaderProps> = ({
               if (e.target.value === '') onSearchChange('');
             }}
             placeholder="Tìm kiếm thiết bị công nghệ..."
-            className="w-full bg-slate-100 text-sm text-slate-800 placeholder-slate-400 rounded-lg pl-10 pr-9 py-2 border border-slate-200 focus:border-blue-500 focus:bg-white outline-none"
+            className="w-full bg-white text-sm text-slate-800 placeholder-slate-400 rounded-xl pl-10 pr-9 py-2 border border-transparent focus:ring-2 focus:ring-white/40 outline-none shadow-sm"
           />
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           {localSearch && (

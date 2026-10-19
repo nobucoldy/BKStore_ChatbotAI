@@ -84,7 +84,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTracking, onOpenReview }) 
             </p>
             <div className="pt-2 text-[11px] text-slate-500 space-y-1 font-mono">
               <p>• Đồ án liên ngành CNTT</p>
-              <p>• GVHD: Thầy Nguyễn Văn Sơn</p>
+              <p>• GVHD: ThS. Thầy Nguyễn Văn Sơn</p>
               <p>• SV: Nguyễn Quế Bắc & Hoàng Tuấn Kiệt</p>
             </div>
           </div>
@@ -120,7 +120,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTracking, onOpenReview }) 
                   href="/orders"
                   className="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1.5 font-medium cursor-pointer"
                 >
-                  <span>→ Lịch sử & Tiến trình đơn hàng</span>
+                  <span>Lịch sử & Tiến trình đơn hàng</span>
                 </Link>
               </li>
               {onOpenReview && (

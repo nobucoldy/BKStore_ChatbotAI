@@ -46,6 +46,7 @@ export const FALLBACK_BRANDS: Brand[] = [
     id: 'br1',
     name: 'Apple',
     slug: 'apple',
+    logo: '/brands/apple.svg',
     description:
       'Thương hiệu công nghệ hàng đầu thế giới từ Mỹ. Nổi bật với hệ sinh thái MacBook, iPhone, iPad sang trọng, chip Apple Silicon hiệu năng mạnh mẽ, thời lượng pin bền bỉ và bảo hành chính hãng VN/A.',
   },
@@ -53,6 +54,7 @@ export const FALLBACK_BRANDS: Brand[] = [
     id: 'br2',
     name: 'Dell',
     slug: 'dell',
+    logo: '/brands/dell.svg',
     description:
       'Thương hiệu máy tính danh tiếng từ Hoa Kỳ, nổi bật với độ bền chuẩn quân đội, bàn phím gõ êm và màn hình viền siêu mỏng InfinityEdge trên dòng Dell XPS doanh nhân, Dell Inspiron và máy trạm Precision.',
   },
@@ -60,6 +62,7 @@ export const FALLBACK_BRANDS: Brand[] = [
     id: 'br3',
     name: 'ASUS',
     slug: 'asus',
+    logo: '/brands/asus.svg',
     description:
       'Thương hiệu công nghệ tiên phong từ Đài Loan, dẫn đầu với laptop gaming ASUS ROG Zephyrus tản nhiệt kim loại lỏng và laptop văn phòng cao cấp Zenbook màn hình Lumina OLED rực rỡ chuẩn điện ảnh.',
   },
@@ -67,6 +70,7 @@ export const FALLBACK_BRANDS: Brand[] = [
     id: 'br4',
     name: 'Samsung',
     slug: 'samsung',
+    logo: '/brands/samsung.svg',
     description:
       'Tập đoàn công nghệ hàng đầu Hàn Quốc, dẫn đầu toàn cầu về màn hình Dynamic AMOLED 2X, thiết kế gập đột phá Galaxy Z Fold/Flip, camera 200MP và kỷ nguyên trí tuệ nhân tạo Galaxy AI.',
   },
@@ -74,6 +78,7 @@ export const FALLBACK_BRANDS: Brand[] = [
     id: 'br5',
     name: 'Sony',
     slug: 'sony',
+    logo: '/brands/sony.svg',
     description:
       'Biểu tượng âm thanh và hình ảnh Nhật Bản đỉnh cao. Dẫn đầu với tai nghe chống ồn chủ động ANC chuẩn phòng thu WH-1000XM5, âm thanh Hi-Res Audio không dây LDAC và màng loa sợi carbon cao cấp.',
   },
@@ -81,6 +86,7 @@ export const FALLBACK_BRANDS: Brand[] = [
     id: 'br6',
     name: 'Keychron',
     slug: 'keychron',
+    logo: '/brands/keychron.svg',
     description:
       'Thương hiệu bàn phím cơ Custom cao cấp hàng đầu thế giới. Tối ưu hoàn hảo chuyển đổi giữa Mac và Windows, kết nối không dây đa thiết bị, mạch hotswap linh hoạt và tùy biến firmware QMK/VIA.',
   },
@@ -88,6 +94,7 @@ export const FALLBACK_BRANDS: Brand[] = [
     id: 'br7',
     name: 'Anker',
     slug: 'anker',
+    logo: '/brands/anker.svg',
     description:
       'Thương hiệu phụ kiện sạc số 1 thế giới từ Mỹ. Tiên phong công nghệ bán dẫn GaNPrime siêu nhỏ gọn công suất cao 65W-140W, sạc thông minh PowerIQ và cáp bọc dù siêu bền uốn gập hơn 20.000 lần.',
   },

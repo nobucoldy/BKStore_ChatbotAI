@@ -336,21 +336,21 @@ export default function HomePage() {
           </div>
         ) : (
           /* CURATED SECTIONS VIEW (ĐỀ XUẤT 1) */
-          <div className="space-y-16">
+          <div className="space-y-12">
             {/* SECTION 1: 🔥 HOT PICKS & SẢN PHẨM NỔI BẬT */}
-            <section>
-              <div className="flex items-center justify-between mb-6">
+            <section className="relative rounded-3xl p-6 sm:p-8 bg-gradient-to-b from-amber-500/10 via-amber-50/40 to-white border-2 border-amber-300/80 shadow-xl shadow-amber-500/5 overflow-hidden">
+              {/* Decorative top-right glow */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-amber-400/15 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/4"></div>
+
+              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3 pb-5 border-b border-amber-200/70">
                 <div>
-                  <div className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 mb-2">
-                    <Zap className="w-3.5 h-3.5 fill-amber-500" />
-                    <span>HOT DEALS & SẢN PHẨM NỔI BẬT</span>
+                  <div className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-amber-500 text-white shadow-sm mb-2.5">
+                    <Zap className="w-3.5 h-3.5 fill-white" />
+                    <span>HOT DEALS </span>
                   </div>
                   <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                     Thiết Bị Công Nghệ Bán Chạy Nhất
                   </h2>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Những sản phẩm cao cấp được khách hàng đánh giá cao nhất tại BK-Store
-                  </p>
                 </div>
               </div>
 
@@ -359,14 +359,14 @@ export default function HomePage() {
                   {Array.from({ length: 4 }).map((_, i) => (
                     <div
                       key={i}
-                      className="bg-white rounded-2xl border border-slate-200 p-4 h-80 animate-pulse"
+                      className="bg-white rounded-2xl border-2 border-amber-200 p-4 h-80 animate-pulse"
                     />
                   ))}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {featuredProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} onAskAI={handleAskAI} />
+                    <ProductCard key={product.id} product={product} onAskAI={handleAskAI} themeColor="amber" />
                   ))}
                 </div>
               )}
@@ -374,34 +374,34 @@ export default function HomePage() {
 
             {/* SECTION 2: 💻 LAPTOP & MÁY TÍNH XÁCH TAY */}
             {laptopProducts.length > 0 && (
-              <section className="pt-4 border-t border-slate-200/70">
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-2">
+              <section className="relative rounded-3xl p-6 sm:p-8 bg-gradient-to-b from-blue-500/10 via-blue-50/40 to-white border-2 border-blue-200/90 shadow-xl shadow-blue-500/5 overflow-hidden">
+                {/* Decorative top-right glow */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-400/15 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/4"></div>
+
+                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3 pb-5 border-b border-blue-200/70">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 border border-blue-200/60 flex items-center justify-center shrink-0 shadow-xs">
-                      <Laptop className="w-5 h-5" />
+                    <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-600/30">
+                      <Laptop className="w-6 h-6" />
                     </div>
                     <div>
                       <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                        Laptop & Máy Tính Xách Tay
+                        Laptop
                       </h2>
-                      <p className="text-xs text-slate-500">
-                        Ultrabook mỏng nhẹ, laptop đồ họa và gaming cấu hình cao
-                      </p>
                     </div>
                   </div>
 
                   <Link
                     href="/categories/laptop"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50/80 hover:bg-blue-100/80 px-4 py-2 rounded-xl transition-all self-start sm:self-auto"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-4 py-2.5 rounded-xl transition-all shadow-md shadow-blue-600/20 self-start sm:self-auto cursor-pointer"
                   >
-                    <span>Xem tất cả Laptop ({laptopCount})</span>
+                    <span>Xem tất cả</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {laptopProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} onAskAI={handleAskAI} />
+                    <ProductCard key={product.id} product={product} onAskAI={handleAskAI} themeColor="blue" />
                   ))}
                 </div>
               </section>
@@ -409,34 +409,34 @@ export default function HomePage() {
 
             {/* SECTION 3: 📱 ĐIỆN THOẠI THÔNG MINH */}
             {smartphoneProducts.length > 0 && (
-              <section className="pt-4 border-t border-slate-200/70">
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-2">
+              <section className="relative rounded-3xl p-6 sm:p-8 bg-gradient-to-b from-indigo-500/10 via-indigo-50/40 to-white border-2 border-indigo-200/90 shadow-xl shadow-indigo-500/5 overflow-hidden">
+                {/* Decorative top-right glow */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-400/15 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/4"></div>
+
+                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3 pb-5 border-b border-indigo-200/70">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-200/60 flex items-center justify-center shrink-0 shadow-xs">
-                      <Smartphone className="w-5 h-5" />
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-indigo-600/30">
+                      <Smartphone className="w-6 h-6" />
                     </div>
                     <div>
                       <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                        Điện Thoại Thông Minh Flagship
+                        Điện Thoại Thông Minh, Tablet
                       </h2>
-                      <p className="text-xs text-slate-500">
-                        Apple iPhone, Samsung Galaxy S & Z Series đỉnh cao công nghệ
-                      </p>
                     </div>
                   </div>
 
                   <Link
                     href="/categories/smartphone"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100/80 px-4 py-2 rounded-xl transition-all self-start sm:self-auto"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 rounded-xl transition-all shadow-md shadow-indigo-600/20 self-start sm:self-auto cursor-pointer"
                   >
-                    <span>Xem tất cả Điện thoại ({smartphoneCount})</span>
+                    <span>Xem tất cả</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {smartphoneProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} onAskAI={handleAskAI} />
+                    <ProductCard key={product.id} product={product} onAskAI={handleAskAI} themeColor="indigo" />
                   ))}
                 </div>
               </section>
@@ -444,34 +444,34 @@ export default function HomePage() {
 
             {/* SECTION 4: 🎧 PHỤ KIỆN & NGOẠI VI */}
             {accessoryProducts.length > 0 && (
-              <section className="pt-4 border-t border-slate-200/70">
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-2">
+              <section className="relative rounded-3xl p-6 sm:p-8 bg-gradient-to-b from-emerald-500/10 via-emerald-50/40 to-white border-2 border-emerald-200/90 shadow-xl shadow-emerald-500/5 overflow-hidden">
+                {/* Decorative top-right glow */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-400/15 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/4"></div>
+
+                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3 pb-5 border-b border-emerald-200/70">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200/60 flex items-center justify-center shrink-0 shadow-xs">
-                      <Headphones className="w-5 h-5" />
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-600/30">
+                      <Headphones className="w-6 h-6" />
                     </div>
                     <div>
                       <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                        Phụ Kiện & Âm Thanh Cao Cấp
+                        Phụ Kiện và âm thanh
                       </h2>
-                      <p className="text-xs text-slate-500">
-                        Tai nghe chống ồn, bàn phím cơ Custom và sạc nhanh GaN
-                      </p>
                     </div>
                   </div>
 
                   <Link
                     href="/categories/accessory"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50/80 hover:bg-emerald-100/80 px-4 py-2 rounded-xl transition-all self-start sm:self-auto"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-600/20 self-start sm:self-auto cursor-pointer"
                   >
-                    <span>Xem tất cả Phụ kiện ({accessoryCount})</span>
+                    <span>Xem tất cả</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {accessoryProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} onAskAI={handleAskAI} />
+                    <ProductCard key={product.id} product={product} onAskAI={handleAskAI} themeColor="emerald" />
                   ))}
                 </div>
               </section>
@@ -479,19 +479,16 @@ export default function HomePage() {
 
             {/* SECTION 5: 🏢 ĐỐI TÁC THƯƠNG HIỆU CHÍNH HÃNG */}
             {brands.length > 0 && (
-              <section className="pt-4 border-t border-slate-200/70">
-                <div className="flex items-center justify-between mb-6">
+              <section className="relative rounded-3xl p-6 sm:p-8 bg-gradient-to-b from-slate-100/90 via-slate-50/50 to-white border-2 border-slate-200/90 shadow-xl shadow-slate-500/5 overflow-hidden">
+                <div className="relative z-10 flex items-center justify-between mb-6 pb-5 border-b border-slate-200/70">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center shrink-0 shadow-xs">
-                      <Store className="w-5 h-5" />
+                    <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center shrink-0 shadow-md shadow-slate-900/20">
+                      <Store className="w-6 h-6" />
                     </div>
                     <div>
                       <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
                         Thương Hiệu Đối Tác Chính Hãng
                       </h2>
-                      <p className="text-xs text-slate-500">
-                        Phân phối ủy quyền 100% chính ngạch với chính sách bảo hành toàn quốc
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -501,22 +498,30 @@ export default function HomePage() {
                     <Link
                       key={brand.id}
                       href={`/brands/${brand.slug}`}
-                      className="group bg-white rounded-2xl border border-slate-200/80 p-5 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/5 transition-all duration-300 flex flex-col justify-between"
+                      className="group bg-white rounded-2xl border-2 border-slate-200/80 p-5 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 flex flex-col justify-between cursor-pointer"
                     >
                       <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-bold text-base text-slate-900 group-hover:text-blue-600 transition-colors">
+                        {/* Logo & Brand Name side-by-side (Chính hãng badge removed) */}
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="h-10 w-14 px-2 py-1.5 rounded-xl bg-slate-50 border border-slate-200/70 flex items-center justify-center shrink-0 group-hover:bg-blue-50/50 group-hover:border-blue-200 transition-colors">
+                            <img
+                              src={brand.logo || `/brands/${brand.slug.toLowerCase()}.svg`}
+                              alt={`${brand.name} logo`}
+                              className="h-5 w-auto max-w-[48px] object-contain group-hover:scale-105 transition-transform"
+                            />
+                          </div>
+
+                          <h3 className="font-extrabold text-base sm:text-lg text-slate-900 group-hover:text-blue-600 transition-colors truncate">
                             {brand.name}
-                          </span>
-                          <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-                            Chính hãng
-                          </span>
+                          </h3>
                         </div>
+
                         <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-4">
                           {brand.description}
                         </p>
                       </div>
-                      <div className="flex items-center text-xs font-semibold text-blue-600 group-hover:translate-x-1 transition-transform">
+
+                      <div className="flex items-center text-xs font-semibold text-blue-600 group-hover:translate-x-1 transition-transform pt-3 border-t border-slate-100">
                         <span>Khám phá sản phẩm</span>
                         <ArrowRight className="w-3.5 h-3.5 ml-1" />
                       </div>

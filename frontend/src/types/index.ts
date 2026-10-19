@@ -41,6 +41,7 @@ export interface Brand {
   name: string;
   slug: string;
   description?: string;
+  logo?: string;
 }
 
 export interface Branch {
