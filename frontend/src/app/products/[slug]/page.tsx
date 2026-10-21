@@ -34,7 +34,7 @@ import { CartDrawer } from '@/components/CartDrawer';
 import { CheckoutModal } from '@/components/CheckoutModal';
 import { OrderTrackingModal } from '@/components/OrderTrackingModal';
 import { ReviewModal } from '@/components/ReviewModal';
-import { ChatWidget } from '@/components/ChatWidget';
+import { useChatStore } from '@/store/chatStore';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -59,8 +59,8 @@ export default function ProductDetailPage() {
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
   const [trackingInitialCode, setTrackingInitialCode] = useState('');
   const [trackingInitialPhone, setTrackingInitialPhone] = useState('');
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatInitialPrompt, setChatInitialPrompt] = useState('');
+  const openChat = useChatStore((state) => state.openChat);
+  const toggleChat = useChatStore((state) => state.toggleChat);
 
   const addItem = useCartStore((state) => state.addItem);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -186,8 +186,7 @@ export default function ProductDetailPage() {
   };
 
   const handleAskAI = () => {
-    setChatInitialPrompt(`Tư vấn cho tôi về sản phẩm ${product.name}, cấu hình này phù hợp với nhu cầu nào?`);
-    setIsChatOpen(true);
+    openChat(`Tư vấn cho tôi về sản phẩm ${product.name}, cấu hình này phù hợp với nhu cầu nào?`);
   };
 
   return (
@@ -199,7 +198,7 @@ export default function ProductDetailPage() {
         onOpenCart={() => setIsCartOpen(true)}
         onOpenTracking={() => setIsTrackingOpen(true)}
         onOpenReview={() => setIsReviewOpen(true)}
-        onOpenChat={() => setIsChatOpen((prev) => !prev)}
+        onOpenChat={toggleChat}
       />
 
 
@@ -741,10 +740,9 @@ export default function ProductDetailPage() {
                   key={p.id}
                   product={p}
                   onAskAI={(prod) => {
-                    setChatInitialPrompt(
+                    openChat(
                       `Tư vấn cho tôi về sản phẩm ${prod.name}, cấu hình này phù hợp với nhu cầu nào?`
                     );
-                    setIsChatOpen(true);
                   }}
                 />
               ))}
@@ -805,13 +803,6 @@ export default function ProductDetailPage() {
         onReviewSubmitted={() => {
           loadReviews(product.slug);
         }}
-      />
-
-      {/* Chat Widget */}
-      <ChatWidget
-        isOpen={isChatOpen}
-        onToggle={() => setIsChatOpen((prev) => !prev)}
-        initialPrompt={chatInitialPrompt}
       />
     </div>
   );

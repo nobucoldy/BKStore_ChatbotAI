@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Search, ShoppingBag, Truck, Phone, Sparkles, X, ChevronDown, Layers, Star, User as UserIcon, Package, LogOut } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
+import { useChatStore } from '@/store/chatStore';
 import { Brand } from '@/types';
 import { fetchBrands, FALLBACK_BRANDS } from '@/lib/api';
 
@@ -14,7 +15,7 @@ interface HeaderProps {
   onOpenCart: () => void;
   onOpenTracking: () => void;
   onOpenReview?: () => void;
-  onOpenChat: () => void;
+  onOpenChat?: () => void;
   onOpenAuth?: () => void;
   onOpenMyOrders?: () => void;
 }
@@ -32,6 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const [localSearch, setLocalSearch] = useState(searchQuery);
   const totalItems = useCartStore((state) => state.getTotalItems());
+  const toggleChat = useChatStore((state) => state.toggleChat);
   const [isCartJumping, setIsCartJumping] = useState(false);
   const prevItemsRef = useRef(totalItems);
 
@@ -113,7 +115,7 @@ export const Header: React.FC<HeaderProps> = ({
             </a>
             <span className="text-blue-800">|</span>
             <button
-              onClick={onOpenChat}
+              onClick={onOpenChat || toggleChat}
               className="flex items-center gap-1.5 text-cyan-300 hover:text-cyan-100 transition-colors cursor-pointer"
             >
               <Sparkles className="w-3 h-3 animate-spin" style={{ animationDuration: '4s' }} />

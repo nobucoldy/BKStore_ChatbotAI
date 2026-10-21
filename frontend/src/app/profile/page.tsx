@@ -113,7 +113,6 @@ export default function ProfilePage() {
         onOpenCart={() => router.push('/#catalog-section')}
         onOpenTracking={() => router.push('/orders')}
         onOpenReview={() => setIsReviewOpen(true)}
-        onOpenChat={() => {}}
         onOpenAuth={() => setIsAuthOpen(true)}
       />
 

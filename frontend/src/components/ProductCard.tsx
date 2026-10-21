@@ -36,35 +36,30 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       imageBg: 'bg-gradient-to-b from-amber-50/80 via-white to-amber-50/20',
       priceColor: 'text-rose-600',
       btnColor: 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md shadow-amber-500/30',
-      topLine: 'bg-gradient-to-r from-amber-400 to-orange-500',
     },
     blue: {
       card: 'border-2 border-blue-400/90 bg-white shadow-md shadow-blue-500/10 hover:border-blue-600 hover:shadow-2xl hover:shadow-blue-500/25 hover:-translate-y-1.5',
       imageBg: 'bg-gradient-to-b from-blue-50/80 via-white to-blue-50/20',
       priceColor: 'text-blue-700',
       btnColor: 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/30',
-      topLine: 'bg-gradient-to-r from-blue-400 to-cyan-500',
     },
     indigo: {
       card: 'border-2 border-indigo-400/90 bg-white shadow-md shadow-indigo-500/10 hover:border-indigo-600 hover:shadow-2xl hover:shadow-indigo-500/25 hover:-translate-y-1.5',
       imageBg: 'bg-gradient-to-b from-indigo-50/80 via-white to-indigo-50/20',
       priceColor: 'text-indigo-700',
       btnColor: 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/30',
-      topLine: 'bg-gradient-to-r from-indigo-400 to-purple-500',
     },
     emerald: {
       card: 'border-2 border-emerald-400/90 bg-white shadow-md shadow-emerald-500/10 hover:border-emerald-600 hover:shadow-2xl hover:shadow-emerald-500/25 hover:-translate-y-1.5',
       imageBg: 'bg-gradient-to-b from-emerald-50/80 via-white to-emerald-50/20',
       priceColor: 'text-emerald-700',
       btnColor: 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/30',
-      topLine: 'bg-gradient-to-r from-emerald-400 to-teal-500',
     },
     default: {
       card: 'border-2 border-slate-200/90 bg-white shadow-sm hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1',
       imageBg: 'bg-slate-50',
       priceColor: 'text-blue-700',
       btnColor: 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20',
-      topLine: 'bg-slate-200',
     },
   }[themeColor || 'default'];
 
@@ -103,7 +98,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       className={`group bg-white rounded-2xl ${themeStyles.card} transition-all duration-300 flex flex-col overflow-hidden cursor-pointer relative block shadow-xs`}
     >
       {/* Top Color Accent Line */}
-      <div className={`h-1.5 w-full ${themeStyles.topLine}`}></div>
 
       {/* Top badges */}
       <div className="absolute top-4 left-3 right-3 z-10 flex items-center justify-between">
@@ -173,15 +167,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                 <span className="text-rose-600 font-semibold">Tạm hết hàng</span>
               </>
-            ) : stock <= 3 ? (
+            )  : (
               <>
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                <span className="text-amber-700 font-semibold">Chỉ còn {stock} máy</span>
-              </>
-            ) : (
-              <>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                <span className="text-slate-500 font-medium">Chính hãng • Sẵn hàng giao ngay</span>
               </>
             )}
           </div>

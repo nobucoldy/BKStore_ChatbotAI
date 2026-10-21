@@ -29,26 +29,45 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const openAuthModal = useAuthStore((state) => state.openAuthModal);
   const [warningMsg, setWarningMsg] = useState<string | null>(null);
 
-  // Transition & Animation state for smooth slide-in and slide-out
+  // Transition & Animation state for smooth slide-in and slide-out with staggered delay
   const [shouldRender, setShouldRender] = useState(isOpen);
-  const [isShowing, setIsShowing] = useState(false);
+  const [isOverlayShowing, setIsOverlayShowing] = useState(false);
+  const [isPanelShowing, setIsPanelShowing] = useState(false);
 
   useEffect(() => {
+    let animFrame: number;
+    let openTimer: NodeJS.Timeout;
+    let closeTimer: NodeJS.Timeout;
+
     if (isOpen) {
       setShouldRender(true);
-      const timer = requestAnimationFrame(() => {
-        setIsShowing(true);
-      });
       document.body.style.overflow = 'hidden';
-      return () => cancelAnimationFrame(timer);
+
+      // 1. Hiệu ứng nền mờ xuất hiện ngay lập tức để phản hồi tương tác click
+      animFrame = requestAnimationFrame(() => {
+        setIsOverlayShowing(true);
+      });
+
+      // 2. Delay thao tác trượt giỏ hàng ra vừa phải (80ms) tạo độ mượt mà không gây cảm giác chờ
+      openTimer = setTimeout(() => {
+        setIsPanelShowing(true);
+      }, 80);
     } else {
-      setIsShowing(false);
+      // Khi đóng, thu giỏ hàng về ngay lập tức không bị delay
+      setIsPanelShowing(false);
+      setIsOverlayShowing(false);
       document.body.style.overflow = '';
-      const timer = setTimeout(() => {
+
+      closeTimer = setTimeout(() => {
         setShouldRender(false);
-      }, 300);
-      return () => clearTimeout(timer);
+      }, 350);
     }
+
+    return () => {
+      if (animFrame) cancelAnimationFrame(animFrame);
+      if (openTimer) clearTimeout(openTimer);
+      if (closeTimer) clearTimeout(closeTimer);
+    };
   }, [isOpen]);
 
   // Handle ESC key press
@@ -102,8 +121,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       <div
         onClick={onClose}
         aria-label="Đóng giỏ hàng"
-        className={`fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-300 ease-in-out cursor-pointer ${
-          isShowing ? 'opacity-100' : 'opacity-0'
+        className={`fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-300 ease-out cursor-pointer ${
+          isOverlayShowing ? 'opacity-100' : 'opacity-0'
         }`}
       />
 
@@ -111,8 +130,15 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-10 pointer-events-none">
         <div
           onClick={(e) => e.stopPropagation()} // Stop propagation so clicking inside drawer doesn't close it
-          className={`w-screen max-w-md bg-white shadow-2xl flex flex-col pointer-events-auto transform transition-transform duration-300 ease-out ${
-            isShowing ? 'translate-x-0' : 'translate-x-full ease-in'
+          style={{
+            transitionTimingFunction: isPanelShowing
+              ? 'cubic-bezier(0.16, 1, 0.3, 1)'
+              : 'cubic-bezier(0.4, 0, 0.8, 1)',
+          }}
+          className={`w-screen max-w-md bg-white shadow-2xl flex flex-col pointer-events-auto transform transition-transform ${
+            isPanelShowing
+              ? 'translate-x-0 duration-[380ms]'
+              : 'translate-x-full duration-250'
           }`}
         >
           {/* Header */}

@@ -19,7 +19,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { CartDrawer } from '@/components/CartDrawer';
 import { CheckoutModal } from '@/components/CheckoutModal';
 import { OrderTrackingModal } from '@/components/OrderTrackingModal';
-import { ChatWidget } from '@/components/ChatWidget';
+import { useChatStore } from '@/store/chatStore';
 
 const CATEGORY_NAME_MAP: Record<string, string> = {
   laptop: 'Laptop & Máy tính xách tay',
@@ -58,8 +58,8 @@ export default function CategoryDetailPage() {
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
   const [trackingInitialCode, setTrackingInitialCode] = useState('');
   const [trackingInitialPhone, setTrackingInitialPhone] = useState('');
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatInitialPrompt, setChatInitialPrompt] = useState<string>('');
+  const openChat = useChatStore((state) => state.openChat);
+  const toggleChat = useChatStore((state) => state.toggleChat);
 
   // Load products for this category
   useEffect(() => {
@@ -139,10 +139,9 @@ export default function CategoryDetailPage() {
 
   // Quick Ask AI from Product Card
   const handleAskAI = (product: Product) => {
-    setChatInitialPrompt(
+    openChat(
       `Tư vấn cho tôi về ${product.name}, sản phẩm này có điểm gì nổi bật và phù hợp với nhu cầu nào?`
     );
-    setIsChatOpen(true);
   };
 
   return (
@@ -153,7 +152,7 @@ export default function CategoryDetailPage() {
         onSearchChange={setSearchQuery}
         onOpenCart={() => setIsCartOpen(true)}
         onOpenTracking={() => setIsTrackingOpen(true)}
-        onOpenChat={() => setIsChatOpen((prev) => !prev)}
+        onOpenChat={toggleChat}
       />
 
       {/* 2. Main Category Page */}
@@ -374,12 +373,6 @@ export default function CategoryDetailPage() {
         }}
         initialOrderCode={trackingInitialCode}
         initialPhone={trackingInitialPhone}
-      />
-
-      <ChatWidget
-        isOpen={isChatOpen}
-        onToggle={() => setIsChatOpen((prev) => !prev)}
-        initialPrompt={chatInitialPrompt}
       />
     </div>
   );

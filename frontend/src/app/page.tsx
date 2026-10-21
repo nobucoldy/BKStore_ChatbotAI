@@ -10,11 +10,11 @@ import { CartDrawer } from '@/components/CartDrawer';
 import { CheckoutModal } from '@/components/CheckoutModal';
 import { OrderTrackingModal } from '@/components/OrderTrackingModal';
 import { ReviewModal } from '@/components/ReviewModal';
-import { ChatWidget } from '@/components/ChatWidget';
 import { AuthModal } from '@/components/AuthModal';
 import { MyOrdersModal } from '@/components/MyOrdersModal';
 import { Footer } from '@/components/Footer';
 import { useAuthStore } from '@/store/authStore';
+import { useChatStore } from '@/store/chatStore';
 
 
 import { Brand, Category, Order, Product } from '@/types';
@@ -50,8 +50,9 @@ export default function HomePage() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const openAuthModal = useAuthStore((state) => state.openAuthModal);
+  const openChat = useChatStore((state) => state.openChat);
+  const toggleChat = useChatStore((state) => state.toggleChat);
   const [isMyOrdersOpen, setIsMyOrdersOpen] = useState(false);
 
   // Tracking pre-fill
@@ -62,9 +63,6 @@ export default function HomePage() {
   const [reviewInitialCode, setReviewInitialCode] = useState<string>('');
   const [reviewInitialPhone, setReviewInitialPhone] = useState<string>('');
   const [reviewInitialProductId, setReviewInitialProductId] = useState<string>('');
-
-  // Chat pre-fill prompt
-  const [chatInitialPrompt, setChatInitialPrompt] = useState<string>('');
 
   // Initialize auth
   useEffect(() => {
@@ -203,10 +201,9 @@ export default function HomePage() {
 
   // Quick Ask AI from Product Card
   const handleAskAI = (product: Product) => {
-    setChatInitialPrompt(
+    openChat(
       `Tư vấn cho tôi về sản phẩm ${product.name}, cấu hình này phù hợp với nhu cầu nào?`
     );
-    setIsChatOpen(true);
   };
 
   // After order created successfully, can open tracking directly
@@ -229,7 +226,7 @@ export default function HomePage() {
           setIsTrackingOpen(true);
         }}
         onOpenReview={() => setIsReviewOpen(true)}
-        onOpenChat={() => setIsChatOpen((prev) => !prev)}
+        onOpenChat={toggleChat}
         onOpenAuth={() => openAuthModal()}
         onOpenMyOrders={() => setIsMyOrdersOpen(true)}
       />
@@ -239,8 +236,7 @@ export default function HomePage() {
       <Hero
         onExploreClick={handleExploreClick}
         onOpenChat={() => {
-          setChatInitialPrompt('Chào BK-Bot! Bạn có thể tư vấn cho tôi một chiếc laptop tốt được không?');
-          setIsChatOpen(true);
+          openChat('Chào BK-Bot! Bạn có thể tư vấn cho tôi một chiếc laptop tốt được không?');
         }}
       />
 
@@ -385,7 +381,7 @@ export default function HomePage() {
                     </div>
                     <div>
                       <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                        Laptop
+                        Laptop và máy tính 
                       </h2>
                     </div>
                   </div>
@@ -611,13 +607,6 @@ export default function HomePage() {
           setReviewInitialPhone(phone || '');
           setIsReviewOpen(true);
         }}
-      />
-
-      {/* Floating BK-Bot Chat Widget */}
-      <ChatWidget
-        isOpen={isChatOpen}
-        onToggle={() => setIsChatOpen((prev) => !prev)}
-        initialPrompt={chatInitialPrompt}
       />
     </div>
   );

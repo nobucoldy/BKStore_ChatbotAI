@@ -177,7 +177,6 @@ export default function MyOrdersPage() {
         onOpenCart={() => router.push('/#catalog-section')}
         onOpenTracking={() => {}}
         onOpenReview={() => setIsReviewOpen(true)}
-        onOpenChat={() => {}}
         onOpenAuth={() => setIsAuthOpen(true)}
       />
 

@@ -24,10 +24,11 @@ import { ChatMessage, Product } from '@/types';
 import { sendChatMessage, fetchProductBySlug } from '@/lib/api';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
+import { useChatStore } from '@/store/chatStore';
 
 interface ChatWidgetProps {
-  isOpen: boolean;
-  onToggle: () => void;
+  isOpen?: boolean;
+  onToggle?: () => void;
   initialPrompt?: string;
 }
 
@@ -53,21 +54,28 @@ function cleanAssistantMessage(text: string): string {
 }
 
 export const ChatWidget: React.FC<ChatWidgetProps> = ({
-  isOpen,
-  onToggle,
-  initialPrompt,
+  isOpen: propIsOpen,
+  onToggle: propOnToggle,
+  initialPrompt: propInitialPrompt,
 }) => {
+  const storeIsOpen = useChatStore((state) => state.isOpen);
+  const storeToggle = useChatStore((state) => state.toggleChat);
+  const storeMessages = useChatStore((state) => state.messages);
+  const setStoreMessages = useChatStore((state) => state.setMessages);
+  const storeIsTyping = useChatStore((state) => state.isTyping);
+  const setStoreIsTyping = useChatStore((state) => state.setIsTyping);
+  const storeInitialPrompt = useChatStore((state) => state.initialPrompt);
+  const setStoreInitialPrompt = useChatStore((state) => state.setInitialPrompt);
+  const clearStoreHistory = useChatStore((state) => state.clearHistory);
+
+  const isOpen = propIsOpen !== undefined ? propIsOpen : storeIsOpen;
+  const onToggle = propOnToggle || storeToggle;
+  const messages = storeMessages;
+  const setMessages = setStoreMessages;
+  const isTyping = storeIsTyping;
+  const setIsTyping = setStoreIsTyping;
+
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'msg-welcome',
-      role: 'assistant',
-      content:
-        'Xin chào! Tôi là **BK-Bot**, trợ lý AI kỹ thuật của BK-Store.\n\nTôi có thể giúp bạn:\n• 💻 **Tư vấn cấu hình** laptop, điện thoại theo nhu cầu & túi tiền\n• 🏢 **Kiểm tra tồn kho thực tế** tại 3 chi nhánh (Hà Nội, TP.HCM, Đà Nẵng)\n• 🚚 **Tra cứu vận đơn & tiến trình đơn hàng** theo mã đơn\n• ⭐ **Xem đánh giá thực tế & hướng dẫn đánh giá** đơn hàng đã giao\n• 📖 **Giải đáp chính sách** bảo hành 1 đổi 1 trong 30 ngày, đổi trả & trả góp\n\nBạn đang quan tâm đến sản phẩm hoặc cần hỗ trợ gì ạ?',
-      timestamp: new Date().toISOString(),
-    },
-  ]);
-  const [isTyping, setIsTyping] = useState(false);
   const [addedItemIds, setAddedItemIds] = useState<Record<string, boolean>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<ChatMessage[]>(messages);
@@ -186,26 +194,22 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
 
   const handleClearHistory = () => {
     lastPromptRef.current = '';
-    setMessages([
-      {
-        id: 'msg-welcome',
-        role: 'assistant',
-        content:
-          'Đã làm mới cuộc trò chuyện! Tôi là **BK-Bot**, trợ lý AI của BK-Store. Tôi có thể hỗ trợ gì cho bạn ngay bây giờ ạ?',
-        timestamp: new Date().toISOString(),
-      },
-    ]);
+    clearStoreHistory();
   };
 
   useEffect(() => {
-    if (initialPrompt && initialPrompt.trim() && initialPrompt !== lastPromptRef.current) {
-      lastPromptRef.current = initialPrompt;
+    const prompt = propInitialPrompt || storeInitialPrompt;
+    if (prompt && prompt.trim() && prompt !== lastPromptRef.current) {
+      lastPromptRef.current = prompt;
+      if (storeInitialPrompt) {
+        setStoreInitialPrompt(undefined);
+      }
       const timer = setTimeout(() => {
-        handleSendPrompt(initialPrompt);
+        handleSendPrompt(prompt);
       }, 50);
       return () => clearTimeout(timer);
     }
-  }, [initialPrompt, handleSendPrompt]);
+  }, [propInitialPrompt, storeInitialPrompt, handleSendPrompt, setStoreInitialPrompt]);
 
   useEffect(() => {
     if (isOpen) {

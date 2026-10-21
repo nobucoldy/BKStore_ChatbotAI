@@ -19,7 +19,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { CartDrawer } from '@/components/CartDrawer';
 import { CheckoutModal } from '@/components/CheckoutModal';
 import { OrderTrackingModal } from '@/components/OrderTrackingModal';
-import { ChatWidget } from '@/components/ChatWidget';
+import { useChatStore } from '@/store/chatStore';
 
 const BRAND_NAME_MAP: Record<string, string> = {
   apple: 'Apple',
@@ -58,8 +58,8 @@ export default function BrandDetailPage() {
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
   const [trackingInitialCode, setTrackingInitialCode] = useState('');
   const [trackingInitialPhone, setTrackingInitialPhone] = useState('');
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatInitialPrompt, setChatInitialPrompt] = useState<string>('');
+  const openChat = useChatStore((state) => state.openChat);
+  const toggleChat = useChatStore((state) => state.toggleChat);
 
   // Load products for this brand
   useEffect(() => {
@@ -145,7 +145,7 @@ export default function BrandDetailPage() {
         onSearchChange={setSearchQuery}
         onOpenCart={() => setIsCartOpen(true)}
         onOpenTracking={() => setIsTrackingOpen(true)}
-        onOpenChat={() => setIsChatOpen((prev) => !prev)}
+        onOpenChat={toggleChat}
       />
 
       {/* 2. Main Brand Products Catalog */}
@@ -300,10 +300,9 @@ export default function BrandDetailPage() {
                 key={product.id}
                 product={product}
                 onAskAI={(p) => {
-                  setChatInitialPrompt(
+                  openChat(
                     `Tư vấn cho tôi về sản phẩm ${p.name}, cấu hình này phù hợp với nhu cầu nào?`
                   );
-                  setIsChatOpen(true);
                 }}
               />
             ))}
@@ -343,12 +342,6 @@ export default function BrandDetailPage() {
         }}
         initialOrderCode={trackingInitialCode}
         initialPhone={trackingInitialPhone}
-      />
-
-      <ChatWidget
-        isOpen={isChatOpen}
-        onToggle={() => setIsChatOpen((prev) => !prev)}
-        initialPrompt={chatInitialPrompt}
       />
     </div>
   );
