@@ -57,8 +57,8 @@
       "warrantyMonths": 12,
       "categoryName": "Laptop & Máy tính xách tay",
       "category_name": "Laptop & Máy tính xách tay",
-      "stockQuantity": 8,
-      "stock": 8
+      "stockQuantity": 7,
+      "stock": 7
     },
     {
       "id": "p1000000-0000-0000-0000-000000000003",
@@ -424,8 +424,35 @@
       "stock": 13
     }
   ],
-  "updatedAt": "2026-10-21T15:47:18.512Z",
+  "updatedAt": "2026-10-21T18:09:15.562Z",
   "orders": [
+    {
+      "id": "order-1792606155560",
+      "orderCode": "#BK-4802",
+      "customerName": "Nguyễn Văn An",
+      "phone": "0912345678",
+      "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+      "note": "",
+      "branchId": "b1000000-0000-0000-0000-000000000002",
+      "branchName": "BK-Store Quận 1 (TP. Hồ Chí Minh)",
+      "totalAmount": 49990000,
+      "paymentMethod": "COD",
+      "status": "pending",
+      "trackingInfo": "Đơn hàng mới tạo — Xuất kho từ chi nhánh BK-Store Quận 1 (TP. Hồ Chí Minh), đang chờ quản trị viên duyệt kho.",
+      "createdAt": "2026-10-21T18:09:15.560Z",
+      "items": [
+        {
+          "productId": "p1000000-0000-0000-0000-000000000002",
+          "productSlug": "macbook-pro-14-m3-pro-18gb-512gb",
+          "productName": "Apple MacBook Pro 14 M3 Pro (18GB RAM, 512GB SSD)",
+          "productThumbnail": "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&q=80",
+          "quantity": 1,
+          "unitPrice": 49990000,
+          "price": 49990000
+        }
+      ],
+      "userId": "u-customer-001"
+    },
     {
       "id": "order-1792597191529",
       "orderCode": "#BK-4125",
@@ -1407,7 +1434,7 @@
     "p1000000-0000-0000-0000-000000000001:b1000000-0000-0000-0000-000000000002": 9,
     "p1000000-0000-0000-0000-000000000001:b1000000-0000-0000-0000-000000000003": 8,
     "p1000000-0000-0000-0000-000000000002:b1000000-0000-0000-0000-000000000001": 0,
-    "p1000000-0000-0000-0000-000000000002:b1000000-0000-0000-0000-000000000002": 3,
+    "p1000000-0000-0000-0000-000000000002:b1000000-0000-0000-0000-000000000002": 2,
     "p1000000-0000-0000-0000-000000000002:b1000000-0000-0000-0000-000000000003": 3,
     "p1000000-0000-0000-0000-000000000003:b1000000-0000-0000-0000-000000000001": 0,
     "p1000000-0000-0000-0000-000000000003:b1000000-0000-0000-0000-000000000002": 1,

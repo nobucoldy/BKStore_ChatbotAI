@@ -78,10 +78,16 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   const [input, setInput] = useState('');
   const [addedItemIds, setAddedItemIds] = useState<Record<string, boolean>>({});
   const [limitErrorItemIds, setLimitErrorItemIds] = useState<Record<string, string | undefined>>({});
+  const [isStreaming, setIsStreaming] = useState(false);
+  const isStreamingRef = useRef<boolean>(false);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<ChatMessage[]>(messages);
   messagesRef.current = messages;
-  const lastPromptRef = useRef<string>('');
+  const isTypingRef = useRef<boolean>(isTyping);
+  isTypingRef.current = isTyping;
+  const isBusy = isTyping || isStreaming;
+  const lastPropPromptRef = useRef<string | undefined>(undefined);
   const addItem = useCartStore((state) => state.addItem);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const openAuthModal = useAuthStore((state) => state.openAuthModal);
@@ -128,9 +134,24 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     }
   };
 
+  const scrollToBottom = React.useCallback((smooth = true) => {
+    if (messagesContainerRef.current) {
+      if (smooth) {
+        messagesContainerRef.current.scrollTo({
+          top: messagesContainerRef.current.scrollHeight,
+          behavior: 'smooth',
+        });
+      } else {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      }
+    } else {
+      messagesEndRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
+    }
+  }, []);
+
   const handleSendPrompt = React.useCallback(
-    async (text: string) => {
-      if (!text.trim() || isTyping) return;
+    async (text: string, force = false) => {
+      if (!text.trim() || (!force && (isTypingRef.current || isStreamingRef.current))) return;
 
       const userMsg: ChatMessage = {
         id: `usr-${Date.now()}`,
@@ -162,25 +183,91 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
         }
       }
 
+      const startTime = performance.now();
+
       try {
         const responseData = await sendChatMessage({
           message: text.trim(),
           history: historyPayload,
         });
 
-        const botMsg: ChatMessage = {
-          id: `ast-${Date.now()}`,
+        // 1. Natural Thinking Delay (Labor illusion):
+        // Giữ hiệu ứng đang soạn tin tối thiểu từ 550ms - 720ms để người dùng bắt nhịp tự nhiên
+        const elapsed = performance.now() - startTime;
+        const naturalThinkingDelay = 550 + Math.floor(Math.random() * 170); // 550ms - 720ms
+        if (elapsed < naturalThinkingDelay) {
+          await new Promise((resolve) => setTimeout(resolve, naturalThinkingDelay - elapsed));
+        }
+
+        const fullContent = cleanAssistantMessage(responseData.reply);
+        const botMsgId = `ast-${Date.now()}`;
+        const words = fullContent.split(' ');
+
+        // Nếu câu trả lời quá ngắn (<= 3 từ), hiển thị luôn
+        if (words.length <= 3) {
+          const finalBotMsg: ChatMessage = {
+            id: botMsgId,
+            role: 'assistant',
+            content: fullContent,
+            cards: responseData.cards,
+            citations: responseData.citations,
+            suggestions: responseData.suggestions,
+            toolUsed: responseData.toolUsed,
+            metrics: responseData.metrics,
+            timestamp: new Date().toISOString(),
+          };
+          setMessages((prev) => [...prev, finalBotMsg]);
+          setIsTyping(false);
+          return;
+        }
+
+        // 2. Progressive Typewriter Effect (Hiệu ứng đánh máy chữ mượt mà)
+        isStreamingRef.current = true;
+        setIsStreaming(true);
+        setIsTyping(false); // Ẩn bong bóng 3 chấm khi chữ bắt đầu xuất hiện
+
+        const CHUNK_STEP = 2; // Gõ 2 từ mỗi nhịp
+        let cursor = CHUNK_STEP;
+        const initialChunk = words.slice(0, cursor).join(' ');
+
+        const initialBotMsg: ChatMessage = {
+          id: botMsgId,
           role: 'assistant',
-          content: cleanAssistantMessage(responseData.reply),
-          cards: responseData.cards,
+          content: initialChunk,
           citations: responseData.citations,
-          suggestions: responseData.suggestions,
           toolUsed: responseData.toolUsed,
           metrics: responseData.metrics,
           timestamp: new Date().toISOString(),
+          // Chưa bung thẻ sản phẩm và gợi ý khi đang gõ chữ
         };
 
-        setMessages((prev) => [...prev, botMsg]);
+        setMessages((prev) => [...prev, initialBotMsg]);
+
+        while (cursor < words.length && isStreamingRef.current) {
+          await new Promise((resolve) => setTimeout(resolve, 24)); // 24ms mỗi nhịp gõ
+          cursor = Math.min(cursor + CHUNK_STEP, words.length);
+          const progressiveText = words.slice(0, cursor).join(' ');
+
+          setMessages((prev) =>
+            prev.map((m) => (m.id === botMsgId ? { ...m, content: progressiveText } : m))
+          );
+          scrollToBottom(false);
+        }
+
+        // 3. Hoàn tất gõ chữ: Bung toàn bộ nội dung hoàn chỉnh kèm Thẻ sản phẩm & Nút gợi ý
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === botMsgId
+              ? {
+                  ...m,
+                  content: fullContent,
+                  cards: responseData.cards,
+                  suggestions: responseData.suggestions,
+                }
+              : m
+          )
+        );
+        scrollToBottom(true);
       } catch (err: any) {
         console.error('Lỗi khi gửi tin nhắn cho AI:', err);
         const errorMsg: ChatMessage = {
@@ -193,35 +280,51 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
         setMessages((prev) => [...prev, errorMsg]);
       } finally {
         setIsTyping(false);
+        setIsStreaming(false);
+        isStreamingRef.current = false;
       }
     },
-    [isTyping]
+    [setMessages, setIsTyping, scrollToBottom]
   );
 
   const handleClearHistory = () => {
-    lastPromptRef.current = '';
+    lastPropPromptRef.current = undefined;
+    isStreamingRef.current = false;
+    setIsStreaming(false);
     clearStoreHistory();
   };
 
   useEffect(() => {
-    const prompt = propInitialPrompt || storeInitialPrompt;
-    if (prompt && prompt.trim() && prompt !== lastPromptRef.current) {
-      lastPromptRef.current = prompt;
-      if (storeInitialPrompt) {
-        setStoreInitialPrompt(undefined);
-      }
-      const timer = setTimeout(() => {
-        handleSendPrompt(prompt);
-      }, 50);
-      return () => clearTimeout(timer);
+    return () => {
+      isStreamingRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    // 1. If propInitialPrompt changed from props
+    if (
+      propInitialPrompt &&
+      propInitialPrompt.trim() &&
+      propInitialPrompt !== lastPropPromptRef.current
+    ) {
+      lastPropPromptRef.current = propInitialPrompt;
+      handleSendPrompt(propInitialPrompt, true);
+      return;
+    }
+
+    // 2. If storeInitialPrompt was set by openChat(prompt)
+    if (storeInitialPrompt && storeInitialPrompt.trim()) {
+      const promptToSend = storeInitialPrompt;
+      setStoreInitialPrompt(undefined);
+      handleSendPrompt(promptToSend, true);
     }
   }, [propInitialPrompt, storeInitialPrompt, handleSendPrompt, setStoreInitialPrompt]);
 
   useEffect(() => {
     if (isOpen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      scrollToBottom(true);
     }
-  }, [messages, isOpen, isTyping]);
+  }, [messages.length, isOpen, isTyping, scrollToBottom]);
 
   return (
     <>
@@ -285,8 +388,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs bg-slate-50/70">
-            {messages.map((msg) => (
+          <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs bg-slate-50/70">
+            {messages.map((msg, idx) => (
               <div
                 key={msg.id}
                 className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -309,7 +412,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                     {msg.role === 'user' ? (
                       msg.content
                     ) : (
-                      <ReactMarkdown
+                      <>
+                        <ReactMarkdown
                         components={{
                           h1: ({ children }) => (
                             <h1 className="text-sm font-bold text-slate-900 mt-2.5 mb-1.5 flex items-center gap-1.5">
@@ -375,6 +479,10 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                       >
                         {msg.content}
                       </ReactMarkdown>
+                      {isStreaming && idx === messages.length - 1 && msg.role === 'assistant' && (
+                        <span className="inline-block w-1.5 h-3 bg-blue-500 ml-1 animate-pulse rounded-xs align-middle" />
+                      )}
+                    </>
                     )}
                   </div>
 
@@ -696,7 +804,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                           key={sIdx}
                           type="button"
                           onClick={() => handleSendPrompt(suggestion)}
-                          disabled={isTyping}
+                          disabled={isBusy}
                           className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-blue-50/90 hover:bg-blue-600 hover:text-white text-blue-700 border border-blue-200 transition-all shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer disabled:opacity-50 text-left"
                         >
                           💬 {suggestion}
@@ -759,7 +867,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
               <button
                 key={idx}
                 onClick={() => handleSendPrompt(p)}
-                disabled={isTyping}
+                disabled={isBusy}
                 className="shrink-0 px-2.5 py-1 text-[11px] font-medium bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 rounded-full border border-slate-200 transition-colors flex items-center gap-1 disabled:opacity-50"
               >
                 <span>{p}</span>
@@ -780,13 +888,13 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              disabled={isTyping}
+              disabled={isBusy}
               placeholder="Nhập câu hỏi công nghệ hoặc mã đơn (#BK-1024)..."
               className="flex-1 bg-slate-100 text-xs text-slate-800 rounded-xl px-3 py-2.5 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 border border-transparent focus:border-blue-400 transition-all disabled:opacity-60"
             />
             <button
               type="submit"
-              disabled={!input.trim() || isTyping}
+              disabled={!input.trim() || isBusy}
               className="p-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-40 text-white rounded-xl shadow-xs transition-all flex items-center justify-center shrink-0"
               title="Gửi câu hỏi"
             >

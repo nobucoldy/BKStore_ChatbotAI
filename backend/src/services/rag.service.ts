@@ -2,13 +2,19 @@ import fs from 'fs/promises';
 import path from 'path';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
+import NodeCache from 'node-cache';
 import { pool, checkDbConnection } from '../config/db';
+import { geminiKeyManager } from '../config/gemini-keys';
 
 dotenv.config();
 
 const apiKey = process.env.GEMINI_API_KEY || '';
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
-const EMBED_MODEL = 'gemini-embedding-001';
+const EMBED_MODEL = process.env.GEMINI_EMBED_MODEL || 'gemini-embedding-001';
+
+// Bộ nhớ đệm cho kết quả tìm kiếm RAG và Query Embeddings (TTL 10 phút)
+const ragQueryCache = new NodeCache({ stdTTL: 600, checkperiod: 120, maxKeys: 1000 });
+const queryVectorCache = new NodeCache({ stdTTL: 1800, checkperiod: 300, maxKeys: 2000 });
 
 export interface KnowledgeDocument {
   id: string;
@@ -272,8 +278,89 @@ class RagService {
       }
 
       console.log(`✅ [RAG] Hoàn tất tính toán Embeddings cho ${count + cachedCount}/${this.chunks.length} chunks.`);
+
+      // Tự động đồng bộ lên PostgreSQL PGVector nếu Database đang sẵn sàng
+      this.syncToPgVector().catch((err) => {
+        console.warn('⚠️ [PGVector] Background sync notice:', err.message);
+      });
     } finally {
       this.isVectorizing = false;
+    }
+  }
+
+  /**
+   * Đồng bộ toàn bộ dữ liệu tài liệu và vector chunks vào PostgreSQL PGVector
+   */
+  public async syncToPgVector(): Promise<void> {
+    try {
+      const isDbReady = await checkDbConnection();
+      if (!isDbReady) {
+        return;
+      }
+
+      const client = await pool.connect();
+      try {
+        // Kiểm tra xem bảng knowledge_chunks đã có dữ liệu vector chưa
+        const checkRes = await client.query('SELECT COUNT(*) FROM knowledge_chunks WHERE embedding IS NOT NULL');
+        const count = parseInt(checkRes.rows[0].count, 10);
+
+        if (count >= this.chunks.length) {
+          console.log(`⚡ [PGVector] Cơ sở dữ liệu PostgreSQL đã có đầy đủ ${count} vector chunks.`);
+          return;
+        }
+
+        console.log(`📤 [PGVector] Đang đồng bộ ${this.chunks.length} chunks vào PostgreSQL PGVector...`);
+        await client.query('BEGIN');
+
+        for (const doc of this.documents) {
+          const docRes = await client.query(
+            `INSERT INTO knowledge_documents (title, category, source_file)
+             VALUES ($1, $2, $3)
+             ON CONFLICT DO NOTHING
+             RETURNING id`,
+            [doc.title, doc.category, doc.filename]
+          );
+
+          let docDbId: string;
+          if (docRes.rows.length > 0) {
+            docDbId = docRes.rows[0].id;
+          } else {
+            const existing = await client.query(
+              `SELECT id FROM knowledge_documents WHERE title = $1 LIMIT 1`,
+              [doc.title]
+            );
+            docDbId = existing.rows[0]?.id;
+          }
+
+          if (!docDbId) continue;
+
+          const docChunks = this.chunks.filter((c) => c.documentId === doc.id);
+          for (const chunk of docChunks) {
+            const vectorStr = chunk.embedding && chunk.embedding.length > 0 
+              ? `[${chunk.embedding.join(',')}]` 
+              : null;
+
+            await client.query(
+              `INSERT INTO knowledge_chunks (document_id, chunk_index, content, metadata, embedding)
+               VALUES ($1, $2, $3, $4, ${vectorStr ? '$5::vector' : 'NULL'})
+               ON CONFLICT DO NOTHING`,
+              vectorStr 
+                ? [docDbId, chunk.chunkIndex, chunk.content, JSON.stringify({ sectionTitle: chunk.sectionTitle }), vectorStr]
+                : [docDbId, chunk.chunkIndex, chunk.content, JSON.stringify({ sectionTitle: chunk.sectionTitle })]
+            );
+          }
+        }
+
+        await client.query('COMMIT');
+        console.log(`✅ [PGVector] Đồng bộ hóa thành công dữ liệu tri thức vào PostgreSQL PGVector.`);
+      } catch (err: any) {
+        await client.query('ROLLBACK');
+        console.warn('⚠️ [PGVector] Lỗi khi đồng bộ vector vào PostgreSQL:', err.message);
+      } finally {
+        client.release();
+      }
+    } catch (err: any) {
+      console.warn('⚠️ [PGVector] Database chưa sẵn sàng để đồng bộ vector:', err.message);
     }
   }
 
@@ -295,64 +382,128 @@ class RagService {
   }
 
   /**
-   * Tính điểm tương đồng từ khóa / Lexical Overlap cho tiếng Việt
+   * Tính điểm tương đồng từ khóa tối ưu cao với từ khóa đã được tiền phân tích (Pre-tokenized)
    */
-  private lexicalScore(query: string, content: string): number {
-    const qWords = query.toLowerCase().replace(/[^a-z0-9à-ỹ\s]/gi, '').split(/\s+/).filter((w) => w.length > 1);
+  private lexicalScorePrecomputed(qWords: string[], lowerContent: string): number {
     if (qWords.length === 0) return 0;
-
-    const lowerContent = content.toLowerCase();
     let matches = 0;
-
     for (const w of qWords) {
       if (lowerContent.includes(w)) {
         matches++;
       }
     }
-
     return matches / qWords.length;
   }
 
   /**
-   * TÌM KIẾM TRI THỨC NGỮ NGHĨA (Hybrid Semantic Search)
-   * Kết hợp Dense Vector Cosine Similarity + Lexical Overlap
+   * TÌM KIẾM TRI THỨC NGỮ NGHĨA
+   * Kiến trúc lai (Hybrid Engine):
+   * 1. Kiểm tra Cache RAG nhanh (0ms)
+   * 2. Ưu tiên PostgreSQL + PGVector (với HNSW Index)
+   * 3. Fallback mượt mà sang bộ nhớ đệm In-Memory nếu Database offline
    */
   public async search(query: string, topK = 3): Promise<SearchResult[]> {
     if (!this.isInitialized) {
       await this.initialize();
     }
 
-    if (!query.trim() || this.chunks.length === 0) {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery || this.chunks.length === 0) {
       return [];
     }
 
-    let queryVector: number[] | null = null;
+    // 1. Kiểm tra Cache truy vấn RAG (Trả về ngay lập tức nếu câu hỏi trùng lặp - 0ms)
+    const cacheKey = `rag:${trimmedQuery.toLowerCase()}:${topK}`;
+    const cachedResults = ragQueryCache.get<SearchResult[]>(cacheKey);
+    if (cachedResults) {
+      return cachedResults;
+    }
 
-    // Try computing query embedding via Gemini
-    if (genAI) {
+    // 2. Tiền xử lý từ khóa truy vấn
+    const qWords = trimmedQuery
+      .toLowerCase()
+      .replace(/[^a-z0-9à-ỹ\s]/gi, '')
+      .split(/\s+/)
+      .filter((w) => w.length > 1);
+
+    // 3. Tính toán Vector truy vấn (kèm Cache & Tự động Failover Key nếu hết hạn ngạch)
+    let queryVector: number[] | null = queryVectorCache.get<number[]>(trimmedQuery.toLowerCase()) || null;
+
+    if (!queryVector && geminiKeyManager.getKeyCount() > 0) {
       try {
-        const embedModel = genAI.getGenerativeModel({ model: EMBED_MODEL });
-        const res = await embedModel.embedContent(query);
-        if (res?.embedding?.values) {
-          queryVector = res.embedding.values;
+        queryVector = await geminiKeyManager.executeWithRotation(async (activeGenAI) => {
+          const embedModel = activeGenAI.getGenerativeModel({ model: EMBED_MODEL });
+          const embedPromise = embedModel.embedContent(trimmedQuery);
+          const timeoutPromise = new Promise<null>((_, reject) =>
+            setTimeout(() => reject(new Error('Embedding API timeout')), 2000)
+          );
+          const res: any = await Promise.race([embedPromise, timeoutPromise]);
+          return res?.embedding?.values || null;
+        });
+        if (queryVector) {
+          queryVectorCache.set(trimmedQuery.toLowerCase(), queryVector);
         }
       } catch (err: unknown) {
-        // Fall back to lexical if API limit / offline
-        console.warn('[RAG Search] Embedding API fallback to lexical search:', (err as Error).message);
+        // Fall back mượt mà nếu hết hạn mức API hoặc mạng chậm
       }
     }
 
+    // 4. Ưu tiên tìm kiếm bằng PostgreSQL PGVector nếu Database đang Online
+    if (queryVector && queryVector.length > 0) {
+      try {
+        const isDbReady = await checkDbConnection();
+        if (isDbReady) {
+          const vectorStr = `[${queryVector.join(',')}]`;
+          const pgSql = `
+            SELECT 
+              kc.id,
+              kc.chunk_index AS "chunkIndex",
+              kc.content,
+              kd.id AS "documentId",
+              kd.title AS "documentTitle",
+              kd.category,
+              1 - (kc.embedding <=> $1::vector) AS score
+            FROM knowledge_chunks kc
+            JOIN knowledge_documents kd ON kc.document_id = kd.id
+            WHERE kc.embedding IS NOT NULL
+            ORDER BY kc.embedding <=> $1::vector
+            LIMIT $2;
+          `;
+          const { rows } = await pool.query(pgSql, [vectorStr, topK]);
+          if (rows && rows.length > 0) {
+            const pgResults: SearchResult[] = rows.map((r: any) => ({
+              chunk: {
+                id: r.id,
+                documentId: r.documentId,
+                documentTitle: r.documentTitle,
+                category: r.category,
+                chunkIndex: r.chunkIndex,
+                content: r.content,
+              },
+              score: parseFloat(r.score) || 0,
+            }));
+            ragQueryCache.set(cacheKey, pgResults);
+            return pgResults;
+          }
+        }
+      } catch (pgErr: any) {
+        // Tự động chuyển sang fallback bộ nhớ mà không làm gián đoạn người dùng
+      }
+    }
+
+    // 5. Fallback: Thuật toán In-Memory tối ưu hóa cao
     const scoredResults: SearchResult[] = [];
 
     for (const chunk of this.chunks) {
-      const lexical = this.lexicalScore(query, chunk.content);
+      const lowerContent = chunk.content.toLowerCase();
+      const lexical = this.lexicalScorePrecomputed(qWords, lowerContent);
       let vectorSim = 0;
 
       if (queryVector && chunk.embedding && chunk.embedding.length === queryVector.length) {
         vectorSim = this.cosineSimilarity(queryVector, chunk.embedding);
       }
 
-      // Hybrid Score: 70% Dense Vector + 30% Lexical matching
+      // Điểm số kết hợp (Hybrid Score): 70% Dense Vector + 30% Lexical
       const finalScore = queryVector && chunk.embedding ? vectorSim * 0.7 + lexical * 0.3 : lexical;
 
       scoredResults.push({
@@ -361,11 +512,14 @@ class RagService {
       });
     }
 
-    // Sort by highest score descending
+    // Sắp xếp giảm dần theo độ tương quan
     scoredResults.sort((a, b) => b.score - a.score);
 
-    // Return Top-K results with score > 0.15 threshold
-    return scoredResults.filter((r) => r.score > 0.15).slice(0, topK);
+    const finalFiltered = scoredResults.filter((r) => r.score > 0.15).slice(0, topK);
+
+    // Lưu vào cache
+    ragQueryCache.set(cacheKey, finalFiltered);
+    return finalFiltered;
   }
 
   /**

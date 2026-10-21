@@ -8,6 +8,7 @@ import { Product } from '@/types';
 import { formatPrice } from '@/lib/utils';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
+import { useChatStore } from '@/store/chatStore';
 
 interface ProductCardProps {
   product: Product;
@@ -27,6 +28,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const addItem = useCartStore((state) => state.addItem);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const openAuthModal = useAuthStore((state) => state.openAuthModal);
+  const openChat = useChatStore((state) => state.openChat);
 
   const stock = product.stock ?? product.stock_quantity ?? 0;
   const isOutOfStock = stock <= 0;
@@ -89,6 +91,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     router.push(`/brands/${encodeURIComponent(product.brand.toLowerCase())}`);
   };
 
+  const handleCardClick = () => {
+    router.push(`/products/${product.slug}`);
+  };
+
+  const handleAskAI = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onAskAI) {
+      onAskAI(product);
+    } else {
+      openChat(
+        `Tư vấn cho tôi về sản phẩm ${product.name}, cấu hình này phù hợp với nhu cầu nào?`
+      );
+    }
+  };
+
   const discountPercent =
     product.originalPrice && product.originalPrice > product.price
       ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
@@ -98,8 +116,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const specChips = Object.entries(product.specs || {}).slice(0, 3);
 
   return (
-    <Link
-      href={`/products/${product.slug}`}
+    <div
+      onClick={handleCardClick}
       className={`group bg-white rounded-2xl ${themeStyles.card} transition-all duration-300 flex flex-col overflow-hidden cursor-pointer relative block shadow-xs`}
     >
       {/* Top Color Accent Line */}
@@ -145,9 +163,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <div className="p-4 flex-1 flex flex-col justify-between gap-3">
         <div>
           {/* Title */}
-          <h3 className="font-bold text-slate-900 text-sm line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
-            {product.name}
-          </h3>
+          <Link
+            href={`/products/${product.slug}`}
+            onClick={(e) => e.stopPropagation()}
+            className="block"
+          >
+            <h3 className="font-bold text-slate-900 text-sm line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
+              {product.name}
+            </h3>
+          </Link>
 
           {/* Spec Chips */}
           <div className="flex flex-wrap gap-1.5 mt-2.5">
@@ -241,12 +265,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               {/* Nút Hỏi nhanh Chatbot (Icon nhỏ gọn nằm bên phải nút Thêm, có khoảng cách an toàn với viền card) */}
               <button
                 type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onAskAI?.(product);
-                }}
-                className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-600 hover:text-cyan-700 border border-cyan-300/80 transition-all flex items-center justify-center shadow-xs active:scale-95 shrink-0"
+                onClick={handleAskAI}
+                className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-600 hover:text-cyan-700 border border-cyan-300/80 transition-all flex items-center justify-center shadow-xs active:scale-95 shrink-0 cursor-pointer"
                 title="Hỏi trợ lý AI BK-Bot về sản phẩm này"
               >
                 <Sparkles className="w-3.5 h-3.5" />
@@ -255,6 +275,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 };

@@ -77,7 +77,7 @@ async function runChatTests() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        message: 'Kiểm tra giúp mình đơn hàng #BK-1024 với',
+        message: 'Kiểm tra giúp mình đơn hàng #BK-1024 số điện thoại 0912345678 với',
       }),
     });
     const data4 = (await res4.json()) as any;

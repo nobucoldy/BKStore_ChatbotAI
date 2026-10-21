@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
 import { ragService, SearchResult } from './rag.service';
 import { products as seedProducts } from '../db/seedData';
+import { geminiKeyManager } from '../config/gemini-keys';
 import {
   checkInventory,
   trackOrder,
@@ -19,17 +20,53 @@ import {
   ProductReviewsResult,
 } from './ai-tools.service';
 import { getOrdersByUserId, getOrdersByPhone } from './order.service';
+import NodeCache from 'node-cache';
 
 dotenv.config();
 
 const apiKey = process.env.GEMINI_API_KEY || '';
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
+// Bộ nhớ đệm lưu câu trả lời cho các câu hỏi phổ biến (TTL 5 phút)
+const chatResponseCache = new NodeCache({ stdTTL: 300, checkperiod: 60, maxKeys: 1000 });
+
+// Hàng đợi điều tiết Concurrency cho Gemini API (Tối đa 8 requests đồng thời, bảo vệ khỏi 429)
+class ConcurrencyLimiter {
+  private running = 0;
+  private queue: Array<() => void> = [];
+
+  constructor(private maxConcurrent: number) {}
+
+  async acquire(): Promise<void> {
+    if (this.running < this.maxConcurrent) {
+      this.running++;
+      return;
+    }
+    return new Promise<void>((resolve) => {
+      this.queue.push(() => {
+        this.running++;
+        resolve();
+      });
+    });
+  }
+
+  release(): void {
+    this.running--;
+    if (this.queue.length > 0) {
+      const next = this.queue.shift();
+      if (next) next();
+    }
+  }
+}
+
+const geminiLimiter = new ConcurrencyLimiter(8);
+
 // Danh sách các model ưu tiên thử nghiệm (fallback nếu gặp 503/429 tạm thời)
 const CANDIDATE_MODELS = [
+  'gemini-3.5-flash-lite',
+  'gemini-3.5-flash',
   'gemini-3.8-flash',
   'gemini-flash-latest',
-  'gemini-3.5-flash',
 ];
 
 const unavailableModels = new Set<string>();
@@ -418,6 +455,192 @@ class ChatService {
   }
 
   /**
+   * Bộ nhận diện câu chào hỏi, hỏi danh tính bot và phép lịch sự (Smalltalk & Greeting Interceptor)
+   * Giúp phản hồi ngay lập tức (0ms), bảo toàn 100% Quota cho Gemini API
+   */
+  public detectSmalltalk(text: string, norm: string): 'greeting' | 'about_bot' | 'courtesy' | null {
+    const cleanNorm = norm.trim();
+
+    // 1. Nhóm hỏi về danh tính, chức năng của Bot (About Bot)
+    const isAboutBot =
+      cleanNorm === 'ban la ai' ||
+      cleanNorm.includes('ban la ai') ||
+      cleanNorm === 'ban ten gi' ||
+      cleanNorm.includes('ban ten gi') ||
+      cleanNorm.includes('em la ai') ||
+      cleanNorm.includes('em ten gi') ||
+      cleanNorm.includes('may la ai') ||
+      cleanNorm.includes('may ten gi') ||
+      cleanNorm.includes('ai day') ||
+      cleanNorm.includes('ai the') ||
+      cleanNorm.includes('ai day nhi') ||
+      cleanNorm.includes('ten gi the') ||
+      cleanNorm.includes('ten ban la gi') ||
+      cleanNorm.includes('ten cua ban la gi') ||
+      cleanNorm.includes('ten cua em la gi') ||
+      cleanNorm.includes('gioi thieu ve ban') ||
+      cleanNorm.includes('gioi thieu ban than') ||
+      cleanNorm.includes('gioi thieu ve minh') ||
+      cleanNorm.includes('gioi thieu em di') ||
+      cleanNorm.includes('gioi thieu ve bot') ||
+      cleanNorm.includes('lam duoc gi') ||
+      cleanNorm.includes('lam duoc nhung gi') ||
+      cleanNorm.includes('co the lam duoc gi') ||
+      cleanNorm.includes('co the lam gi') ||
+      cleanNorm.includes('co the lam nhung gi') ||
+      cleanNorm.includes('giup duoc gi') ||
+      cleanNorm.includes('ho tro duoc gi') ||
+      cleanNorm.includes('co the giup gi') ||
+      cleanNorm.includes('ban lam duoc gi') ||
+      cleanNorm.includes('bot lam duoc gi') ||
+      cleanNorm.includes('em lam duoc gi') ||
+      cleanNorm.includes('ban giup duoc gi') ||
+      cleanNorm.includes('ban co the lam gi') ||
+      cleanNorm.includes('bot co the lam gi') ||
+      cleanNorm.includes('em co the lam gi') ||
+      cleanNorm.includes('chuc nang cua ban') ||
+      cleanNorm.includes('chuc nang cua bot') ||
+      cleanNorm.includes('chuc nang cua em') ||
+      cleanNorm.includes('tinh nang cua bot') ||
+      cleanNorm.includes('ban la robot hay') ||
+      cleanNorm.includes('ban la nguoi hay') ||
+      cleanNorm.includes('ban la con gi') ||
+      cleanNorm.includes('tro ly ao la gi') ||
+      cleanNorm.includes('bk bot la gi') ||
+      cleanNorm.includes('bkbot la gi') ||
+      cleanNorm.includes('bk bot la ai') ||
+      cleanNorm.includes('bkbot la ai') ||
+      cleanNorm === 'who are you' ||
+      cleanNorm.includes('who are you') ||
+      cleanNorm.includes('what is your name') ||
+      cleanNorm.includes('what can you do') ||
+      cleanNorm.includes('tell me about yourself');
+
+    if (isAboutBot) {
+      return 'about_bot';
+    }
+
+    // 2. Nhóm Lịch sự: Cảm ơn & Tạm biệt (Courtesy)
+    const COURTESY_EXACT = new Set([
+      'cam on',
+      'cam on nhe',
+      'cam on ban',
+      'cam on bot',
+      'cam on shop',
+      'cam on em',
+      'cam on nhieu',
+      'thanks',
+      'thank you',
+      'thank bot',
+      'thanks bot',
+      'thank shop',
+      'thanks shop',
+      'ok cam on',
+      'oke cam on',
+      'da cam on',
+      'tam biet',
+      'tam biet bot',
+      'tam biet shop',
+      'bye',
+      'bye bot',
+      'bye shop',
+      'goodbye',
+      'hen gap lai',
+      'chuc mot ngay tot lanh',
+      'chuc buoi toi vui ve',
+      'chuc ngay moi vui ve',
+    ]);
+
+    const isCourtesy =
+      COURTESY_EXACT.has(cleanNorm) ||
+      cleanNorm.startsWith('cam on') ||
+      cleanNorm.startsWith('thank') ||
+      cleanNorm.startsWith('tam biet') ||
+      cleanNorm.startsWith('bye ') ||
+      cleanNorm === 'bye';
+
+    if (isCourtesy) {
+      return 'courtesy';
+    }
+
+    // 3. Nhóm Chào hỏi (Greeting)
+    const GREETING_EXACT = new Set([
+      'hi',
+      'hello',
+      'helo',
+      'hey',
+      'alo',
+      'alo shop',
+      'alo bot',
+      'alô',
+      'hola',
+      'hallo',
+      'chao',
+      'xin chao',
+      'chao ban',
+      'chao bot',
+      'chao em',
+      'chao shop',
+      'chao ad',
+      'chao admin',
+      'chao anh',
+      'chao chi',
+      'chao ca nha',
+      'chao shop nhe',
+      'chao shop nha',
+      'hello bot',
+      'hi bot',
+      'helo bot',
+      'hey bot',
+      'good morning',
+      'good afternoon',
+      'good evening',
+      'chao buoi sang',
+      'chao buoi chieu',
+      'chao buoi toi',
+      'co ai o day khong',
+      'co ai truc khong',
+      'co ai khong',
+      'shop con mo cua khong',
+      'shop oi',
+      'bot oi',
+    ]);
+
+    if (GREETING_EXACT.has(cleanNorm)) {
+      return 'greeting';
+    }
+
+    // Câu bắt đầu bằng từ chào hỏi và không chứa câu hỏi nghiệp vụ
+    const isGreetingPrefix =
+      cleanNorm.startsWith('hi ') ||
+      cleanNorm.startsWith('hello ') ||
+      cleanNorm.startsWith('hey ') ||
+      cleanNorm.startsWith('alo ') ||
+      cleanNorm.startsWith('xin chao ') ||
+      cleanNorm.startsWith('chao ');
+
+    if (isGreetingPrefix) {
+      const words = cleanNorm.split(/\s+/);
+      const hasTaskIndicator =
+        cleanNorm.includes('trieu') ||
+        cleanNorm.includes('laptop') ||
+        cleanNorm.includes('smartphone') ||
+        cleanNorm.includes('dien thoai') ||
+        cleanNorm.includes('may tinh') ||
+        cleanNorm.includes('don hang') ||
+        cleanNorm.includes('ton kho') ||
+        cleanNorm.includes('gia') ||
+        cleanNorm.includes('mua');
+
+      if (words.length <= 5 && !hasTaskIndicator) {
+        return 'greeting';
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Phân tích ý định người dùng để tiền xử lý công cụ (Deterministic Intent Parser)
    */
   private detectIntent(
@@ -437,6 +660,9 @@ class ChatService {
       | 'clarify_order_tracking'
       | 'clarify_inventory_product'
       | 'clarify_review_product'
+      | 'greeting'
+      | 'about_bot'
+      | 'courtesy'
       | 'general';
     extracted: any;
   } {
@@ -806,6 +1032,15 @@ class ChatService {
       }
     }
 
+    // 3.5. Kiểm tra các câu chào hỏi, hỏi danh tính bot hoặc phép lịch sự (Smalltalk / Greeting / Identity)
+    const smalltalkIntent = this.detectSmalltalk(text, norm);
+    if (smalltalkIntent) {
+      return {
+        intent: smalltalkIntent,
+        extracted: null,
+      };
+    }
+
     // 4. Kiểm tra ý định Tìm & Lọc theo tầm tiền / danh mục / đối tượng & nhu cầu sử dụng (Sinh viên, Văn phòng, Lập trình, Gaming, Đồ họa)
     const isPolicyOnlyQuestion =
       norm.includes('tra gop') ||
@@ -824,14 +1059,31 @@ class ChatService {
 
     let useCase: string | undefined;
     if (!isPolicyOnlyQuestion) {
+      const words = norm.split(/\s+/);
+      const isAiKeyword =
+        norm.includes('tri tue nhan tao') ||
+        norm.includes('machine learning') ||
+        norm.includes('deep learning') ||
+        norm.includes('lam ai') ||
+        norm.includes('hoc ai') ||
+        norm.includes('chay ai') ||
+        norm.includes('mo hinh ai');
+      const isItKeyword =
+        words.includes('it') ||
+        norm.includes('dan it') ||
+        norm.includes('nganh it') ||
+        norm.includes('chuyen nganh it');
+
       if (
         norm.includes('lap trinh') ||
         norm.includes('code') ||
         norm.includes('cntt') ||
-        norm.includes('it') ||
         norm.includes('ky su phan mem') ||
-        norm.includes('ai') ||
-        norm.includes('data')
+        isItKeyword ||
+        isAiKeyword ||
+        norm.includes('khoa hoc du lieu') ||
+        norm.includes('data science') ||
+        norm.includes('du lieu lon')
       ) {
         useCase = 'lap_trinh';
       } else if (
@@ -979,49 +1231,71 @@ class ChatService {
   }
 
   /**
-   * Gọi mô hình Gemini với cơ chế luân chuyển model (Model Fallback) khi gặp 503
+   * Gọi mô hình Gemini với cơ chế luân chuyển model (Model Fallback),
+   * điều tiết hàng đợi (Rate Limiting) và Tự động xoay vòng API Key (Key Pool Failover)
    */
   private async generateWithFallback(
     prompt: string,
     systemInstructionText?: string
   ): Promise<{ text: string; modelName: string }> {
-    if (!genAI) {
+    if (geminiKeyManager.getKeyCount() === 0) {
       throw new Error('Chưa cấu hình GEMINI_API_KEY trong file .env');
     }
 
-    let lastError: any = null;
+    // Đợi hàng đợi phân luồng nếu có quá nhiều request đồng thời
+    await geminiLimiter.acquire();
 
-    for (const modelName of CANDIDATE_MODELS) {
-      if (unavailableModels.has(modelName)) continue;
-      try {
-        const modelParams: any = {
-          model: modelName,
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 2048,
-          },
-        };
-        if (systemInstructionText) {
-          modelParams.systemInstruction = systemInstructionText;
+    try {
+      return await geminiKeyManager.executeWithRotation(async (activeGenAI, keyInfo) => {
+        let lastError: any = null;
+
+        for (const modelName of CANDIDATE_MODELS) {
+          if (unavailableModels.has(modelName)) continue;
+          try {
+            const modelParams: any = {
+              model: modelName,
+              generationConfig: {
+                temperature: 0.3,
+                maxOutputTokens: 2048,
+              },
+            };
+            if (systemInstructionText) {
+              modelParams.systemInstruction = systemInstructionText;
+            }
+
+            const model = activeGenAI.getGenerativeModel(modelParams);
+            const res = await model.generateContent(prompt);
+            const text = res.response.text();
+            if (text && text.trim().length > 0) {
+              return { text: text.trim(), modelName };
+            }
+          } catch (err: any) {
+            lastError = err;
+            const errMsg = String(err?.message || '');
+            if (err?.status === 404 || errMsg.includes('404 Not Found')) {
+              unavailableModels.add(modelName);
+            }
+
+            // Nếu là lỗi Quota / Rate limit (429), ném lỗi ra ngoài để executeWithRotation đổi Key!
+            const isQuotaError =
+              err?.status === 429 ||
+              errMsg.includes('429') ||
+              errMsg.includes('Quota exceeded') ||
+              errMsg.includes('RESOURCE_EXHAUSTED');
+
+            if (isQuotaError) {
+              throw err;
+            }
+
+            console.warn(`⚠️ [ChatService] Model ${modelName} gặp sự cố (${err.status || err.message}), thử model tiếp theo...`);
+          }
         }
 
-        const model = genAI.getGenerativeModel(modelParams);
-        const res = await model.generateContent(prompt);
-        const text = res.response.text();
-        if (text && text.trim().length > 0) {
-          return { text: text.trim(), modelName };
-        }
-      } catch (err: any) {
-        lastError = err;
-        const errMsg = String(err?.message || '');
-        if (err?.status === 404 || errMsg.includes('404 Not Found')) {
-          unavailableModels.add(modelName);
-        }
-        console.warn(`⚠️ [ChatService] Model ${modelName} gặp sự cố (${err.status || err.message}), thử model tiếp theo...`);
-      }
+        throw lastError || new Error('Không thể kết nối với mô hình Gemini AI lúc này.');
+      });
+    } finally {
+      geminiLimiter.release();
     }
-
-    throw lastError || new Error('Không thể kết nối với mô hình Gemini AI lúc này.');
   }
 
   /**
@@ -1030,6 +1304,21 @@ class ChatService {
   public async handleMessage(options: ChatRequestOptions): Promise<ChatResponseData> {
     const startTotal = performance.now();
     const { message, history = [] } = options;
+
+    // 0. Kiểm tra Response Cache cho câu hỏi phổ biến (khi không đăng nhập và câu hỏi độc lập)
+    const isCacheCandidate = !options.currentUser && (!history || history.length === 0);
+    const cacheKey = isCacheCandidate ? `chat_resp:${normalizeText(message)}` : '';
+    if (cacheKey) {
+      const cached = chatResponseCache.get<ChatResponseData>(cacheKey);
+      if (cached) {
+        return {
+          ...cached,
+          model: `${cached.model} (cache)`,
+          metrics: cached.metrics ? { ...cached.metrics, totalResponseTimeMs: 2 } : undefined,
+        };
+      }
+    }
+
     const citations: string[] = [];
     let toolResultData: any = null;
     let cardPayload: any = undefined;
@@ -1046,6 +1335,101 @@ class ChatService {
     const startIntent = performance.now();
     const detected = this.detectIntent(message, history, options.currentUser);
     const intentDetectionMs = Math.max(1, Math.round((performance.now() - startIntent) * 100) / 100);
+
+    // 1.0. Xử lý phản hồi tức thì cho Chào hỏi, Danh tính Bot & Lịch sự (Local Greeting Interceptor - Tiết kiệm 100% Quota, 0ms Latency)
+    if (detected.intent === 'greeting' || detected.intent === 'about_bot' || detected.intent === 'courtesy') {
+      const customerName = options.currentUser?.name ? ` **${options.currentUser.name}**` : '';
+      let reply = '';
+      let smalltalkSuggestions: string[] = [];
+      const toolUsed = detected.intent;
+      let cardPayload: any = undefined;
+
+      // Chuẩn bị 2 sản phẩm tiêu biểu để đính kèm thẻ giao diện trực quan
+      const highlightProds = seedProducts.filter((p) => p.categorySlug === 'laptop').slice(0, 2);
+      if (highlightProds.length > 0) {
+        cardPayload = {
+          type: 'products' as const,
+          data: highlightProds.map((p) => ({
+            id: p.id,
+            name: p.name,
+            slug: p.slug,
+            brand: p.brand,
+            price: Number(p.price),
+            formattedPrice: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(p.price)),
+            thumbnail: p.thumbnail,
+            specsSummary: Object.entries(p.specs || {}).slice(0, 3).map(([k, v]) => `${k.toUpperCase()}: ${v}`).join(' • '),
+            inStock: true,
+          })),
+        };
+      }
+
+      const normMsg = normalizeText(message);
+
+      if (detected.intent === 'about_bot') {
+        reply = `Dạ em chào anh/chị${customerName}! Em là **BK-Bot** – Trợ lý ảo AI thông minh được phát triển riêng cho Hệ thống bán lẻ công nghệ **BK-Store** 🤖✨\n\n` +
+          `Em được trang bị các kỹ năng chuyên biệt để hỗ trợ anh/chị mua sắm thuận tiện nhất:\n\n` +
+          `1. 💻 **Tư vấn cấu hình chuyên sâu:** Lựa chọn Laptop, Điện thoại, Phụ kiện phù hợp chuẩn xác theo ngân sách và nhu cầu (Học tập - Văn phòng, Lập trình/IT, Đồ họa 3D, Gaming).\n` +
+          `2. 📦 **Kiểm tra tồn kho thời gian thực:** Tra cứu máy sẵn hàng tại cả 3 Showroom (Hà Nội, TP.HCM, Đà Nẵng).\n` +
+          `3. 🚚 **Theo dõi đơn hàng tự động:** Tra cứu nhanh trạng thái đơn hàng, kho xuất và lộ trình vận chuyển qua Mã đơn (#BK-xxxx) và Số điện thoại.\n` +
+          `4. 🛡️ **Giải đáp chính sách chính hãng (RAG):** Cung cấp chính xác chính sách bảo hành 1 đổi 1 trong 30 ngày, trả góp 0% và quy trình đổi trả.\n\n` +
+          `Anh/chị đang quan tâm đến dòng máy nào hoặc cần em hỗ trợ thông tin gì ạ?`;
+        smalltalkSuggestions = [
+          'Tư vấn laptop theo tầm giá',
+          'Kiểm tra tồn kho MacBook M3',
+          'Tra cứu đơn hàng của tôi',
+          'Chính sách 1 đổi 1 trong 30 ngày',
+        ];
+      } else if (detected.intent === 'courtesy') {
+        const isGoodbye = normMsg.includes('tam biet') || normMsg.includes('bye') || normMsg.includes('goodbye') || normMsg.includes('hen gap lai');
+        if (isGoodbye) {
+          reply = `Dạ BK-Bot xin chào tạm biệt anh/chị${customerName}! Cảm ơn anh/chị đã quan tâm và ghé thăm **BK-Store**. Khi nào cần tư vấn máy hoặc kiểm tra ưu đãi, anh/chị cứ nhắn lại cho em nhé. Chúc anh/chị một ngày thật tuyệt vời ạ! 👋✨`;
+          smalltalkSuggestions = ['Xem laptop bán chạy', 'Chính sách trả góp 0%', 'Hotline 1800 6868'];
+        } else {
+          reply = `Dạ không có gì ạ! Rất hân hạnh được hỗ trợ anh/chị${customerName} tại **BK-Store**. Nếu cần thêm thông tin về bất kỳ dòng máy, giá bán ưu đãi hay kiểm tra đơn hàng, anh/chị cứ nhắn em bất kỳ lúc nào nhé! Chúc anh/chị một ngày mua sắm vui vẻ ạ! 😊`;
+          smalltalkSuggestions = ['Xem laptop bán chạy', 'Khuyến mãi hôm nay', 'Chính sách bảo hành'];
+        }
+      } else {
+        // greeting
+        const greetingTemplates = [
+          `Dạ em chào anh/chị${customerName}! Chào mừng anh/chị đến với **BK-Store** – Hệ thống thiết bị công nghệ chính hãng hàng đầu.\n\nEm là **BK-Bot**, trợ lý AI luôn sẵn sàng hỗ trợ anh/chị 24/7. Hôm nay anh/chị đang quan tâm đến dòng máy nào hay cần em hỗ trợ tra cứu thông tin gì ạ?`,
+          `Dạ BK-Bot xin chào anh/chị${customerName}! Rất vui được đón tiếp anh/chị tại **BK-Store**.\n\nHiện hệ thống đang có nhiều ưu đãi lớn cho các dòng Laptop sinh viên, IT - Lập trình và Gaming cao cấp. Em có thể tư vấn mẫu máy nào giúp anh/chị hôm nay ạ?`,
+          `Dạ chào anh/chị${customerName}! Em là **BK-Bot** – Trợ lý tư vấn AI của BK-Store.\n\nEm có thể hỗ trợ anh/chị chọn máy theo ngân sách, kiểm tra tồn kho tại 3 Showroom (Hà Nội, TP.HCM, Đà Nẵng) hoặc tra cứu tiến trình đơn hàng. Anh/chị cần em hỗ trợ ngay vấn đề nào ạ?`,
+        ];
+        reply = greetingTemplates[Math.floor(Math.random() * greetingTemplates.length)];
+        smalltalkSuggestions = [
+          'Tư vấn laptop sinh viên',
+          'Laptop Gaming / Đồ họa',
+          'Kiểm tra tồn kho chi nhánh',
+          'Chính sách bảo hành 1 đổi 1',
+        ];
+      }
+
+      const totalResponseTimeMs = Math.max(1, Math.round(performance.now() - startTotal));
+      const finalResponse: ChatResponseData = {
+        reply,
+        citations: [],
+        cards: cardPayload,
+        suggestions: smalltalkSuggestions,
+        toolUsed,
+        model: 'local-rule-engine',
+        metrics: {
+          totalResponseTimeMs,
+          intentDetectionMs,
+          toolExecutionMs: 0,
+          ragRetrievalMs: 0,
+          llmGenerationMs: 0,
+          detectedIntent: detected.intent,
+          topRagScore: 0,
+          ragChunksEvaluated: 0,
+        },
+      };
+
+      if (cacheKey) {
+        chatResponseCache.set(cacheKey, finalResponse);
+      }
+
+      return finalResponse;
+    }
 
     const startTool = performance.now();
     if (detected.intent === 'clarify_product_need') {
@@ -1609,30 +1993,95 @@ Hãy đưa ra câu trả lời trực tiếp cho khách hàng (chỉ xuất lờ
         } else {
           replyText = `Dạ, ${toolResultData.message || 'BK-Store luôn sẵn sàng phục vụ anh/chị!'}`;
         }
-      } else if (matchedRagChunks && matchedRagChunks.length > 0) {
-        const topChunk = matchedRagChunks[0].chunk;
-        const cleanContent = topChunk.content
-          .replace(/\[Tài liệu:.*?\]/g, '')
-          .replace(/\[Mục:.*?\]/g, '')
-          .replace(/^#+\s+/gm, '')
-          .trim();
-
-        const paragraphs = cleanContent
-          .split('\n\n')
-          .filter((p) => p.trim().length > 0)
-          .slice(0, 3)
-          .join('\n\n');
-
-        const prefix =
-          topChunk.category === 'buying_guide'
-            ? 'Dạ em chào anh/chị! Dựa trên nhu cầu của mình, BK-Bot xin gợi ý tiêu chuẩn chọn máy và các dòng máy phù hợp tại BK-Store như sau:'
-            : 'Dạ em chào anh/chị! Về chính sách chính thức của BK-Store, em xin phép thông tin chi tiết đến anh/chị như sau:';
-
-        replyText = `${prefix}\n\n${paragraphs}\n\nAnh/chị hoàn toàn yên tâm khi mua sắm tại BK-Store ạ! Nếu cần hỗ trợ thêm thông tin chi tiết, anh/chị có thể liên hệ ngay tổng đài miễn phí **1800 6868** nhé!`;
       } else {
-        replyText = `Dạ em chào anh/chị! Em là **BK-Bot** - Trợ lý công nghệ của BK-Store. Em có thể hỗ trợ anh/chị tư vấn cấu hình laptop, điện thoại, kiểm tra tồn kho tại 3 chi nhánh hoặc tra cứu tiến trình đơn hàng. Anh/chị đang quan tâm đến sản phẩm nào ạ?`;
+        const normMsg = normalizeText(message);
+        const smalltalkFallback = this.detectSmalltalk(message, normMsg);
+
+        if (smalltalkFallback === 'about_bot') {
+          replyText = `Dạ em chào anh/chị! Em là **BK-Bot** – Trợ lý ảo AI thông minh tại Hệ thống bán lẻ công nghệ **BK-Store** 🤖✨\n\n` +
+            `Em có thể hỗ trợ anh/chị:\n` +
+            `• Tư vấn cấu hình laptop, điện thoại, phụ kiện theo ngân sách & nhu cầu (học tập, IT, đồ họa, gaming).\n` +
+            `• Tra cứu số lượng tồn kho thời gian thực tại cả 3 Showroom (Hà Nội, TP.HCM, Đà Nẵng).\n` +
+            `• Tra cứu nhanh trạng thái đơn hàng (#BK-xxxx) và tiến trình vận đơn.\n` +
+            `• Hướng dẫn chính sách bảo hành 1 đổi 1 trong 30 ngày và trả góp 0%.\n\n` +
+            `Anh/chị đang quan tâm đến dòng máy nào hay cần em hỗ trợ thông tin gì ạ?`;
+          suggestions = ['Tư vấn laptop theo tầm giá', 'Kiểm tra tồn kho Showroom', 'Tra cứu đơn hàng', 'Chính sách bảo hành'];
+        } else if (smalltalkFallback === 'greeting') {
+          replyText = `Dạ em chào anh/chị! Chào mừng anh/chị đến với **BK-Store**.\n\nEm là **BK-Bot**, trợ lý AI của cửa hàng. Em có thể hỗ trợ anh/chị tư vấn chọn máy theo ngân sách, kiểm tra tồn kho tại các chi nhánh hoặc tra cứu tiến trình đơn hàng. Anh/chị đang quan tâm đến sản phẩm nào ạ?`;
+          suggestions = ['Tư vấn laptop sinh viên', 'Laptop Gaming / Đồ họa', 'Kiểm tra tồn kho chi nhánh', 'Chính sách bảo hành 1 đổi 1'];
+        } else if (smalltalkFallback === 'courtesy') {
+          replyText = `Dạ không có gì ạ! BK-Bot rất vui được hỗ trợ anh/chị tại BK-Store. Nếu có bất kỳ câu hỏi nào cần giải đáp thêm, anh/chị cứ nhắn em nhé! Chúc anh/chị một ngày thật vui vẻ ạ! 😊`;
+          suggestions = ['Xem laptop bán chạy', 'Chính sách trả góp 0%', 'Hotline 1800 6868'];
+        } else if (
+          normMsg.includes('dia chi') ||
+          normMsg.includes('showroom') ||
+          normMsg.includes('cua hang') ||
+          normMsg.includes('chi nhanh o dau') ||
+          normMsg.includes('hotline') ||
+          normMsg.includes('gio mo cua') ||
+          normMsg.includes('lien he')
+        ) {
+          replyText = `Dạ em chào anh/chị! Hệ thống **BK-Store** hiện có 3 Showroom chính hãng và tổng đài phục vụ trên toàn quốc:\n\n` +
+            `📍 **Showroom Hà Nội:** 123 Cầu Giấy, Q. Cầu Giấy, Hà Nội\n` +
+            `📍 **Showroom TP.HCM:** 456 Nguyễn Thị Minh Khai, P. Bến Nghé, Quận 1, TP.HCM\n` +
+            `📍 **Showroom Đà Nẵng:** 789 Nguyễn Văn Linh, Q. Hải Châu, Đà Nẵng\n\n` +
+            `⏰ **Giờ mở cửa:** 08:30 - 21:30 (tất cả các ngày trong tuần, kể cả ngày lễ)\n` +
+            `📞 **Hotline tư vấn & CSKH:** **1800 6868** (Miễn cước cuộc gọi)\n` +
+            `🌐 **Website:** https://bkstore.vn\n\n` +
+            `Anh/chị có thể ghé trực tiếp showroom để trải nghiệm máy hoặc đặt hàng online giao nhanh 2h nhé ạ!`;
+          suggestions = ['Kiểm tra tồn kho chi nhánh', 'Chính sách bảo hành 1 đổi 1', 'Xem sản phẩm hot'];
+        } else if (matchedRagChunks && matchedRagChunks.length > 0 && topRagScore >= 0.40) {
+          const topChunk = matchedRagChunks[0].chunk;
+          const cleanContent = topChunk.content
+            .replace(/\[Tài liệu:.*?\]/g, '')
+            .replace(/\[Mục:.*?\]/g, '')
+            .replace(/^#+\s+/gm, '')
+            .trim();
+
+          const paragraphs = cleanContent
+            .split('\n\n')
+            .filter((p) => p.trim().length > 0)
+            .slice(0, 3)
+            .join('\n\n');
+
+          const prefix =
+            topChunk.category === 'buying_guide'
+              ? 'Dạ em chào anh/chị! Dựa trên nhu cầu của mình, BK-Bot xin gợi ý tiêu chuẩn chọn máy và các dòng máy phù hợp tại BK-Store như sau:'
+              : 'Dạ em chào anh/chị! Về chính sách chính thức của BK-Store, em xin phép thông tin chi tiết đến anh/chị như sau:';
+
+          replyText = `${prefix}\n\n${paragraphs}\n\nAnh/chị hoàn toàn yên tâm khi mua sắm tại BK-Store ạ! Nếu cần hỗ trợ thêm thông tin chi tiết, anh/chị có thể liên hệ ngay tổng đài miễn phí **1800 6868** nhé!`;
+          suggestions = ['Chính sách đổi trả 30 ngày', 'Chính sách bảo hành', 'Hotline 1800 6868'];
+        } else {
+          replyText = `Dạ em chào anh/chị! Hiện tại hệ thống kết nối AI chuyên sâu của BK-Bot đang có lượt truy cập cao trong giờ cao điểm hoặc tạm gián đoạn hạn mức Quota.\n\n` +
+            `Tuy nhiên, hệ thống cơ sở dữ liệu của BK-Store vẫn hoạt động bình thường! Em có thể hỗ trợ anh/chị ngay lập tức:\n` +
+            `• **Tư vấn cấu hình:** Nhập mức ngân sách hoặc nhu cầu (ví dụ: *laptop học tập dưới 20 triệu*, *laptop gaming*).\n` +
+            `• **Kiểm tra kho hàng:** Gõ tên máy và chi nhánh (Hà Nội, TP.HCM, Đà Nẵng).\n` +
+            `• **Theo dõi đơn hàng:** Gửi Mã đơn (*#BK-xxxx*) và Số điện thoại đặt hàng.\n\n` +
+            `Anh/chị cũng có thể bấm chọn nhanh các mục gợi ý bên dưới hoặc liên hệ hotline miễn phí **1800 6868** để được tư vấn viên hỗ trợ ngay ạ!`;
+          suggestions = ['Tư vấn laptop sinh viên', 'Laptop Gaming / Đồ họa', 'Kiểm tra tồn kho chi nhánh', 'Hotline 1800 6868'];
+        }
+
+        if (!cardPayload) {
+          const fallbackProds = seedProducts.filter((p) => p.categorySlug === 'laptop').slice(0, 2);
+          if (fallbackProds.length > 0) {
+            cardPayload = {
+              type: 'products',
+              data: fallbackProds.map((p) => ({
+                id: p.id,
+                name: p.name,
+                slug: p.slug,
+                brand: p.brand,
+                price: Number(p.price),
+                formattedPrice: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(p.price)),
+                thumbnail: p.thumbnail,
+                specsSummary: Object.entries(p.specs || {}).slice(0, 3).map(([k, v]) => `${k.toUpperCase()}: ${v}`).join(' • '),
+                inStock: true,
+              })),
+            };
+          }
+        }
       }
-      usedModel = 'smart-fallback';
+      usedModel = 'smart-offline-fallback';
     }
     const llmGenerationMs = Math.max(1, Math.round((performance.now() - startLlm) * 100) / 100);
 
@@ -1658,7 +2107,7 @@ Hãy đưa ra câu trả lời trực tiếp cho khách hàng (chỉ xuất lờ
       ragChunksEvaluated: ragService.getMetrics().chunksCount,
     };
 
-    return {
+    const finalResponse: ChatResponseData = {
       reply: cleanedReply,
       citations: Array.from(new Set(citations)),
       cards: cardPayload,
@@ -1668,6 +2117,13 @@ Hãy đưa ra câu trả lời trực tiếp cho khách hàng (chỉ xuất lờ
       model: usedModel,
       metrics,
     };
+
+    // Lưu vào Response Cache nếu là câu hỏi chung (không chứa dữ liệu cá nhân hay đơn hàng cụ thể)
+    if (cacheKey && !toolResultData?.isAskingUnconfirmedOrders && !toolResultData?.userOrders) {
+      chatResponseCache.set(cacheKey, finalResponse);
+    }
+
+    return finalResponse;
   }
 
   /**

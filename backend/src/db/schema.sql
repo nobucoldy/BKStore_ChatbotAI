@@ -138,7 +138,7 @@ CREATE TABLE IF NOT EXISTS knowledge_chunks (
     chunk_index INT NOT NULL,
     content TEXT NOT NULL,
     metadata JSONB DEFAULT '{}'::jsonb,
-    embedding vector(768),
+    embedding vector,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
