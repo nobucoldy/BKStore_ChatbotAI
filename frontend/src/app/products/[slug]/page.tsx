@@ -21,6 +21,7 @@ import {
   ThumbsUp,
   Filter,
   Lock,
+  AlertTriangle,
 } from 'lucide-react';
 import { fetchProductBySlug, fetchProducts, fetchProductReviews } from '@/lib/api';
 import { Product, ProductReviewsData, Review } from '@/types';
@@ -47,6 +48,7 @@ export default function ProductDetailPage() {
   const [selectedImg, setSelectedImg] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
+  const [cartFeedback, setCartFeedback] = useState<string | null>(null);
 
   // Review states
   const [reviewsData, setReviewsData] = useState<ProductReviewsData | null>(null);
@@ -63,6 +65,7 @@ export default function ProductDetailPage() {
   const toggleChat = useChatStore((state) => state.toggleChat);
 
   const addItem = useCartStore((state) => state.addItem);
+  const cartItems = useCartStore((state) => state.items);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const openAuthModal = useAuthStore((state) => state.openAuthModal);
 
@@ -154,6 +157,10 @@ export default function ProductDetailPage() {
   const stock = product.stock ?? product.stock_quantity ?? 0;
   const isOutOfStock = stock <= 0;
 
+  const existingCartItem = product ? cartItems.find((i) => i.product.id === product.id) : null;
+  const cartQty = existingCartItem?.quantity ?? 0;
+  const isReachedMaxInCart = cartQty >= stock && stock > 0;
+
   const discountPercent =
     product.originalPrice && product.originalPrice > product.price
       ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
@@ -165,10 +172,25 @@ export default function ProductDetailPage() {
       openAuthModal('Vui lòng đăng nhập tài khoản để thêm sản phẩm vào giỏ hàng.');
       return;
     }
+
+    const currentCartItems = useCartStore.getState().items;
+    const existing = currentCartItems.find((i) => i.product.id === product.id);
+    const inCartQty = existing ? existing.quantity : 0;
+
+    if (inCartQty >= stock) {
+      setCartFeedback(`Sản phẩm này đã đạt số lượng tối đa trong giỏ (${stock} máy).`);
+      setTimeout(() => setCartFeedback(null), 4000);
+      return;
+    }
+
     const res = addItem(product, quantity);
     if (res.success) {
       setIsAdded(true);
+      setCartFeedback(null);
       setTimeout(() => setIsAdded(false), 1500);
+    } else if (res.message) {
+      setCartFeedback(res.message);
+      setTimeout(() => setCartFeedback(null), 4000);
     }
   };
 
@@ -178,8 +200,20 @@ export default function ProductDetailPage() {
       openAuthModal('Vui lòng đăng nhập tài khoản để đặt mua sản phẩm.');
       return;
     }
-    const res = addItem(product, quantity);
-    if (res.success) {
+
+    const currentCartItems = useCartStore.getState().items;
+    const existing = currentCartItems.find((i) => i.product.id === product.id);
+
+    // Nếu đã có sẵn trong giỏ hàng với số lượng hợp lệ, không cố add thêm mà chọn luôn và mở Checkout
+    if (existing && existing.quantity >= 1) {
+      useCartStore.getState().selectOnlyItem(product.id);
+      setIsCheckoutOpen(true);
+      return;
+    }
+
+    // Nếu chưa có trong giỏ, thêm 1 máy rồi mở Checkout
+    const res = addItem(product, Math.min(quantity, Math.max(1, stock)));
+    if (res.success || existing) {
       useCartStore.getState().selectOnlyItem(product.id);
       setIsCheckoutOpen(true);
     }
@@ -193,8 +227,6 @@ export default function ProductDetailPage() {
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
       {/* Sticky Header */}
       <Header
-        searchQuery=""
-        onSearchChange={() => {}}
         onOpenCart={() => setIsCartOpen(true)}
         onOpenTracking={() => setIsTrackingOpen(true)}
         onOpenReview={() => setIsReviewOpen(true)}
@@ -289,9 +321,23 @@ export default function ProductDetailPage() {
               </div>
 
 
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight mb-4">
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight mb-2">
                 {product.name}
               </h1>
+
+              {/* Urgency Badge for stock <= 10 */}
+              {!isOutOfStock && stock === 1 && (
+                <div className="mb-4 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-rose-50 border border-rose-300 text-rose-700 text-xs font-bold animate-pulse">
+                  <span>🔥</span>
+                  <span>Chỉ còn 1 máy duy nhất trong hệ thống! Nhanh tay kẻo hết</span>
+                </div>
+              )}
+              {!isOutOfStock && stock > 1 && stock <= 10 && (
+                <div className="mb-4 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-800 text-xs font-bold">
+                  <span>⚡</span>
+                  <span>Sắp hết hàng: Chỉ còn {stock} máy trong kho!</span>
+                </div>
+              )}
 
               {/* Price Row */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 mb-6 flex items-baseline gap-3">
@@ -337,7 +383,8 @@ export default function ProductDetailPage() {
                     <button
                       onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                       disabled={quantity <= 1 || isOutOfStock}
-                      className="px-3 py-1.5 text-slate-600 hover:bg-slate-200 disabled:opacity-40 transition-colors"
+                      className="px-3 py-1.5 text-slate-600 hover:bg-slate-200 disabled:opacity-40 transition-colors cursor-pointer"
+                      title={quantity <= 1 ? 'Số lượng tối thiểu là 1' : 'Giảm'}
                     >
                       -
                     </button>
@@ -345,19 +392,45 @@ export default function ProductDetailPage() {
                     <button
                       onClick={() => setQuantity((q) => Math.min(stock, q + 1))}
                       disabled={quantity >= stock || isOutOfStock}
-                      className="px-3 py-1.5 text-slate-600 hover:bg-slate-200 disabled:opacity-40 transition-colors"
+                      className="px-3 py-1.5 text-slate-600 hover:bg-slate-200 disabled:opacity-40 transition-colors cursor-pointer"
+                      title={quantity >= stock ? `Đã đạt giới hạn tồn kho tối đa (${stock} máy)` : 'Tăng số lượng'}
                     >
                       +
                     </button>
                   </div>
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs">
                     {isOutOfStock ? (
                       <span className="text-rose-600 font-semibold">Tạm hết hàng</span>
+                    ) : stock === 1 ? (
+                      <span className="inline-flex items-center gap-1 font-bold text-rose-600 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-md">
+                        🔥 Chỉ còn 1 máy duy nhất!
+                      </span>
+                    ) : stock <= 10 ? (
+                      <span className="inline-flex items-center gap-1 font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-md">
+                        ⚡ Sắp hết hàng: Còn {stock} máy
+                      </span>
                     ) : (
-                      `Còn ${stock} máy trong kho`
+                      <span className="text-slate-500 font-medium">Còn {stock} máy trong kho</span>
                     )}
                   </span>
                 </div>
+
+                {/* Feedback message when cart reaches limit or error */}
+                {cartFeedback && (
+                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 font-medium">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>{cartFeedback}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsCartOpen(true)}
+                      className="px-2.5 py-1 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 shrink-0 cursor-pointer"
+                    >
+                      Xem giỏ hàng
+                    </button>
+                  </div>
+                )}
 
                 {!isAuthenticated && (
                   <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs">
@@ -377,13 +450,20 @@ export default function ProductDetailPage() {
                         ? 'bg-emerald-600 text-white'
                         : isOutOfStock
                         ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                        : 'bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white border border-blue-200'
+                        : isReachedMaxInCart
+                        ? 'bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 cursor-pointer'
+                        : 'bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white border border-blue-200 cursor-pointer'
                     }`}
                   >
                     {isAdded ? (
                       <>
                         <Check className="w-4 h-4" />
                         <span>Đã thêm vào giỏ!</span>
+                      </>
+                    ) : isReachedMaxInCart ? (
+                      <>
+                        <ShoppingBag className="w-4 h-4 text-amber-600" />
+                        <span>Đã trong giỏ ({cartQty}/{stock})</span>
                       </>
                     ) : (
                       <>
@@ -396,9 +476,9 @@ export default function ProductDetailPage() {
                   <button
                     onClick={handleBuyNow}
                     disabled={isOutOfStock}
-                    className="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm shadow-md shadow-blue-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm shadow-md shadow-blue-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
-                    Mua ngay
+                    {stock === 1 ? 'Mua chiếc cuối cùng' : 'Mua ngay'}
                   </button>
                 </div>
 

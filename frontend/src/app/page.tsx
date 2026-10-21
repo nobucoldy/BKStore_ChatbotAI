@@ -217,8 +217,6 @@ export default function HomePage() {
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
       {/* 1. Sticky Header */}
       <Header
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
         onOpenCart={() => setIsCartOpen(true)}
         onOpenTracking={() => {
           setTrackingInitialCode('');

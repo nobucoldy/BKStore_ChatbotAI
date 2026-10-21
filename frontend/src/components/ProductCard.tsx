@@ -23,6 +23,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
   const router = useRouter();
   const [isPopping, setIsPopping] = useState(false);
+  const [warningMsg, setWarningMsg] = useState<string | null>(null);
   const addItem = useCartStore((state) => state.addItem);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const openAuthModal = useAuthStore((state) => state.openAuthModal);
@@ -74,7 +75,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     const res = addItem(product, 1);
     if (res.success) {
       setIsPopping(true);
+      setWarningMsg(null);
       setTimeout(() => setIsPopping(false), 700);
+    } else if (res.message) {
+      setWarningMsg(res.message);
+      setTimeout(() => setWarningMsg(null), 2500);
     }
   };
 
@@ -167,9 +172,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                 <span className="text-rose-600 font-semibold">Tạm hết hàng</span>
               </>
-            )  : (
-              <>
-              </>
+            ) : stock === 1 ? (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-50 border border-rose-200 text-rose-600 font-bold text-[10px] animate-pulse">
+                🔥 Chỉ còn 1 máy!
+              </span>
+            ) : stock <= 10 ? (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-700 font-bold text-[10px]">
+                ⚡ Sắp hết: Còn {stock} máy
+              </span>
+            ) : (
+              <span className="text-slate-400 text-[10px]">Kho: {stock} máy</span>
             )}
           </div>
 
@@ -186,7 +198,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               )}
             </div>
 
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0 relative">
+              {warningMsg && (
+                <span className="absolute -top-7 right-0 text-[10px] font-sans font-medium bg-slate-900 text-white px-2 py-0.5 rounded shadow-lg z-30 whitespace-nowrap animate-in fade-in">
+                  {warningMsg}
+                </span>
+              )}
               {/* Nút Thêm vào giỏ với màu sắc theo chủ đề và hiệu ứng nảy */}
               <button
                 type="button"

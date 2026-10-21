@@ -325,9 +325,17 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
                           {isOutOfStock ? (
                             <span className="text-[10px] font-bold text-rose-600">Hết hàng</span>
+                          ) : maxStock === 1 ? (
+                            <span className="text-[10px] text-rose-600 font-bold font-mono">
+                              (🔥 Chiếc cuối cùng)
+                            </span>
                           ) : isMaxReached ? (
                             <span className="text-[10px] text-amber-700 font-medium font-mono">
                               (Tối đa: {maxStock})
+                            </span>
+                          ) : maxStock <= 10 ? (
+                            <span className="text-[10px] text-amber-600 font-medium font-mono">
+                              (Kho còn: {maxStock})
                             </span>
                           ) : null}
                         </div>

@@ -172,8 +172,6 @@ export default function MyOrdersPage() {
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
       {/* 1. Header */}
       <Header
-        searchQuery=""
-        onSearchChange={() => {}}
         onOpenCart={() => router.push('/#catalog-section')}
         onOpenTracking={() => {}}
         onOpenReview={() => setIsReviewOpen(true)}

@@ -108,8 +108,6 @@ export default function ProfilePage() {
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
       {/* 1. Sticky Header */}
       <Header
-        searchQuery=""
-        onSearchChange={() => {}}
         onOpenCart={() => router.push('/#catalog-section')}
         onOpenTracking={() => router.push('/orders')}
         onOpenReview={() => setIsReviewOpen(true)}

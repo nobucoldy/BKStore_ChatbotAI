@@ -148,8 +148,6 @@ export default function CategoryDetailPage() {
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
       {/* 1. Header */}
       <Header
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
         onOpenCart={() => setIsCartOpen(true)}
         onOpenTracking={() => setIsTrackingOpen(true)}
         onOpenChat={toggleChat}

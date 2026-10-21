@@ -60,8 +60,18 @@ export const ProductQuickView: React.FC<ProductQuickViewProps> = ({
       openAuthModal('Vui lòng đăng nhập tài khoản để đặt mua sản phẩm.');
       return;
     }
-    const res = addItem(product, quantity);
-    if (res.success) {
+
+    const currentCartItems = useCartStore.getState().items;
+    const existing = currentCartItems.find((i) => i.product.id === product.id);
+
+    // Nếu sản phẩm đã có trong giỏ hàng, cho phép mua ngay lập tức mà không bị chặn
+    if (existing && existing.quantity >= 1) {
+      onBuyNow(product, existing.quantity);
+      return;
+    }
+
+    const res = addItem(product, Math.min(quantity, Math.max(1, availableToAdd)));
+    if (res.success || existing) {
       onBuyNow(product, quantity);
     }
   };
@@ -151,6 +161,14 @@ export const ProductQuickView: React.FC<ProductQuickViewProps> = ({
                     <span className="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-700 font-bold">
                       Tạm hết hàng
                     </span>
+                  ) : stock === 1 ? (
+                    <span className="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-300 text-rose-700 font-bold flex items-center gap-1.5 animate-pulse">
+                      🔥 <span>Chỉ còn 1 máy duy nhất!</span>
+                    </span>
+                  ) : stock <= 10 ? (
+                    <span className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-300 text-amber-800 font-bold flex items-center gap-1.5">
+                      ⚡ <span>Sắp hết hàng: Còn <strong>{stock}</strong> máy</span>
+                    </span>
                   ) : (
                     <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 flex items-center gap-1.5">
                       <Package className="w-3.5 h-3.5 text-blue-600" />
@@ -212,9 +230,9 @@ export const ProductQuickView: React.FC<ProductQuickViewProps> = ({
                   </div>
                 </div>
 
-                {availableToAdd > 0 && availableToAdd <= 3 && (
+                {availableToAdd > 0 && availableToAdd <= 10 && (
                   <span className="text-[11px] text-amber-700 font-mono font-medium">
-                    (Có thể thêm tối đa {availableToAdd} máy)
+                    {availableToAdd === 1 ? '🔥 Chỉ có thể thêm 1 máy cuối cùng' : `(Có thể thêm tối đa ${availableToAdd} máy)`}
                   </span>
                 )}
               </div>
@@ -228,7 +246,7 @@ export const ProductQuickView: React.FC<ProductQuickViewProps> = ({
                       ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
                       : isPopping
                       ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 ring-2 ring-blue-400/50 scale-[1.02]'
-                      : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+                      : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 cursor-pointer'
                   }`}
                 >
                   <ShoppingBag
@@ -254,13 +272,13 @@ export const ProductQuickView: React.FC<ProductQuickViewProps> = ({
                 <button
                   onClick={handleBuyNow}
                   disabled={isOutOfStock}
-                  className={`py-3 px-4 rounded-xl font-semibold text-sm shadow-md transition-all text-center ${
+                  className={`py-3 px-4 rounded-xl font-semibold text-sm shadow-md transition-all text-center cursor-pointer ${
                     isOutOfStock
                       ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
                       : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-blue-500/20'
                   }`}
                 >
-                  Mua ngay
+                  {stock === 1 ? 'Mua chiếc cuối cùng' : 'Mua ngay'}
                 </button>
               </div>
             </div>

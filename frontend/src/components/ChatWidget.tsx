@@ -77,6 +77,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
 
   const [input, setInput] = useState('');
   const [addedItemIds, setAddedItemIds] = useState<Record<string, boolean>>({});
+  const [limitErrorItemIds, setLimitErrorItemIds] = useState<Record<string, string | undefined>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<ChatMessage[]>(messages);
   messagesRef.current = messages;
@@ -119,6 +120,11 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
       setTimeout(() => {
         setAddedItemIds((prev) => ({ ...prev, [prod.id]: false }));
       }, 1500);
+    } else if (res.message) {
+      setLimitErrorItemIds((prev) => ({ ...prev, [prod.id]: 'Đã đạt tối đa trong giỏ' }));
+      setTimeout(() => {
+        setLimitErrorItemIds((prev) => ({ ...prev, [prod.id]: undefined }));
+      }, 2500);
     }
   };
 
@@ -419,9 +425,23 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                                     -{prod.discountPercent}%
                                   </span>
                                 )}
+                                {prod.stock === 1 || prod.stockQuantity === 1 ? (
+                                  <span className="text-[9px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1 py-0.2 rounded animate-pulse">
+                                    🔥 Còn 1
+                                  </span>
+                                ) : (prod.stock && prod.stock <= 10) || (prod.stockQuantity && prod.stockQuantity <= 10) ? (
+                                  <span className="text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1 py-0.2 rounded">
+                                    ⚡ Còn {prod.stock || prod.stockQuantity}
+                                  </span>
+                                ) : null}
                               </div>
                             </div>
-                            <div className="flex flex-col gap-1 shrink-0">
+                            <div className="flex flex-col gap-1 shrink-0 relative">
+                              {limitErrorItemIds[prod.id] && (
+                                <span className="absolute -top-6 right-0 text-[9px] font-sans font-semibold bg-slate-900 text-white px-1.5 py-0.5 rounded shadow z-30 whitespace-nowrap">
+                                  {limitErrorItemIds[prod.id]}
+                                </span>
+                              )}
                               <button
                                 type="button"
                                 onClick={(e) => {

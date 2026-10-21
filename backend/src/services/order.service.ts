@@ -29,9 +29,15 @@ export const createOrder = async (input: CreateOrderInput) => {
     // In-memory / Local DB fallback
     let totalAmount = 0;
     const itemsWithDetails: any[] = [];
-    const requestedBranch = input.branchId ? resolveBranchInMemory(input.branchId) : null;
+    const isCentralHub =
+      !input.branchId ||
+      input.branchId === 'central-hub' ||
+      input.branchId === 'hub' ||
+      input.branchId === 'toan-quoc';
 
-    if (input.branchId && !requestedBranch) {
+    const requestedBranch = !isCentralHub && input.branchId ? resolveBranchInMemory(input.branchId) : null;
+
+    if (input.branchId && !isCentralHub && !requestedBranch) {
       throw new Error(`Chi nhánh xuất kho "${input.branchId}" không tồn tại.`);
     }
 
@@ -48,7 +54,7 @@ export const createOrder = async (input: CreateOrderInput) => {
         );
       }
 
-      if (requestedBranch) {
+      if (requestedBranch && !isCentralHub) {
         const branchStock = getBranchStockForProductInMemory(prod.id, requestedBranch.id);
         if (item.quantity > branchStock) {
           throw new Error(
@@ -71,23 +77,25 @@ export const createOrder = async (input: CreateOrderInput) => {
     }
 
     // Step 2: Deduct in-memory product total stock + branch warehouse stock
-    let fulfilledBranch = requestedBranch
+    let fulfilledBranch = requestedBranch && !isCentralHub
       ? { branchId: requestedBranch.id, branchName: requestedBranch.name, city: requestedBranch.city }
-      : null;
+      : { branchId: 'central-hub', branchName: 'Kho Tổng BK-Store (Điều phối gom hàng liên chi nhánh)', city: 'Toàn quốc' };
 
     for (const item of itemsWithDetails) {
       deductStockInMemory(item.productId, item.quantity);
       const deductedBranch = deductBranchStockForOrderInMemory(
         item.productId,
         item.quantity,
-        requestedBranch?.id
+        isCentralHub ? undefined : requestedBranch?.id
       );
-      if (!fulfilledBranch) {
+      if (!fulfilledBranch && deductedBranch) {
         fulfilledBranch = deductedBranch;
       }
     }
 
-    const branchLabel = fulfilledBranch?.branchName || 'Kho trung tâm BK-Store';
+    const branchLabel = isCentralHub
+      ? 'Kho Tổng BK-Store (Điều phối gom hàng liên chi nhánh)'
+      : (fulfilledBranch?.branchName || 'Kho trung tâm BK-Store');
 
     const allLocalUsers = readLocalDb().users || [];
     const matchedUser = input.userId
@@ -107,7 +115,9 @@ export const createOrder = async (input: CreateOrderInput) => {
       totalAmount,
       paymentMethod: input.paymentMethod,
       status: 'pending',
-      trackingInfo: `Đơn hàng mới tạo — Xuất kho từ chi nhánh ${branchLabel}, đang chờ quản trị viên duyệt kho.`,
+      trackingInfo: isCentralHub
+        ? `Đơn hàng mới tạo — Đang tiến hành điều phối gom hàng từ các chi nhánh (Hà Nội, TP.HCM, Đà Nẵng...), thời gian giao hàng dự kiến 2 - 4 ngày.`
+        : `Đơn hàng mới tạo — Xuất kho từ chi nhánh ${branchLabel}, đang chờ quản trị viên duyệt kho.`,
       createdAt: new Date().toISOString(),
       items: itemsWithDetails,
       userId: resolvedUserId,
@@ -127,8 +137,13 @@ export const createOrder = async (input: CreateOrderInput) => {
     const itemsToInsert: { productId: string; productSlug: string; productName: string; quantity: number; unitPrice: number; price: number }[] = [];
     let selectedBranchName = 'Kho trung tâm BK-Store';
     let resolvedBranchId: string | null = null;
+    const isDbCentralHub =
+      !input.branchId ||
+      input.branchId === 'central-hub' ||
+      input.branchId === 'hub' ||
+      input.branchId === 'toan-quoc';
 
-    if (input.branchId) {
+    if (input.branchId && !isDbCentralHub) {
       const bRes = await client.query(
         'SELECT id, name FROM branches WHERE id::text = $1 OR LOWER(city) LIKE LOWER($2) OR LOWER(name) LIKE LOWER($2) LIMIT 1',
         [input.branchId, `%${input.branchId}%`]
@@ -137,6 +152,8 @@ export const createOrder = async (input: CreateOrderInput) => {
         resolvedBranchId = bRes.rows[0].id;
         selectedBranchName = bRes.rows[0].name;
       }
+    } else if (isDbCentralHub) {
+      selectedBranchName = 'Kho Tổng BK-Store (Điều phối gom hàng liên chi nhánh)';
     }
 
     for (const item of input.items) {
@@ -157,7 +174,7 @@ export const createOrder = async (input: CreateOrderInput) => {
         );
       }
 
-      if (resolvedBranchId) {
+      if (resolvedBranchId && !isDbCentralHub) {
         const invRes = await client.query(
           'SELECT quantity FROM inventories WHERE product_id = $1 AND branch_id = $2 FOR UPDATE',
           [product.id, resolvedBranchId]
@@ -189,15 +206,33 @@ export const createOrder = async (input: CreateOrderInput) => {
         'UPDATE products SET stock_quantity = stock_quantity - $1 WHERE id = $2',
         [item.quantity, item.productId]
       );
-      if (resolvedBranchId) {
+      if (resolvedBranchId && !isDbCentralHub) {
         await client.query(
           'UPDATE inventories SET quantity = quantity - $1, updated_at = CURRENT_TIMESTAMP WHERE product_id = $2 AND branch_id = $3',
           [item.quantity, item.productId, resolvedBranchId]
         );
+      } else {
+        // Multi-branch deduction: deduct from branches with highest quantity
+        const invRows = await client.query(
+          'SELECT branch_id, quantity FROM inventories WHERE product_id = $1 AND quantity > 0 ORDER BY quantity DESC FOR UPDATE',
+          [item.productId]
+        );
+        let rem = item.quantity;
+        for (const row of invRows.rows) {
+          if (rem <= 0) break;
+          const deductNow = Math.min(row.quantity, rem);
+          await client.query(
+            'UPDATE inventories SET quantity = quantity - $1, updated_at = CURRENT_TIMESTAMP WHERE product_id = $2 AND branch_id = $3',
+            [deductNow, item.productId, row.branch_id]
+          );
+          rem -= deductNow;
+        }
       }
     }
 
-    const trackingText = `Đơn hàng mới tạo — Xuất kho từ chi nhánh ${selectedBranchName}, đang chờ quản trị viên duyệt kho.`;
+    const trackingText = isDbCentralHub
+      ? `Đơn hàng mới tạo — Đang tiến hành điều phối gom hàng từ các chi nhánh (Hà Nội, TP.HCM, Đà Nẵng...), thời gian giao hàng dự kiến 2 - 4 ngày.`
+      : `Đơn hàng mới tạo — Xuất kho từ chi nhánh ${selectedBranchName}, đang chờ quản trị viên duyệt kho.`;
 
     const orderRes = await client.query(
       `INSERT INTO orders (

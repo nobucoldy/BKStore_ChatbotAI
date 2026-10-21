@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Search, ShoppingBag, Truck, Phone, Sparkles, X, ChevronDown, Layers, Star, User as UserIcon, Package, LogOut } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
@@ -10,10 +11,10 @@ import { Brand } from '@/types';
 import { fetchBrands, FALLBACK_BRANDS } from '@/lib/api';
 
 interface HeaderProps {
-  searchQuery: string;
-  onSearchChange: (q: string) => void;
-  onOpenCart: () => void;
-  onOpenTracking: () => void;
+  searchQuery?: string;
+  onSearchChange?: (q: string) => void;
+  onOpenCart?: () => void;
+  onOpenTracking?: () => void;
   onOpenReview?: () => void;
   onOpenChat?: () => void;
   onOpenAuth?: () => void;
@@ -21,7 +22,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  searchQuery,
+  searchQuery = '',
   onSearchChange,
   onOpenCart,
   onOpenTracking,
@@ -30,12 +31,16 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAuth,
   onOpenMyOrders,
 }) => {
-
+  const router = useRouter();
   const [localSearch, setLocalSearch] = useState(searchQuery);
   const totalItems = useCartStore((state) => state.getTotalItems());
   const toggleChat = useChatStore((state) => state.toggleChat);
   const [isCartJumping, setIsCartJumping] = useState(false);
   const prevItemsRef = useRef(totalItems);
+
+  useEffect(() => {
+    setLocalSearch(searchQuery);
+  }, [searchQuery]);
 
   // Dynamic Brands state
   const [brands, setBrands] = useState<Brand[]>(FALLBACK_BRANDS);
@@ -89,12 +94,21 @@ export const Header: React.FC<HeaderProps> = ({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearchChange(localSearch);
+    const trimmed = localSearch.trim();
+    if (!trimmed) {
+      return;
+    }
+    if (onSearchChange) {
+      onSearchChange(trimmed);
+    }
+    router.push(`/search?q=${encodeURIComponent(trimmed)}`);
   };
 
   const handleClearSearch = () => {
     setLocalSearch('');
-    onSearchChange('');
+    if (onSearchChange) {
+      onSearchChange('');
+    }
   };
 
   return (
@@ -151,10 +165,9 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               type="button"
               onClick={() => setIsBrandOpen((prev) => !prev)}
-              className="flex items-center gap-1.5 px-2.5 py-2 text-xs font-bold text-white hover:bg-white/10 rounded-xl transition-colors shrink-0 cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 py-2 text-sm font-bold text-white hover:bg-white/10 rounded-xl transition-colors shrink-0 cursor-pointer"
               title="Danh mục thương hiệu chính hãng"
             >
-              <Layers className="w-4 h-4 text-white" />
               <span>Thương hiệu</span>
               <ChevronDown
                 className={`w-3.5 h-3.5 transition-transform duration-200 text-blue-200 ${
@@ -203,7 +216,7 @@ export const Header: React.FC<HeaderProps> = ({
               value={localSearch}
               onChange={(e) => {
                 setLocalSearch(e.target.value);
-                if (e.target.value === '') onSearchChange('');
+                if (e.target.value === '' && onSearchChange) onSearchChange('');
               }}
               placeholder="Tìm kiếm MacBook, iPhone, bàn phím cơ, chip M3, RTX 4060..."
               className="w-full bg-white hover:bg-blue-50/20 focus:bg-white text-sm text-slate-800 placeholder-slate-400 rounded-full pl-11 pr-10 py-2.5 shadow-sm border border-transparent focus:border-white focus:ring-4 focus:ring-white/20 transition-all outline-none"
@@ -379,7 +392,7 @@ export const Header: React.FC<HeaderProps> = ({
             value={localSearch}
             onChange={(e) => {
               setLocalSearch(e.target.value);
-              if (e.target.value === '') onSearchChange('');
+              if (e.target.value === '' && onSearchChange) onSearchChange('');
             }}
             placeholder="Tìm kiếm thiết bị công nghệ..."
             className="w-full bg-white text-sm text-slate-800 placeholder-slate-400 rounded-xl pl-10 pr-9 py-2 border border-transparent focus:ring-2 focus:ring-white/40 outline-none shadow-sm"

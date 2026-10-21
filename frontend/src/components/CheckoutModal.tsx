@@ -62,6 +62,14 @@ const DEFAULT_BRANCHES: Branch[] = [
   },
 ];
 
+export const CENTRAL_HUB_BRANCH: Branch = {
+  id: 'central-hub',
+  name: 'Kho Tổng BK-Store (Điều phối gom hàng liên chi nhánh)',
+  city: 'Toàn quốc',
+  address: 'Trung tâm phân phối & điều chuyển liên kho toàn quốc BK-Store',
+  phone: '1800.6868',
+};
+
 interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -104,7 +112,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [copiedField, setCopiedField] = useState<'code' | 'account' | null>(null);
 
   const selectedBranchObj =
-    branches.find((b) => b.id === selectedBranchId) || DEFAULT_BRANCHES[0];
+    selectedBranchId === 'central-hub'
+      ? CENTRAL_HUB_BRANCH
+      : branches.find((b) => b.id === selectedBranchId) || DEFAULT_BRANCHES[0];
 
   // 15-minute countdown timer for QR payment step
   useEffect(() => {
@@ -176,11 +186,23 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   const getBranchStockForProduct = useCallback(
     (product: Product, branchId: string): number => {
+      if (branchId === 'central-hub') {
+        return product.stock ?? product.stock_quantity ?? 0;
+      }
       const invItem = inventoryItems.find(
         (it) => it.productId === product.id || it.productSlug === product.slug
       );
       if (invItem) {
-        const bStock = invItem.branchesStock.find((bs) => bs.branchId === branchId);
+        const bStock = invItem.branchesStock.find(
+          (bs) =>
+            bs.branchId === branchId ||
+            (branchId.endsWith('001') && bs.branchId === 'b1') ||
+            (branchId.endsWith('002') && bs.branchId === 'b2') ||
+            (branchId.endsWith('003') && bs.branchId === 'b3') ||
+            (branchId === 'b1' && bs.branchId.endsWith('001')) ||
+            (branchId === 'b2' && bs.branchId.endsWith('002')) ||
+            (branchId === 'b3' && bs.branchId.endsWith('003'))
+        );
         if (bStock !== undefined) return bStock.quantity;
       }
       // Fallback to product.inventories if present
@@ -188,13 +210,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         const matched = product.inventories.find(
           (inv) =>
             inv.branchId === branchId ||
-            (branchId.endsWith('001') && (inv.branchId === 'b1' || inv.city.includes('Hà Nội'))) ||
-            (branchId.endsWith('002') && (inv.branchId === 'b2' || inv.city.includes('Hồ Chí Minh') || inv.city.includes('HCM'))) ||
-            (branchId.endsWith('003') && (inv.branchId === 'b3' || inv.city.includes('Đà Nẵng')))
+            (branchId.endsWith('001') && (inv.branchId === 'b1' || inv.city?.includes('Hà Nội'))) ||
+            (branchId.endsWith('002') && (inv.branchId === 'b2' || inv.city?.includes('Hồ Chí Minh') || inv.city?.includes('HCM'))) ||
+            (branchId.endsWith('003') && (inv.branchId === 'b3' || inv.city?.includes('Đà Nẵng'))) ||
+            (branchId === 'b1' && (inv.branchId?.endsWith('001') || inv.city?.includes('Hà Nội'))) ||
+            (branchId === 'b2' && (inv.branchId?.endsWith('002') || inv.city?.includes('Hồ Chí Minh') || inv.city?.includes('HCM'))) ||
+            (branchId === 'b3' && (inv.branchId?.endsWith('003') || inv.city?.includes('Đà Nẵng')))
         );
         if (matched !== undefined) return matched.quantity;
       }
-      return 5;
+      return product.stock ?? product.stock_quantity ?? 5;
     },
     [inventoryItems]
   );
@@ -213,7 +238,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     }
   }, [isOpen]);
 
-  // Load branch stock overview
+  // Load branch stock overview and auto-select branch that can fulfill items
   useEffect(() => {
     if (isOpen && !createdOrder) {
       fetchInventoryOverview()
@@ -223,26 +248,38 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           }
           if (data.items) {
             setInventoryItems(data.items);
-            const currentItems = useCartStore.getState().items;
+            const itemsToCheck = effectiveItems.length > 0 ? effectiveItems : useCartStore.getState().items;
             const availBranches = data.branches?.length ? data.branches : DEFAULT_BRANCHES;
             const firstValid = availBranches.find((b) =>
-              currentItems.every(({ product, quantity }) => {
+              itemsToCheck.every(({ product, quantity }) => {
                 const invProd = data.items.find(
                   (it) => it.productId === product.id || it.productSlug === product.slug
                 );
-                const qty =
-                  invProd?.branchesStock.find((bs) => bs.branchId === b.id)?.quantity ?? 5;
+                const bStock = invProd?.branchesStock.find(
+                  (bs) =>
+                    bs.branchId === b.id ||
+                    (b.id.endsWith('001') && bs.branchId === 'b1') ||
+                    (b.id.endsWith('002') && bs.branchId === 'b2') ||
+                    (b.id.endsWith('003') && bs.branchId === 'b3') ||
+                    (bs.branchId.endsWith('001') && b.id === 'b1') ||
+                    (bs.branchId.endsWith('002') && b.id === 'b2') ||
+                    (bs.branchId.endsWith('003') && b.id === 'b3')
+                );
+                const qty = bStock?.quantity ?? (product.stock ?? product.stock_quantity ?? 5);
                 return qty >= quantity;
               })
             );
             if (firstValid) {
               setSelectedBranchId(firstValid.id);
+            } else {
+              // Tự động chuyển sang Kho Tổng gom hàng liên chi nhánh nếu không chi nhánh nào đủ 100%
+              setSelectedBranchId('central-hub');
             }
           }
         })
         .catch(() => {});
     }
-  }, [isOpen, createdOrder]);
+  }, [isOpen, createdOrder, effectiveItems]);
 
   if (!isOpen) return null;
 
@@ -286,12 +323,27 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         return;
       }
 
-      const branchStock = getBranchStockForProduct(item.product, selectedBranchId);
-      if (item.quantity > branchStock) {
-        setErrorMsg(
-          `Kho "${selectedBranchObj.name}" hiện chỉ còn ${branchStock} máy "${item.product.name}" (bạn đặt ${item.quantity} máy). Vui lòng chọn kho chi nhánh khác!`
-        );
-        return;
+      if (selectedBranchId !== 'central-hub') {
+        const branchStock = getBranchStockForProduct(item.product, selectedBranchId);
+        if (item.quantity > branchStock) {
+          // Tự động tìm chi nhánh khác còn đủ hàng để hỗ trợ khách hàng không bị kẹt đơn
+          const alternativeBranch = branches.find(
+            (b) => getBranchStockForProduct(item.product, b.id) >= item.quantity
+          );
+          if (alternativeBranch) {
+            setSelectedBranchId(alternativeBranch.id);
+            setErrorMsg(
+              `Kho "${selectedBranchObj.name}" không đủ hàng (${branchStock} máy), hệ thống đã tự động chuyển sang kho "${alternativeBranch.name}" (còn đủ máy). Vui lòng nhấn "Xác nhận đặt hàng" lần nữa để hoàn tất!`
+            );
+          } else {
+            // Không có kho đơn lẻ nào đủ, nhưng tổng kho còn đủ -> Tự động chuyển sang Kho Tổng gom hàng liên chi nhánh
+            setSelectedBranchId('central-hub');
+            setErrorMsg(
+              `Từng kho riêng lẻ không đủ số lượng (${item.quantity} máy), nhưng Tổng kho BK-Store còn đủ ${maxStock} máy! Hệ thống đã tự động kích hoạt chế độ "Gom hàng liên chi nhánh". Vui lòng nhấn "Xác nhận đặt hàng" lần nữa để hoàn tất!`
+            );
+          }
+          return;
+        }
       }
     }
 
@@ -1003,11 +1055,85 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
                 {/* Branch / Warehouse Selection */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
-                    <Warehouse className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Chọn kho / chi nhánh xuất hàng <span className="text-rose-500">*</span></span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                      <Warehouse className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Chọn kho / phương thức xuất hàng <span className="text-rose-500">*</span></span>
+                    </label>
+                    {selectedBranchId === 'central-hub' && (
+                      <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
+                        ✨ Đang chọn gom hàng liên chi nhánh
+                      </span>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-1 gap-2.5">
+                    {/* Tùy chọn 1: Kho Tổng gom hàng liên chi nhánh */}
+                    {(() => {
+                      const isSelected = selectedBranchId === 'central-hub';
+                      const canTotalFulfill = effectiveItems.every(
+                        ({ product, quantity }) => (product.stock ?? product.stock_quantity ?? 0) >= quantity
+                      );
+
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedBranchId('central-hub')}
+                          className={`p-3 rounded-xl border text-left transition-all flex flex-col gap-1.5 cursor-pointer ${
+                            isSelected
+                              ? 'border-indigo-600 bg-indigo-50/70 ring-2 ring-indigo-500/20 shadow-xs'
+                              : 'border-indigo-200 hover:border-indigo-300 bg-indigo-50/30'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                                  isSelected
+                                    ? 'border-indigo-600 bg-indigo-600 text-white'
+                                    : 'border-slate-300 bg-white'
+                                }`}
+                              >
+                                {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                              </span>
+                              <span className="text-xs font-bold text-indigo-950">
+                                {CENTRAL_HUB_BRANCH.name}
+                              </span>
+                            </div>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                                canTotalFulfill
+                                  ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
+                                  : 'bg-rose-100 text-rose-700'
+                              }`}
+                            >
+                              {canTotalFulfill ? 'Đủ hàng (Gom liên kho)' : 'Tổng kho không đủ'}
+                            </span>
+                          </div>
+
+                          <div className="pl-6 text-[11px] text-slate-600 leading-snug">
+                            Tự động gom hàng từ các chi nhánh (Hà Nội, TP.HCM, Đà Nẵng...) khi từng kho riêng lẻ không đủ số lượng. Giao hàng toàn quốc 2-4 ngày (Miễn phí điều phối).
+                          </div>
+
+                          <div className="pl-6 flex flex-wrap gap-1.5 mt-0.5">
+                            {effectiveItems.map(({ product, quantity }, idx) => {
+                              const total = product.stock ?? product.stock_quantity ?? 0;
+                              return (
+                                <span
+                                  key={idx}
+                                  className="text-[10px] font-mono px-2 py-0.5 rounded-md border bg-white border-indigo-200 text-indigo-800"
+                                >
+                                  {effectiveItems.length > 1 ? `${product.name.split('(')[0].trim()}: ` : 'Tổng kho toàn quốc: '}
+                                  <strong>{total}</strong> máy (bạn đặt {quantity})
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </button>
+                      );
+                    })()}
+
+                    {/* Danh sách các chi nhánh vật lý cụ thể */}
                     {branches.map((branch) => {
                       const isSelected = selectedBranchId === branch.id;
                       const itemStocks = effectiveItems.map(({ product, quantity }) => {
@@ -1026,7 +1152,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                           key={branch.id}
                           type="button"
                           onClick={() => setSelectedBranchId(branch.id)}
-                          className={`p-3 rounded-xl border text-left transition-all flex flex-col gap-1.5 ${
+                          className={`p-3 rounded-xl border text-left transition-all flex flex-col gap-1.5 cursor-pointer ${
                             isSelected
                               ? canFulfillAll
                                 ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-500/15'
@@ -1083,6 +1209,22 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                         </button>
                       );
                     })}
+                  </div>
+
+                  {/* Thông báo điều phối xuất kho thông minh */}
+                  <div className={`mt-2.5 p-3 rounded-xl border text-xs flex items-center gap-2 ${
+                    selectedBranchId === 'central-hub'
+                      ? 'bg-indigo-50/90 border-indigo-200 text-indigo-950 font-medium'
+                      : 'bg-blue-50/80 border-blue-200/80 text-blue-900'
+                  }`}>
+                    <Truck className={`w-4 h-4 shrink-0 ${selectedBranchId === 'central-hub' ? 'text-indigo-600' : 'text-blue-600'}`} />
+                    <span>
+                      {selectedBranchId === 'central-hub' ? (
+                        <>Phương thức xuất hàng: <strong>Gom hàng liên chi nhánh BK-Store</strong>. Hệ thống sẽ điều phối xuất kho từ nhiều chi nhánh để đảm bảo giao đủ số lượng máy cho bạn.</>
+                      ) : (
+                        <>Xuất kho từ: <strong>{selectedBranchObj.name}</strong>. Hỗ trợ giao hỏa tốc 2H hoặc điều chuyển giao tận nhà toàn quốc (2 - 3 ngày).</>
+                      )}
+                    </span>
                   </div>
                 </div>
 

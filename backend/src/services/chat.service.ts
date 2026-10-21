@@ -90,7 +90,13 @@ VAI TRÒ & PHONG CÁCH:
 
 NGUYÊN TẮC BẮT BUỘC:
 1. DỮ LIỆU ĐƯỢC CUNG CẤP: Dựa trên NGỮ CẢNH TRI THỨC (Chính sách, Cẩm nang) và DỮ LIỆU THỰC TẾ (Tồn kho, Đơn hàng, Danh mục) được hệ thống chuyển đến bên dưới. Tuyệt đối không tự bịa đặt thông tin không có trong tài liệu.
-2. TƯ VẤN CẤU HÌNH: Giải thích vì sao cấu hình đó phù hợp với nhu cầu của khách (ví dụ: sinh viên kinh tế cần mỏng nhẹ pin trâu; AI/Data Science cần 32GB RAM + GPU CUDA; gaming cần tần số quét cao).
+2. NGUYÊN TẮC TƯ VẤN CẤU HÌNH & SẢN PHẨM (TUYỆT ĐỐI KHÔNG XẢ BẢNG THÔNG SỐ CHI TIẾT RA MÀN HÌNH):
+- Giao diện khung chat đã có sẵn các THẺ SẢN PHẨM TƯƠNG TÁC (Product Cards) hiển thị trực quan ảnh máy, giá bán ưu đãi, link xem chi tiết và tóm tắt cấu hình ngay phía dưới câu trả lời của bạn.
+- TUYỆT ĐỐI KHÔNG liệt kê bảng thông số kỹ thuật chi tiết (như danh sách dài dòng CPU, GPU, RAM, SSD, độ phân giải màn hình, dung lượng pin, cổng kết nối, chuẩn Wi-Fi/Bluetooth...) vào trong nội dung tin nhắn văn bản, vì sẽ làm câu trả lời quá dài, choán hết màn hình và che khuất thẻ card sản phẩm.
+- Cách trình bày tư vấn chuẩn:
+  + Đưa ra nhận xét ngắn gọn 1-2 câu giải thích tiêu chí chọn cấu hình phù hợp với nhu cầu/ngân sách của khách (ví dụ: sinh viên kinh tế cần mỏng nhẹ pin trâu; AI/Data Science cần 32GB RAM + GPU CUDA; gaming cần tản nhiệt tốt & tần số quét cao).
+  + Khi gợi ý các dòng máy (tối đa 2–3 mẫu máy): Chỉ nêu Tên máy + Mức giá + 1 đến 2 ưu điểm đắt giá nhất giải quyết đúng nỗi đau hoặc nhu cầu của khách (Ví dụ: "MacBook Air M3 (26.990.000₫): Siêu mỏng nhẹ 1.2kg, pin trâu 18 tiếng liên tục, màn Retina sắc nét" hoặc "ASUS ROG Zephyrus G14 (48.990.000₫): Trang bị RTX 4060 và màn OLED 120Hz chuyên trị đồ họa 3D/gaming").
+  + Ở cuối tin nhắn, hướng dẫn ngắn gọn: "Anh/chị có thể xem ảnh thực tế và cấu hình chi tiết tại thẻ sản phẩm ngay bên dưới nhé ạ!" và hỏi bước tiếp theo (muốn kiểm tra tồn kho chi nhánh nào hay cần tư vấn thêm).
 3. ĐƠN HÀNG & TÌNH TRẠNG DUYỆT ĐƠN:
 - Khi khách hàng hỏi về số lượng hoặc danh sách đơn hàng chưa được xác nhận, chưa được duyệt đơn:
   + Dựa vào "unconfirmedCount" trong DỮ LIỆU THỜI GIAN THỰC (LIVE DATA) để trả lời chính xác số lượng đơn hàng đang chờ duyệt.
@@ -1398,6 +1404,11 @@ class ChatService {
 
     const userPromptWithData = `${ragContextText ? `=== NGỮ CẢNH TRI THỨC CHUẨN XÁC TỪ BK-STORE (RAG) ===\n${ragContextText}\n\n` : ''}${toolResultData ? `=== DỮ LIỆU THỜI GIAN THỰC TỪ HỆ THỐNG / DATABASE (LIVE DATA) ===\nCông cụ: ${toolUsed}\nKết quả: ${JSON.stringify(toolResultData, null, 2)}\n\n` : ''}${conversationHistoryText ? `=== LỊCH SỬ HỘI THOẠI GẦN ĐÂY ===\n${conversationHistoryText}\n\n` : ''}Khách hàng vừa hỏi: "${message}"
 
+LƯU Ý QUAN TRỌNG VỀ ĐỘ DÀI & ĐỊNH DẠNG:
+- Giao diện thẻ tương tác (Product Cards) ngay phía dưới tin nhắn đã hiển thị đầy đủ hình ảnh, giá bán, link xem chi tiết và tóm tắt cấu hình của các máy.
+- TUYỆT ĐỐI KHÔNG liệt kê lại toàn bộ bảng thông số kỹ thuật chi tiết (như danh sách dài CPU, GPU, RAM, SSD, màn hình, pin, cổng kết nối...) trong tin nhắn văn bản vì sẽ làm câu trả lời quá dài.
+- Chỉ tư vấn ngắn gọn, súc tích (tối đa 2-3 máy, mỗi máy 1-2 dòng nêu điểm nổi bật nhất phù hợp với nhu cầu khách), và hướng dẫn khách xem chi tiết tại thẻ sản phẩm bên dưới.
+
 Hãy đưa ra câu trả lời trực tiếp cho khách hàng (chỉ xuất lời thoại tư vấn, tuyệt đối không in bất kỳ dòng checklist hoặc siêu dữ liệu tự kiểm tra nào):`;
 
     const startLlm = performance.now();
@@ -1464,15 +1475,18 @@ Hãy đưa ra câu trả lời trực tiếp cho khách hàng (chỉ xuất lờ
             replyText += `• **Đặc quyền hỗ trợ tại 3 Showroom (Hà Nội, TP.HCM, Đà Nẵng):** Đổi mới tại quầy trong 15–30 phút (trong 30 ngày đầu), và **hỗ trợ cho mượn miễn phí 01 thiết bị tương đương** dùng tạm nếu cần gửi thẩm định hãng (3–7 ngày).\n\n`;
             replyText += `Hiện **${p.name}** đang có giá ưu đãi **${p.formattedPrice}**. Anh/chị có muốn em kiểm tra tồn kho tại chi nhánh gần mình nhất không ạ?`;
           } else {
-            replyText = `Dạ chào anh/chị! Dưới đây là thông số kỹ thuật chi tiết và chính sách của **${p.name}** tại BK-Store:\n\n`;
-            replyText += `• **Thương hiệu:** ${p.brand}\n`;
-            replyText += `• **Giá niêm yết ưu đãi:** **${p.formattedPrice}**\n`;
-            if (p.specs && typeof p.specs === 'object') {
-              replyText += `• **Cấu hình nổi bật:**\n`;
-              replyText += Object.entries(p.specs).map(([k, v]) => `  - ${k.toUpperCase()}: ${v}`).join('\n') + '\n';
+            replyText = `Dạ chào anh/chị! Về mẫu máy **${p.name}** (${p.brand}), đây là dòng sản phẩm chính hãng 100% tại BK-Store với mức giá ưu đãi **${p.formattedPrice}**.\n\n`;
+            const highlightSpecs = [
+              p.specs?.cpu ? `CPU ${p.specs.cpu}` : '',
+              p.specs?.ram ? `RAM ${p.specs.ram}` : '',
+              p.specs?.gpu ? `GPU ${p.specs.gpu}` : '',
+              p.specs?.display ? `Màn hình ${p.specs.display}` : '',
+            ].filter(Boolean).slice(0, 2).join(' • ');
+            if (highlightSpecs) {
+              replyText += `• **Điểm nổi bật:** ${highlightSpecs}\n`;
             }
-            replyText += `• **Chính sách bảo hành:** Hàng chính hãng 100%, bảo hành **${p.warrantyMonths} tháng**, đặc quyền **1 đổi 1 trong 30 ngày** nếu có lỗi phần cứng.\n\n`;
-            replyText += `Mẫu máy này cực kỳ tối ưu cho các tác vụ làm việc và giải trí cao cấp. Anh/chị có muốn em kiểm tra tồn kho tại showroom gần mình nhất không ạ?`;
+            replyText += `• **Chính sách bảo hành:** Bảo hành chính hãng **${p.warrantyMonths} tháng**, đặc quyền **1 đổi 1 trong 30 ngày** nếu có lỗi phần cứng từ nhà sản xuất.\n\n`;
+            replyText += `Anh/chị có thể xem đầy đủ ảnh thực tế và thông số chi tiết tại thẻ sản phẩm ngay bên dưới nhé ạ. Anh/chị có muốn em kiểm tra tồn kho tại showroom gần mình nhất không ạ?`;
           }
         } else if (toolUsed === 'getProductReviews') {
           if (toolResultData.found && toolResultData.product) {
@@ -1566,13 +1580,14 @@ Hãy đưa ra câu trả lời trực tiếp cho khách hàng (chỉ xuất lờ
               `Anh/chị có thể bấm chọn gợi ý bên dưới hoặc nhắn trực tiếp cho em nhé! Em có gửi trước 2 mẫu máy tiêu biểu trong tầm giá này bên dưới ạ.`;
           } else {
             const introAdvice = toolResultData.advice
-              ? `${toolResultData.advice}\n\n**Dưới đây là các mẫu máy phù hợp nhất đang sẵn hàng tại BK-Store:**\n\n`
-              : `Dạ chào anh/chị! Dưới đây là các sản phẩm phù hợp nhất với tầm giá và nhu cầu của mình tại BK-Store:\n\n`;
+              ? `${toolResultData.advice}\n\n`
+              : `Dạ chào anh/chị! Dựa trên nhu cầu và tầm ngân sách của mình, em gợi ý các mẫu máy tối ưu nhất đang sẵn hàng tại BK-Store:\n\n`;
             replyText = `Dạ chào anh/chị! ${introAdvice}`;
             replyText += toolResultData.products
-              .map((p: any) => `• **${p.name}** — Giá ưu đãi: **${p.formattedPrice}**\n  *Cấu hình:* ${p.specsSummary}`)
-              .join('\n\n');
-            replyText += `\n\nTất cả sản phẩm đều là hàng chính hãng 100%, bảo hành 1 đổi 1 trong 30 ngày ạ!`;
+              .slice(0, 3)
+              .map((p: any) => `• **${p.name}** (Giá: **${p.formattedPrice}**): ${p.specsSummary || 'Hiệu năng mạnh mẽ, thiết kế cao cấp.'}`)
+              .join('\n');
+            replyText += `\n\nAnh/chị có thể xem ảnh thực tế và cấu hình chi tiết tại các thẻ sản phẩm bên dưới. Anh/chị cần em kiểm tra máy sẵn tại chi nhánh nào ạ?`;
           }
         } else if (matchedRagChunks && matchedRagChunks.length > 0) {
           const topChunk = matchedRagChunks[0].chunk;
