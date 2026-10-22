@@ -198,14 +198,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               </>
             ) : stock === 1 ? (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-50 border border-rose-200 text-rose-600 font-bold text-[10px] animate-pulse">
-                🔥 Chỉ còn 1 máy!
+                🔥 Chỉ còn 1 sản phẩm!
               </span>
             ) : stock <= 10 ? (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-700 font-bold text-[10px]">
-                ⚡ Sắp hết: Còn {stock} máy
+                ⚡ Sắp hết: Còn {stock} sản phẩm
               </span>
             ) : (
-              <span className="text-slate-400 text-[10px]">Kho: {stock} máy</span>
+              <span className="text-slate-400 text-[10px]">Kho: {stock} sản phẩm</span>
             )}
           </div>
 

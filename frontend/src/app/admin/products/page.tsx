@@ -520,7 +520,7 @@ export default function AdminProductsPage() {
                           }`}
                         >
                           <Package className="w-3 h-3" />
-                          {stock} máy
+                          {stock} sản phẩm
                         </span>
                       </td>
 
@@ -687,7 +687,7 @@ export default function AdminProductsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Số lượng tồn kho (máy)
+                    Số lượng tồn kho (sản phẩm)
                   </label>
                   <input
                     type="number"

@@ -693,7 +693,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                           </span>
                         </div>
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          Tổng kho: {msg.cards.data.totalStock} máy
+                          Tổng kho: {msg.cards.data.totalStock} sản phẩm
                         </span>
                       </div>
                       <div className="space-y-1.5 pt-0.5">

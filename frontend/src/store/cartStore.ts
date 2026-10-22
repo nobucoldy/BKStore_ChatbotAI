@@ -98,7 +98,7 @@ export const useCartStore = create<CartState>()(
         if (currentQty >= maxStock) {
           return {
             success: false,
-            message: `Bạn đã có ${currentQty} máy trong giỏ hàng (đã đạt giới hạn tồn kho ${maxStock} máy).`,
+            message: `Bạn đã có ${currentQty} sản phẩm trong giỏ hàng (đã đạt giới hạn tồn kho ${maxStock} sản phẩm).`,
             addedQuantity: 0,
           };
         }
@@ -123,7 +123,7 @@ export const useCartStore = create<CartState>()(
         if (isClamped) {
           return {
             success: true,
-            message: `Chỉ còn ${maxStock} máy trong kho. Đã thêm tối đa ${actualAdd} máy vào giỏ hàng.`,
+            message: `Chỉ còn ${maxStock} sản phẩm trong kho. Đã thêm tối đa ${actualAdd} sản phẩm vào giỏ hàng.`,
             addedQuantity: actualAdd,
           };
         }
@@ -163,7 +163,7 @@ export const useCartStore = create<CartState>()(
           return {
             success: false,
             clamped: true,
-            message: `Số lượng yêu cầu (${quantity}) vượt quá tồn kho (${maxStock} máy). Hệ thống đã tự động điều chỉnh về ${maxStock}.`,
+            message: `Số lượng yêu cầu (${quantity}) vượt quá tồn kho (${maxStock} sản phẩm). Hệ thống đã tự động điều chỉnh về ${maxStock}.`,
           };
         }
 

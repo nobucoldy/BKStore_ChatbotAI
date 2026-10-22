@@ -1657,7 +1657,7 @@ export async function transferInventoryStock(
     if (currentFrom < payload.quantity) {
       return {
         success: false,
-        error: `Kho xuất chỉ còn ${currentFrom} máy, không đủ ${payload.quantity} để chuyển.`,
+        error: `Kho xuất chỉ còn ${currentFrom} sản phẩm, không đủ ${payload.quantity} để chuyển.`,
       };
     }
     const currentTo = getLocalStock(payload.productId, payload.toBranchId);

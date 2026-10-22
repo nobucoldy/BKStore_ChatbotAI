@@ -178,7 +178,7 @@ export default function ProductDetailPage() {
     const inCartQty = existing ? existing.quantity : 0;
 
     if (inCartQty >= stock) {
-      setCartFeedback(`Sản phẩm này đã đạt số lượng tối đa trong giỏ (${stock} máy).`);
+      setCartFeedback(`Sản phẩm này đã đạt số lượng tối đa trong giỏ (${stock} sản phẩm).`);
       setTimeout(() => setCartFeedback(null), 4000);
       return;
     }
@@ -329,13 +329,13 @@ export default function ProductDetailPage() {
               {!isOutOfStock && stock === 1 && (
                 <div className="mb-4 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-rose-50 border border-rose-300 text-rose-700 text-xs font-bold animate-pulse">
                   <span>🔥</span>
-                  <span>Chỉ còn 1 máy duy nhất trong hệ thống! Nhanh tay kẻo hết</span>
+                  <span>Chỉ còn 1 sản phẩm duy nhất trong hệ thống! Nhanh tay kẻo hết</span>
                 </div>
               )}
               {!isOutOfStock && stock > 1 && stock <= 10 && (
                 <div className="mb-4 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-800 text-xs font-bold">
                   <span>⚡</span>
-                  <span>Sắp hết hàng: Chỉ còn {stock} máy trong kho!</span>
+                  <span>Sắp hết hàng: Chỉ còn {stock} sản phẩm trong kho!</span>
                 </div>
               )}
 
@@ -393,7 +393,7 @@ export default function ProductDetailPage() {
                       onClick={() => setQuantity((q) => Math.min(stock, q + 1))}
                       disabled={quantity >= stock || isOutOfStock}
                       className="px-3 py-1.5 text-slate-600 hover:bg-slate-200 disabled:opacity-40 transition-colors cursor-pointer"
-                      title={quantity >= stock ? `Đã đạt giới hạn tồn kho tối đa (${stock} máy)` : 'Tăng số lượng'}
+                      title={quantity >= stock ? `Đã đạt giới hạn tồn kho tối đa (${stock} sản phẩm)` : 'Tăng số lượng'}
                     >
                       +
                     </button>
@@ -403,14 +403,14 @@ export default function ProductDetailPage() {
                       <span className="text-rose-600 font-semibold">Tạm hết hàng</span>
                     ) : stock === 1 ? (
                       <span className="inline-flex items-center gap-1 font-bold text-rose-600 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-md">
-                        🔥 Chỉ còn 1 máy duy nhất!
+                        🔥 Chỉ còn 1 sản phẩm duy nhất!
                       </span>
                     ) : stock <= 10 ? (
                       <span className="inline-flex items-center gap-1 font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-md">
-                        ⚡ Sắp hết hàng: Còn {stock} máy
+                        ⚡ Sắp hết hàng: Còn {stock} sản phẩm
                       </span>
                     ) : (
-                      <span className="text-slate-500 font-medium">Còn {stock} máy trong kho</span>
+                      <span className="text-slate-500 font-medium">Còn {stock} sản phẩm trong kho</span>
                     )}
                   </span>
                 </div>
@@ -536,7 +536,7 @@ export default function ProductDetailPage() {
                                   inStock ? 'bg-emerald-500' : 'bg-rose-500'
                                 }`}
                               ></span>
-                              {inStock ? `Còn ${q} máy` : 'Hết hàng'}
+                              {inStock ? `Còn ${q} sản phẩm` : 'Hết hàng'}
                             </span>
                           </div>
                         </div>

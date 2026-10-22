@@ -9,6 +9,7 @@ export const getAllBrands = async () => {
       name: b.name,
       slug: b.slug,
       description: b.description,
+      logo: (b as any).logo || `/brands/${b.slug.toLowerCase()}.svg`,
     }));
   }
 
@@ -23,6 +24,7 @@ export const getAllBrands = async () => {
     name: r.name,
     slug: r.slug,
     description: r.description,
+    logo: `/brands/${r.slug.toLowerCase()}.svg`,
   }));
 };
 
@@ -30,7 +32,7 @@ export const getBrandBySlug = async (slug: string) => {
   const isDbConnected = await checkDbConnection();
   if (!isDbConnected) {
     const brand = fallbackBrands.find((b) => b.slug.toLowerCase() === slug.toLowerCase());
-    return brand || null;
+    return brand ? { ...brand, logo: (brand as any).logo || `/brands/${brand.slug.toLowerCase()}.svg` } : null;
   }
 
   const query = `
@@ -39,5 +41,5 @@ export const getBrandBySlug = async (slug: string) => {
     WHERE LOWER(slug) = LOWER($1)
   `;
   const res = await pool.query(query, [slug]);
-  return res.rows[0] || null;
+  return res.rows[0] ? { ...res.rows[0], logo: `/brands/${res.rows[0].slug.toLowerCase()}.svg` } : null;
 };

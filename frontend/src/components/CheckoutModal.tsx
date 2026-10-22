@@ -318,7 +318,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       }
       if (item.quantity > maxStock) {
         setErrorMsg(
-          `Sản phẩm "${item.product.name}" chỉ còn ${maxStock} máy trong kho (bạn đang chọn ${item.quantity} máy). Vui lòng điều chỉnh lại số lượng.`
+          `Sản phẩm "${item.product.name}" chỉ còn ${maxStock} sản phẩm trong kho (bạn đang chọn ${item.quantity} sản phẩm). Vui lòng điều chỉnh lại số lượng.`
         );
         return;
       }
@@ -333,13 +333,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           if (alternativeBranch) {
             setSelectedBranchId(alternativeBranch.id);
             setErrorMsg(
-              `Kho "${selectedBranchObj.name}" không đủ hàng (${branchStock} máy), hệ thống đã tự động chuyển sang kho "${alternativeBranch.name}" (còn đủ máy). Vui lòng nhấn "Xác nhận đặt hàng" lần nữa để hoàn tất!`
+              `Kho "${selectedBranchObj.name}" không đủ hàng (${branchStock} sản phẩm), hệ thống đã tự động chuyển sang kho "${alternativeBranch.name}" (còn đủ máy). Vui lòng nhấn "Xác nhận đặt hàng" lần nữa để hoàn tất!`
             );
           } else {
             // Không có kho đơn lẻ nào đủ, nhưng tổng kho còn đủ -> Tự động chuyển sang Kho Tổng gom hàng liên chi nhánh
             setSelectedBranchId('central-hub');
             setErrorMsg(
-              `Từng kho riêng lẻ không đủ số lượng (${item.quantity} máy), nhưng Tổng kho BK-Store còn đủ ${maxStock} máy! Hệ thống đã tự động kích hoạt chế độ "Gom hàng liên chi nhánh". Vui lòng nhấn "Xác nhận đặt hàng" lần nữa để hoàn tất!`
+              `Từng kho riêng lẻ không đủ số lượng (${item.quantity} sản phẩm), nhưng Tổng kho BK-Store còn đủ ${maxStock} sản phẩm! Hệ thống đã tự động kích hoạt chế độ "Gom hàng liên chi nhánh". Vui lòng nhấn "Xác nhận đặt hàng" lần nữa để hoàn tất!`
             );
           }
           return;
@@ -620,7 +620,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     <span>Chi tiết sản phẩm đã đặt ({createdOrder.items.length}):</span>
                   </span>
                   <span className="text-xs font-mono text-slate-500">
-                    Tổng cộng: <strong>{createdOrder.items.reduce((sum, it) => sum + it.quantity, 0)}</strong> máy
+                    Tổng cộng: <strong>{createdOrder.items.reduce((sum, it) => sum + it.quantity, 0)}</strong> sản phẩm
                   </span>
                 </div>
 
@@ -1124,7 +1124,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                                   className="text-[10px] font-mono px-2 py-0.5 rounded-md border bg-white border-indigo-200 text-indigo-800"
                                 >
                                   {effectiveItems.length > 1 ? `${product.name.split('(')[0].trim()}: ` : 'Tổng kho toàn quốc: '}
-                                  <strong>{total}</strong> máy (bạn đặt {quantity})
+                                  <strong>{total}</strong> sản phẩm (bạn đặt {quantity})
                                 </span>
                               );
                             })}
@@ -1220,7 +1220,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     <Truck className={`w-4 h-4 shrink-0 ${selectedBranchId === 'central-hub' ? 'text-indigo-600' : 'text-blue-600'}`} />
                     <span>
                       {selectedBranchId === 'central-hub' ? (
-                        <>Phương thức xuất hàng: <strong>Gom hàng liên chi nhánh BK-Store</strong>. Hệ thống sẽ điều phối xuất kho từ nhiều chi nhánh để đảm bảo giao đủ số lượng máy cho bạn.</>
+                        <>Phương thức xuất hàng: <strong>Gom hàng liên chi nhánh BK-Store</strong>. Hệ thống sẽ điều phối xuất kho từ nhiều chi nhánh để đảm bảo giao đủ số lượng sản phẩm cho bạn.</>
                       ) : (
                         <>Xuất kho từ: <strong>{selectedBranchObj.name}</strong>. Hỗ trợ giao hỏa tốc 2H hoặc điều chuyển giao tận nhà toàn quốc (2 - 3 ngày).</>
                       )}

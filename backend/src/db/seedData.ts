@@ -10,6 +10,7 @@ export interface SeedBrand {
   name: string;
   slug: string;
   description: string;
+  logo?: string;
 }
 
 export interface SeedBranch {
@@ -37,623 +38,1588 @@ export interface SeedProduct {
 
 export const categories: SeedCategory[] = [
   {
-    id: 'c1000000-0000-0000-0000-000000000001',
-    name: 'Laptop & Máy tính xách tay',
-    slug: 'laptop',
-    description: 'Laptop văn phòng, đồ họa, gaming chính hãng cấu hình cao từ Apple, Asus, Dell, Lenovo, Acer.',
+    "id": "c1000000-0000-0000-0000-000000000001",
+    "name": "Laptop & Máy tính xách tay",
+    "slug": "laptop",
+    "description": "Laptop văn phòng, đồ họa, gaming chính hãng cấu hình cao từ Apple, Asus, Dell, Lenovo, Acer."
   },
   {
-    id: 'c1000000-0000-0000-0000-000000000002',
-    name: 'Điện thoại thông minh',
-    slug: 'smartphone',
-    description: 'Smartphone cao cấp chính hãng Apple iPhone, Samsung Galaxy, Xiaomi đỉnh cao công nghệ.',
+    "id": "c1000000-0000-0000-0000-000000000002",
+    "name": "Điện thoại thông minh",
+    "slug": "smartphone",
+    "description": "Smartphone cao cấp chính hãng Apple iPhone, Samsung Galaxy, Xiaomi đỉnh cao công nghệ."
   },
   {
-    id: 'c1000000-0000-0000-0000-000000000003',
-    name: 'Phụ kiện & Thiết bị ngoại vi',
-    slug: 'accessory',
-    description: 'Tai nghe chống ồn, chuột công thái học, bàn phím cơ và củ sạc GaN siêu nhanh.',
-  },
+    "id": "c1000000-0000-0000-0000-000000000003",
+    "name": "Phụ kiện & Thiết bị ngoại vi",
+    "slug": "accessory",
+    "description": "Tai nghe chống ồn, chuột công thái học, bàn phím cơ và củ sạc GaN siêu nhanh."
+  }
 ];
 
 export const brands: SeedBrand[] = [
   {
-    id: 'br000000-0000-0000-0000-000000000001',
-    name: 'Apple',
-    slug: 'apple',
-    description:
-      'Thương hiệu công nghệ hàng đầu thế giới từ Mỹ. Nổi bật với hệ sinh thái MacBook, iPhone, iPad sang trọng, chip Apple Silicon hiệu năng mạnh mẽ, thời lượng pin bền bỉ và bảo hành chính hãng VN/A.',
+    "id": "br000000-0000-0000-0000-000000000001",
+    "name": "Apple",
+    "slug": "apple",
+    "description": "Thương hiệu công nghệ hàng đầu thế giới từ Mỹ. Nổi bật với hệ sinh thái MacBook, iPhone, iPad sang trọng, chip Apple Silicon hiệu năng mạnh mẽ, thời lượng pin bền bỉ và bảo hành chính hãng VN/A.",
+    "logo": "/brands/apple.svg"
   },
   {
-    id: 'br000000-0000-0000-0000-000000000002',
-    name: 'Dell',
-    slug: 'dell',
-    description:
-      'Thương hiệu máy tính danh tiếng từ Hoa Kỳ, nổi bật với độ bền chuẩn quân đội, bàn phím gõ êm và màn hình viền siêu mỏng InfinityEdge trên dòng Dell XPS doanh nhân, Dell Inspiron và máy trạm Precision.',
+    "id": "br000000-0000-0000-0000-000000000002",
+    "name": "ASUS",
+    "slug": "asus",
+    "description": "Thương hiệu công nghệ tiên phong từ Đài Loan, dẫn đầu với laptop gaming ASUS ROG Zephyrus tản nhiệt kim loại lỏng và laptop văn phòng cao cấp Zenbook màn hình Lumina OLED rực rỡ chuẩn điện ảnh.",
+    "logo": "/brands/asus.svg"
   },
   {
-    id: 'br000000-0000-0000-0000-000000000003',
-    name: 'ASUS',
-    slug: 'asus',
-    description:
-      'Thương hiệu công nghệ tiên phong từ Đài Loan, dẫn đầu với laptop gaming ASUS ROG Zephyrus tản nhiệt kim loại lỏng và laptop văn phòng cao cấp Zenbook màn hình Lumina OLED rực rỡ chuẩn điện ảnh.',
+    "id": "br000000-0000-0000-0000-000000000003",
+    "name": "Samsung",
+    "slug": "samsung",
+    "description": "Tập đoàn công nghệ hàng đầu Hàn Quốc, dẫn đầu toàn cầu về màn hình Dynamic AMOLED 2X, thiết kế gập đột phá Galaxy Z Fold/Flip, camera 200MP và kỷ nguyên trí tuệ nhân tạo Galaxy AI.",
+    "logo": "/brands/samsung.svg"
   },
   {
-    id: 'br000000-0000-0000-0000-000000000004',
-    name: 'Samsung',
-    slug: 'samsung',
-    description:
-      'Tập đoàn công nghệ hàng đầu Hàn Quốc, dẫn đầu toàn cầu về màn hình Dynamic AMOLED 2X, thiết kế gập đột phá Galaxy Z Fold/Flip, camera 200MP và kỷ nguyên trí tuệ nhân tạo Galaxy AI.',
+    "id": "br000000-0000-0000-0000-000000000004",
+    "name": "Sony",
+    "slug": "sony",
+    "description": "Biểu tượng âm thanh và hình ảnh Nhật Bản đỉnh cao. Dẫn đầu với tai nghe chống ồn chủ động ANC chuẩn phòng thu WH-1000XM5, âm thanh Hi-Res Audio không dây LDAC và màng loa sợi carbon cao cấp.",
+    "logo": "/brands/sony.svg"
   },
   {
-    id: 'br000000-0000-0000-0000-000000000005',
-    name: 'Sony',
-    slug: 'sony',
-    description:
-      'Biểu tượng âm thanh và hình ảnh Nhật Bản đỉnh cao. Dẫn đầu với tai nghe chống ồn chủ động ANC chuẩn phòng thu WH-1000XM5, âm thanh Hi-Res Audio không dây LDAC và màng loa sợi carbon cao cấp.',
+    "id": "br000000-0000-0000-0000-000000000005",
+    "name": "Lenovo",
+    "slug": "lenovo",
+    "description": "Tập đoàn công nghệ hàng đầu toàn cầu, sở hữu dòng laptop doanh nhân ThinkPad huyền thoại, ThinkBook thanh lịch và laptop gaming Legion đỉnh cao.",
+    "logo": "/brands/lenovo.svg"
   },
   {
-    id: 'br000000-0000-0000-0000-000000000006',
-    name: 'Keychron',
-    slug: 'keychron',
-    description:
-      'Thương hiệu bàn phím cơ Custom cao cấp hàng đầu thế giới. Tối ưu hoàn hảo chuyển đổi giữa Mac và Windows, kết nối không dây đa thiết bị, mạch hotswap linh hoạt và tùy biến firmware QMK/VIA.',
+    "id": "br000000-0000-0000-0000-000000000006",
+    "name": "Xiaomi",
+    "slug": "xiaomi",
+    "description": "Tập đoàn công nghệ và thiết bị thông minh hàng đầu với hệ sinh thái Xiaomi Smart Living, smartphone cao cấp cấu hình vượt trội và phụ kiện tiện ích.",
+    "logo": "/brands/xiaomi.svg"
   },
   {
-    id: 'br000000-0000-0000-0000-000000000007',
-    name: 'Anker',
-    slug: 'anker',
-    description:
-      'Thương hiệu phụ kiện sạc số 1 thế giới từ Mỹ. Tiên phong công nghệ bán dẫn GaNPrime siêu nhỏ gọn công suất cao 65W-140W, sạc thông minh PowerIQ và cáp bọc dù siêu bền uốn gập hơn 20.000 lần.',
-  },
+    "id": "br000000-0000-0000-0000-000000000007",
+    "name": "Logitech",
+    "slug": "logitech",
+    "description": "Thương hiệu thiết bị ngoại vi số 1 thế giới từ Thụy Sĩ, dẫn đầu với chuột văn phòng MX Master, chuột gaming Logitech G Pro và bàn phím cơ công thái học.",
+    "logo": "/brands/logitech.svg"
+  }
 ];
 
 export const branches: SeedBranch[] = [
   {
-    id: 'b1000000-0000-0000-0000-000000000001',
-    name: 'BK-Store Cầu Giấy (Hà Nội)',
-    city: 'Hà Nội',
-    address: '268 Cầu Giấy, P. Dịch Vọng, Q. Cầu Giấy, Hà Nội',
-    phone: '024.3838.9999',
+    "id": "b1000000-0000-0000-0000-000000000001",
+    "name": "BK-Store Cầu Giấy (Hà Nội)",
+    "city": "Hà Nội",
+    "address": "268 Cầu Giấy, P. Dịch Vọng, Q. Cầu Giấy, Hà Nội",
+    "phone": "024.3838.9999"
   },
   {
-    id: 'b1000000-0000-0000-0000-000000000002',
-    name: 'BK-Store Quận 1 (TP. Hồ Chí Minh)',
-    city: 'TP. Hồ Chí Minh',
-    address: '123 Lê Lợi, P. Bến Thành, Quận 1, TP. Hồ Chí Minh',
-    phone: '028.3939.8888',
+    "id": "b1000000-0000-0000-0000-000000000002",
+    "name": "BK-Store Quận 1 (TP. Hồ Chí Minh)",
+    "city": "TP. Hồ Chí Minh",
+    "address": "123 Lê Lợi, P. Bến Thành, Quận 1, TP. Hồ Chí Minh",
+    "phone": "028.3939.8888"
   },
   {
-    id: 'b1000000-0000-0000-0000-000000000003',
-    name: 'BK-Store Hải Châu (Đà Nẵng)',
-    city: 'Đà Nẵng',
-    address: '45 Nguyễn Văn Linh, P. Nam Dương, Q. Hải Châu, Đà Nẵng',
-    phone: '0236.3636.777',
-  },
+    "id": "b1000000-0000-0000-0000-000000000003",
+    "name": "BK-Store Hải Châu (Đà Nẵng)",
+    "city": "Đà Nẵng",
+    "address": "45 Nguyễn Văn Linh, P. Nam Dương, Q. Hải Châu, Đà Nẵng",
+    "phone": "0236.3636.777"
+  }
 ];
 
 export const products: SeedProduct[] = [
-  // --- LAPTOPS ---
   {
-    id: 'p1000000-0000-0000-0000-000000000001',
-    categorySlug: 'laptop',
-    name: 'Apple MacBook Air 13 M3 (16GB RAM, 512GB SSD)',
-    slug: 'macbook-air-m3-13-16gb-512gb',
-    brand: 'Apple',
-    price: 31990000,
-    originalPrice: 34990000,
-    thumbnail: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&q=80',
-    images: [
-      'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&q=80',
-      'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=800&q=80',
+    "id": "p1000000-0000-0000-0000-000000000001",
+    "categorySlug": "laptop",
+    "name": "Laptop ASUS TUF Gaming A15 FA506NCG-HN396W (Ryzen 7 155, RTX 3050 4GB, 8GB, 512GB)",
+    "slug": "asus-tuf-gaming-a15-fa506ncg-hn396w",
+    "brand": "ASUS",
+    "price": 25990000,
+    "originalPrice": 32990000,
+    "thumbnail": "/images/tuf gaming.webp",
+    "images": [
+      "/images/tuf 1.webp",
+      "/images/tuf 2.webp"
     ],
-    specs: {
-      cpu: 'Apple M3 8-core CPU',
-      gpu: '10-core GPU, 16-core Neural Engine',
-      ram: '16GB Unified Memory',
-      storage: '512GB SSD Siêu tốc',
-      screen: '13.6 inch Liquid Retina (2560 x 1664), 500 nits, True Tone',
-      battery: 'Pin 52.6Wh, thời lượng lên đến 18 giờ',
-      weight: '1.24 kg',
-      os: 'macOS Sonoma',
+    "specs": {
+      "cpu": "AMD Ryzen 7 155 (6 nhân 12 luồng, Turbo 4.70GHz, 22MB Cache)",
+      "gpu": "NVIDIA GeForce RTX 3050 4GB GDDR6 (Up to 75W)",
+      "ram": "8GB DDR5 4800MHz (2 khe SO-DIMM, nâng cấp tối đa 64GB)",
+      "storage": "512GB PCIe 4.0 NVMe M.2 SSD (còn trống 1 khe M.2)",
+      "screen": "15.6 inch FHD (1920 x 1080) IPS 144Hz, 250 nits, Anti-glare, Adaptive-Sync",
+      "battery": "Pin 3-cell 48Wh, sạc 180W",
+      "weight": "2.30 kg",
+      "os": "Windows 11 Home"
     },
-    description: 'MacBook Air M3 mỏng nhẹ đỉnh cao với hiệu năng vượt trội, thời lượng pin cả ngày, phù hợp cho học tập, văn phòng và thiết kế đồ họa 2D chuyên sâu.',
-    warrantyMonths: 12,
+    "description": "Laptop gaming bền bỉ chuẩn quân đội MIL-STD-810H với chip AMD Ryzen 7 155 đời mới, card đồ họa rời RTX 3050, bàn phím RGB 1 vùng và hệ thống tản nhiệt 2 quạt làm mát hiệu quả.",
+    "warrantyMonths": 24
   },
   {
-    id: 'p1000000-0000-0000-0000-000000000002',
-    categorySlug: 'laptop',
-    name: 'Apple MacBook Pro 14 M3 Pro (18GB RAM, 512GB SSD)',
-    slug: 'macbook-pro-14-m3-pro-18gb-512gb',
-    brand: 'Apple',
-    price: 49990000,
-    originalPrice: 53990000,
-    thumbnail: 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&q=80',
-    images: [
-      'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&q=80',
-      'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=800&q=80',
+    "id": "p1000000-0000-0000-0000-000000000002",
+    "categorySlug": "laptop",
+    "name": "Laptop Gaming Lenovo LOQ 15IRX9 83DV01ALVN (i7 13650HX, RTX 4050 6GB, 16GB, 512GB)",
+    "slug": "lenovo-loq-15irx9-83dv01alvn",
+    "brand": "Lenovo",
+    "price": 36990000,
+    "originalPrice": 39990000,
+    "thumbnail": "/images/lenovo loq.webp",
+    "images": [
+      "/images/lenovo 1.webp",
+      "/images/lenovo 2.webp"
     ],
-    specs: {
-      cpu: 'Apple M3 Pro 11-core CPU',
-      gpu: '14-core GPU, Ray Tracing phần cứng',
-      ram: '18GB Unified Memory',
-      storage: '512GB SSD NVMe',
-      screen: '14.2 inch Liquid Retina XDR (3024 x 1964), 120Hz ProMotion, 1600 nits Peak',
-      battery: 'Pin 70Wh, sạc nhanh 96W MagSafe 3',
-      weight: '1.61 kg',
-      os: 'macOS Sonoma',
+    "specs": {
+      "cpu": "Intel Core i7-13650HX (14 nhân 20 luồng, max 4.9GHz, 24MB Cache)",
+      "gpu": "NVIDIA GeForce RTX 4050 6GB GDDR6 (TGP 105W, 194 AI TOPS)",
+      "ram": "16GB DDR5 4800MHz (1 x 16GB SO-DIMM, nâng cấp tối đa 32GB)",
+      "storage": "512GB SSD M.2 2242 PCIe 4.0 NVMe (trống 1 khe M.2 2280 PCIe 4.0)",
+      "screen": "15.6 inch FHD (1920 x 1080) IPS, 144Hz, 300 nits, 100% sRGB, G-SYNC",
+      "battery": "Pin 60Wh, sạc nhanh Super Rapid Charge Pro 170W",
+      "weight": "2.38 kg",
+      "os": "Windows 11 Home"
     },
-    description: 'Quái thú đồ họa và lập trình với màn hình Liquid Retina XDR 120Hz siêu nét, tản nhiệt quạt chủ động và chip M3 Pro cân mượt các project nặng.',
-    warrantyMonths: 12,
+    "description": "Cỗ máy gaming phân khúc cận cao cấp trang bị chip i7 dòng HX ép xung cực mạnh, GPU RTX 4050 105W TGP tích hợp chip AI Lenovo LA1 cùng màn hình 100% sRGB sắc nét cho cả game thủ và dân đồ họa.",
+    "warrantyMonths": 24
   },
   {
-    id: 'p1000000-0000-0000-0000-000000000003',
-    categorySlug: 'laptop',
-    name: 'ASUS ROG Zephyrus G14 OLED (Ryzen 9 8945HS, RTX 4060 8GB, 16GB)',
-    slug: 'asus-rog-zephyrus-g14-2024',
-    brand: 'ASUS',
-    price: 46990000,
-    originalPrice: 49990000,
-    thumbnail: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80',
-    images: [
-      'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80',
+    "id": "p1000000-0000-0000-0000-000000000003",
+    "categorySlug": "laptop",
+    "name": "Laptop Lenovo ThinkBook 16 G9 IRL 21US008FVN (i5-13420H, 16GB RAM, 512GB SSD, 16.0 WUXGA)",
+    "slug": "lenovo-thinkbook-16-g9-irl-21us008fvn",
+    "brand": "Lenovo",
+    "price": 26590000,
+    "originalPrice": 29990000,
+    "thumbnail": "/images/lenovo thinkbook.webp",
+    "images": [
+      "/images/thinkbook 1.webp",
+      "/images/thinkbook 2.webp"
     ],
-    specs: {
-      cpu: 'AMD Ryzen 9 8945HS (8 nhân 16 luồng, up to 5.2GHz, NPU 16 TOPS)',
-      gpu: 'NVIDIA GeForce RTX 4060 8GB GDDR6 (TGP 90W)',
-      ram: '16GB LPDDR5X 6400MHz',
-      storage: '1TB PCIe 4.0 NVMe M.2 SSD',
-      screen: '14 inch 3K OLED (2880 x 1800) 120Hz, 0.2ms, 100% DCI-P3, G-Sync',
-      battery: 'Pin 73Wh, sạc nhanh Type-C PD 100W',
-      weight: '1.5 kg',
-      os: 'Windows 11 Home bản quyền',
+    "specs": {
+      "cpu": "Intel Core i5-13420H (8 nhân 12 luồng, Turbo 4.60GHz, 12MB Cache)",
+      "gpu": "Intel UHD Graphics",
+      "ram": "16GB DDR5 5200MHz (1 x 16GB, 2 khe, nâng cấp tối đa 64GB)",
+      "storage": "512GB SSD M.2 2242 PCIe 4.0 NVMe (2 khe M.2)",
+      "screen": "16.0 inch WUXGA (1920 x 1200) IPS, 16:10, 300 nits, Anti-glare, 60Hz",
+      "battery": "Pin 3-cell 48Wh, sạc nhanh USB-C 65W",
+      "weight": "1.70 kg",
+      "os": "Windows 11 Home SL bản quyền"
     },
-    description: 'Laptop gaming cao cấp siêu mỏng nhẹ chỉ 1.5kg, trang bị màn hình OLED 3K 120Hz tuyệt mỹ cùng GPU RTX 4060 mạnh mẽ.',
-    warrantyMonths: 24,
+    "description": "Laptop doanh nghiệp mỏng nhẹ cao cấp đạt độ bền quân đội MIL-STD-810H, khung vỏ nhôm màu xám Arctic Grey sang trọng, chip Core i5 dòng H hiệu năng mạnh mẽ và màn hình rộng 16 inch 16:10.",
+    "warrantyMonths": 24
   },
   {
-    id: 'p1000000-0000-0000-0000-000000000004',
-    categorySlug: 'laptop',
-    name: 'Dell XPS 13 9340 (Intel Core Ultra 7 155H, 16GB RAM, 512GB SSD)',
-    slug: 'dell-xps-13-9340-intel-core-ultra-7',
-    brand: 'Dell',
-    price: 42490000,
-    originalPrice: 45990000,
-    thumbnail: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=800&q=80',
-    images: [
-      'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=800&q=80',
+    "id": "p1000000-0000-0000-0000-000000000004",
+    "categorySlug": "laptop",
+    "name": "Laptop Lenovo ThinkPad E14 Gen 7 21T90025VN (Core 7-240H, 16GB RAM, 512GB SSD, 14.0 WUXGA)",
+    "slug": "lenovo-thinkpad-e14-gen-7-21t90025vn",
+    "brand": "Lenovo",
+    "price": 34190000,
+    "originalPrice": 37990000,
+    "thumbnail": "/images/lenovo thinkpad.webp",
+    "images": [
+      "/images/thinkpad 1.webp",
+      "/images/thinkpad 2.webp"
     ],
-    specs: {
-      cpu: 'Intel Core Ultra 7 155H (16 nhân 22 luồng, Intel AI Boost NPU)',
-      gpu: 'Intel Arc Graphics',
-      ram: '16GB LPDDR5x 7467MHz Dual Channel',
-      storage: '512GB PCIe 4.0 NVMe SSD',
-      screen: '13.4 inch FHD+ (1920 x 1200) InfinityEdge, 120Hz, 500 nits',
-      battery: 'Pin 55Wh, sạc Type-C 60W',
-      weight: '1.19 kg',
-      os: 'Windows 11 Pro',
+    "specs": {
+      "cpu": "Intel Core 7 240H (10 nhân 16 luồng, Turbo 5.20GHz, 24MB Cache)",
+      "gpu": "Intel Graphics",
+      "ram": "16GB DDR5 5600MHz (1 x 16GB, 2 khe SODIMM, nâng cấp tối đa 64GB)",
+      "storage": "512GB SSD M.2 2242 PCIe 4.0x4 NVMe Opal 2.0",
+      "screen": "14.0 inch WUXGA (1920 x 1200) IPS, 16:10, 300 nits, Anti-glare, 60Hz",
+      "battery": "Pin 3-cell 48Wh, hỗ trợ sạc nhanh Rapid Charge",
+      "weight": "1.34 kg",
+      "os": "Windows 11 Home SL bản quyền"
     },
-    description: 'Tuyệt phẩm doanh nhân với thiết kế nhôm nguyên khối CNC sang trọng, hàng phím cảm ứng vô hình và vi xử lý Intel Core Ultra tích hợp AI.',
-    warrantyMonths: 12,
+    "description": "Dòng máy tính xách tay chuẩn doanh nhân cao cấp với bộ khung nhôm đạt chuẩn độ bền quân sự MIL-STD-810H, bàn phím ThinkPad tích hợp TrackPoint huyền thoại, bảo mật vân tay và Camera IR nhận diện khuôn mặt.",
+    "warrantyMonths": 24
   },
   {
-    id: 'p1000000-0000-0000-0000-000000000005',
-    categorySlug: 'laptop',
-    name: 'Lenovo Legion Pro 5 16IRX9 (Core i7 14650HX, RTX 4060 8GB, 16GB, 1TB)',
-    slug: 'lenovo-legion-pro-5-16irx9',
-    brand: 'Lenovo',
-    price: 38990000,
-    originalPrice: 41990000,
-    thumbnail: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=800&q=80',
-    images: [
-      'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=800&q=80',
+    "id": "p1000000-0000-0000-0000-000000000005",
+    "categorySlug": "laptop",
+    "name": "Laptop Lenovo ThinkPad T14s Gen 6 21QX00LJVN (Ultra 5-228V, 32GB RAM, 1TB SSD, Win 11 Pro)",
+    "slug": "lenovo-thinkpad-t14s-gen-6-21qx00ljvn",
+    "brand": "Lenovo",
+    "price": 50990000,
+    "originalPrice": 61600000,
+    "thumbnail": "/images/lenovo thinkpad t14s thumb.webp",
+    "images": [
+      "/images/lenovo thinkpad t14s.webp"
     ],
-    specs: {
-      cpu: 'Intel Core i7-14650HX (16 nhân 24 luồng, max 5.2GHz)',
-      gpu: 'NVIDIA GeForce RTX 4060 8GB GDDR6 (TGP tối đa 140W)',
-      ram: '16GB DDR5 5600MHz (nâng cấp tối đa 64GB)',
-      storage: '1TB SSD M.2 2280 PCIe 4.0 NVMe',
-      screen: '16 inch WQXGA (2560x1600) IPS 240Hz, 500 nits, 100% sRGB, G-SYNC',
-      battery: 'Pin 80Wh, củ sạc 300W',
-      weight: '2.5 kg',
-      os: 'Windows 11 Home',
+    "specs": {
+      "cpu": "Intel Core Ultra 5 228V (Lunar Lake, 8 nhân 8 luồng, Turbo 4.5GHz, NPU Intel AI Boost 40 TOPS)",
+      "gpu": "Intel Arc Graphics 130V",
+      "ram": "32GB LPDDR5X 8533MHz Onboard (Memory-on-Package)",
+      "storage": "1TB SSD M.2 2280 PCIe 5.0x4 Performance NVMe Opal 2.0",
+      "screen": "14.0 inch WUXGA (1920 x 1200) IPS, 16:10, 400 nits, Anti-glare, DBEF5",
+      "battery": "Pin 58Wh, sạc nhanh 65W USB-C Slim GaN",
+      "weight": "1.28 kg",
+      "os": "Windows 11 Pro bản quyền"
     },
-    description: 'Cỗ máy cày game và render 3D chuyên nghiệp với tản nhiệt Legion ColdFront 5.0 và màn hình 240Hz sắc nét.',
-    warrantyMonths: 24,
+    "description": "Dòng máy chuẩn Copilot+ PC dành cho doanh nhân và lãnh đạo với khung vỏ Carbon Fiber Hybrid siêu nhẹ, vi xử lý Intel Core Ultra thế hệ mới tích hợp NPU 40 TOPS xử lý AI cục bộ, RAM 32GB siêu tốc cùng chuẩn kết nối Wi-Fi 7 và Thunderbolt 4 hiện đại.",
+    "warrantyMonths": 36
   },
   {
-    id: 'p1000000-0000-0000-0000-000000000006',
-    categorySlug: 'laptop',
-    name: 'Acer Predator Helios Neo 16 (Core i5 14500HX, RTX 4050 6GB, 16GB)',
-    slug: 'acer-predator-helios-neo-16',
-    brand: 'Acer',
-    price: 28990000,
-    originalPrice: 31990000,
-    thumbnail: 'https://images.unsplash.com/photo-1544652478-6653e09f18a2?w=800&q=80',
-    images: [
-      'https://images.unsplash.com/photo-1544652478-6653e09f18a2?w=800&q=80',
+    "id": "p1000000-0000-0000-0000-000000000006",
+    "categorySlug": "laptop",
+    "name": "Laptop ASUS Vivobook 14 X1404VA-EB355W (Core 7-150U, 16GB RAM, 512GB SSD, Bạc)",
+    "slug": "asus-vivobook-14-x1404va-eb355w",
+    "brand": "ASUS",
+    "price": 22490000,
+    "originalPrice": 25990000,
+    "thumbnail": "/images/asus vivobook.webp",
+    "images": [
+      "/images/vivobook 1.webp",
+      "/images/vivobook 2.webp"
     ],
-    specs: {
-      cpu: 'Intel Core i5-14500HX (14 nhân 20 luồng)',
-      gpu: 'NVIDIA GeForce RTX 4050 6GB (140W MGP)',
-      ram: '16GB DDR5 5600MHz',
-      storage: '512GB PCIe NVMe SSD',
-      screen: '16 inch WQXGA (2560 x 1600) IPS 165Hz, 100% sRGB',
-      battery: 'Pin 90Wh, sạc 330W',
-      weight: '2.6 kg',
-      os: 'Windows 11 Home',
+    "specs": {
+      "cpu": "Intel Core 7 150U (10 nhân 12 luồng, Turbo 5.40GHz, 12MB Cache)",
+      "gpu": "Intel Graphics",
+      "ram": "16GB DDR5 4800MHz (8GB Onboard + 8GB SO-DIMM, nâng cấp tối đa 24GB)",
+      "storage": "512GB M.2 NVMe PCIe 4.0 SSD",
+      "screen": "14.0 inch Full HD (1920 x 1080) IPS, 60Hz, 250 nits, Anti-glare, chứng nhận bảo vệ mắt TÜV Rheinland",
+      "battery": "Pin 3-cell 42Wh",
+      "weight": "1.40 kg",
+      "os": "Windows 11 Home SL bản quyền"
     },
-    description: 'Mẫu laptop gaming phân khúc tầm trung quốc dân với bàn phím LED RGB 4 vùng và tản nhiệt quạt kim loại AeroBlade 3D thế hệ 5.',
-    warrantyMonths: 12,
-  },
-
-  // --- SMARTPHONES ---
-  {
-    id: 'p1000000-0000-0000-0000-000000000007',
-    categorySlug: 'smartphone',
-    name: 'Apple iPhone 16 Pro Max 256GB (Titan Sa Mạc)',
-    slug: 'iphone-16-pro-max-256gb',
-    brand: 'Apple',
-    price: 34490000,
-    originalPrice: 36990000,
-    thumbnail: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&q=80',
-    images: [
-      'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&q=80',
-      'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=800&q=80',
-    ],
-    specs: {
-      chipset: 'Apple A18 Pro 3nm thế hệ 2, 6-core GPU, Camera Control nút chụp',
-      ram: '8GB RAM',
-      storage: '256GB NVMe',
-      screen: '6.9 inch Super Retina XDR OLED, 120Hz ProMotion, Dynamic Island',
-      camera: 'Chính 48MP Fusion + Tele 5x 12MP + Siêu rộng 48MP',
-      battery: 'Thời lượng xem video lên đến 33 giờ, sạc nhanh MagSafe 25W',
-      weight: '227 g',
-      os: 'iOS 18 hỗ trợ Apple Intelligence',
-    },
-    description: 'Flagship đỉnh cao nhất của Apple với khung viền Titan Cấp 5, màn hình lớn nhất từ trước đến nay 6.9 inch và nút Camera Control chuyên nghiệp.',
-    warrantyMonths: 12,
+    "description": "Thiết kế thời thượng màu Bạc Cool Silver với trọng lượng siêu nhẹ 1.4kg đạt độ bền quân sự MIL-STD-810H, chip Intel Core 7 150U xung nhịp tới 5.4GHz cực nhanh, cảm biến vân tay một chạm và bản lề gập mở 180 độ linh hoạt.",
+    "warrantyMonths": 24
   },
   {
-    id: 'p1000000-0000-0000-0000-000000000008',
-    categorySlug: 'smartphone',
-    name: 'Apple iPhone 15 128GB (Hồng Pastel)',
-    slug: 'iphone-15-128gb',
-    brand: 'Apple',
-    price: 18990000,
-    originalPrice: 21990000,
-    thumbnail: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&q=80',
-    images: [
-      'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&q=80',
+    "id": "p2000000-0000-0000-0000-000000000001",
+    "categorySlug": "smartphone",
+    "name": "iPhone 18 Pro Max 512GB | Chính hãng VN/A",
+    "slug": "iphone-18-pro-max-512gb-chinh-hang",
+    "brand": "Apple",
+    "price": 48490000,
+    "originalPrice": 48499000,
+    "thumbnail": "/images/ip18promax512.webp",
+    "images": [
+      "/images/18promax1.webp"
     ],
-    specs: {
-      chipset: 'Apple A16 Bionic (4nm)',
-      ram: '6GB RAM',
-      storage: '128GB',
-      screen: '6.1 inch Super Retina XDR OLED, Dynamic Island, độ sáng đỉnh 2000 nits',
-      camera: 'Chính 48MP + Siêu rộng 12MP, chụp ảnh chân dung thế hệ mới',
-      battery: 'Xem video đến 20 giờ, cổng sạc USB-C',
-      weight: '171 g',
-      os: 'iOS 17',
+    "specs": {
+      "screen": "6.9 inch Super Retina XDR OLED, 120Hz ProMotion, 3000 nits, Dynamic Island thế hệ mới",
+      "chipset": "Apple A20 Pro (tiến trình 2nm, GPU 7 lõi, Neural Engine 16 lõi tích hợp buồng hơi tản nhiệt)",
+      "ram": "12GB LPDDR5X",
+      "storage": "512GB NVMe",
+      "camera": "Chính 48MP Fusion (khẩu độ biến thiên f/1.48 - f/4.0), Siêu rộng 48MP 120 độ, Telephoto 48MP zoom quang 4x (zoom quang học chất lượng 8x)",
+      "selfieCamera": "18MP Center Stage, khẩu độ f/1.9, quay video 4K Dolby Vision 60fps",
+      "battery": "Pin Li-Ion 5391 mAh, xem video lên đến 43 giờ, sạc có dây 50% trong 15 phút, sạc MagSafe 25W",
+      "weight": "249 g",
+      "os": "iOS 27"
     },
-    description: 'Chiếc iPhone tiêu chuẩn xuất sắc với cổng sạc USB-C tiện lợi, thiết kế mặt lưng kính pha màu mịn màng và cụm Dynamic Island thông minh.',
-    warrantyMonths: 12,
+    "description": "Đỉnh cao công nghệ di động của Apple với thiết kế nhôm rèn nguyên khối phủ kính Ceramic Shield 2, chip Apple A20 Pro tiến trình 2nm siêu mạnh mẽ cùng cụm 3 camera 48MP có ống kính khẩu độ thay đổi linh hoạt.",
+    "warrantyMonths": 12
   },
   {
-    id: 'p1000000-0000-0000-0000-000000000009',
-    categorySlug: 'smartphone',
-    name: 'Samsung Galaxy S24 Ultra 256GB (Xám Titan - Galaxy AI)',
-    slug: 'samsung-galaxy-s24-ultra-256gb',
-    brand: 'Samsung',
-    price: 26990000,
-    originalPrice: 31990000,
-    thumbnail: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=800&q=80',
-    images: [
-      'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=800&q=80',
+    "id": "p2000000-0000-0000-0000-000000000002",
+    "categorySlug": "smartphone",
+    "name": "iPhone 18 Pro Max 1TB | Chính hãng VN/A",
+    "slug": "iphone-18-pro-max-1tb-chinh-hang",
+    "brand": "Apple",
+    "price": 54490000,
+    "originalPrice": 54999000,
+    "thumbnail": "/images/ip18promax1tb.webp",
+    "images": [
+      "/images/ip18promax1tb.webp"
     ],
-    specs: {
-      chipset: 'Qualcomm Snapdragon 8 Gen 3 for Galaxy (4nm)',
-      ram: '12GB LPDDR5X',
-      storage: '256GB UFS 4.0',
-      screen: '6.8 inch Dynamic AMOLED 2X, QHD+, 1-120Hz, kính chống lóa Corning Gorilla Armor',
-      camera: '200MP Chính + 50MP Zoom quang 5x + 10MP Zoom quang 3x + 12MP Ultra-wide',
-      battery: '5000 mAh, sạc nhanh có dây 45W, sạc không dây 15W',
-      weight: '232 g',
-      features: 'Tích hợp bút S-Pen, bộ tính năng thông minh toàn diện Galaxy AI',
-      os: 'Android 14 với One UI 6.1 (cam kết cập nhật 7 năm)',
+    "specs": {
+      "screen": "6.9 inch Super Retina XDR OLED, 120Hz ProMotion, 3000 nits, Dynamic Island thế hệ mới",
+      "chipset": "Apple A20 Pro (tiến trình 2nm, GPU 7 lõi, Neural Engine 16 lõi tích hợp buồng hơi tản nhiệt)",
+      "ram": "12GB LPDDR5X",
+      "storage": "1TB NVMe",
+      "camera": "Chính 48MP Fusion (khẩu độ biến thiên f/1.48 - f/4.0), Siêu rộng 48MP 120 độ, Telephoto 48MP zoom quang 4x (zoom quang học chất lượng 8x)",
+      "selfieCamera": "18MP Center Stage, khẩu độ f/1.9, quay video 4K Dolby Vision 60fps",
+      "battery": "Pin Li-Ion 5391 mAh, xem video lên đến 43 giờ, sạc nhanh 50% trong 15 phút, sạc MagSafe 25W",
+      "weight": "249 g",
+      "os": "iOS 27"
     },
-    description: 'Siêu phẩm công nghệ Android toàn diện nhất trang bị bút S-Pen, hệ thống camera zoom 100x và trí tuệ nhân tạo Galaxy AI phục vụ công việc và dịch thuật.',
-    warrantyMonths: 12,
+    "description": "Phiên bản dung lượng cực khủng 1TB của iPhone 18 Pro Max, đáp ứng hoàn hảo nhu cầu quay video 4K ProRes chuẩn điện ảnh, chip A20 Pro 2nm cùng thiết kế nhôm rèn nguyên khối phủ Ceramic Shield 2 bền bỉ.",
+    "warrantyMonths": 12
   },
   {
-    id: 'p1000000-0000-0000-0000-000000000010',
-    categorySlug: 'smartphone',
-    name: 'Xiaomi 14 Ultra 512GB (Ống kính nhiếp ảnh Leica)',
-    slug: 'xiaomi-14-ultra-512gb',
-    brand: 'Xiaomi',
-    price: 27990000,
-    originalPrice: 32990000,
-    thumbnail: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=800&q=80',
-    images: [
-      'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=800&q=80',
+    "id": "p2000000-0000-0000-0000-000000000003",
+    "categorySlug": "smartphone",
+    "name": "iPhone 13 128GB | Chính hãng VN/A",
+    "slug": "iphone-13-128gb-chinh-hang",
+    "brand": "Apple",
+    "price": 11990000,
+    "originalPrice": 18990000,
+    "thumbnail": "/images/ip13 128.webp",
+    "images": [
+      "/images/ip13 1.webp"
     ],
-    specs: {
-      chipset: 'Qualcomm Snapdragon 8 Gen 3 (4nm)',
-      ram: '16GB LPDDR5X',
-      storage: '512GB UFS 4.0',
-      screen: '6.73 inch LTPO AMOLED, WQHD+ (3200 x 1440), 120Hz, 3000 nits Peak',
-      camera: 'Hệ thống 4 camera Leica 50MP, cảm biến chính Sony LYT-900 1-inch khẩu độ biến thiên f/1.63 - f/4.0',
-      battery: '5000 mAh, sạc siêu tốc 90W HyperCharge, sạc không dây 80W',
-      weight: '219.8 g',
-      os: 'Xiaomi HyperOS trên nền Android 14',
+    "specs": {
+      "screen": "6.1 inch Super Retina XDR OLED, 2532 x 1170 Pixels, HDR10, True Tone, 1200 nits (peak)",
+      "chipset": "Apple A15 Bionic (6 nhân CPU, 4 nhân GPU, 16 nhân Neural Engine)",
+      "ram": "4GB",
+      "storage": "128GB NVMe",
+      "camera": "Kép 12MP: Camera góc rộng f/1.6 (chống rung Sensor-shift OIS) + Góc siêu rộng 12MP f/2.4 (120 độ)",
+      "selfieCamera": "12MP TrueDepth f/2.2, quay video 4K Dolby Vision HDR",
+      "battery": "Pin Li-Ion 3240 mAh, sạc nhanh 20W (50% trong 30 phút), sạc không dây MagSafe 15W",
+      "weight": "174 g",
+      "os": "iOS (Hỗ trợ cập nhật lâu dài)"
     },
-    description: 'Chiếc máy ảnh chuyên nghiệp thu nhỏ vào thân hình smartphone với cụm camera tròn Leica 1 inch khẩu độ cơ học biến thiên.',
-    warrantyMonths: 18,
-  },
-
-  // --- ACCESSORIES ---
-  {
-    id: 'p1000000-0000-0000-0000-000000000011',
-    categorySlug: 'accessory',
-    name: 'Tai nghe chụp tai chống ồn Sony WH-1000XM5 (Đen)',
-    slug: 'sony-wh-1000xm5-black',
-    brand: 'Sony',
-    price: 6790000,
-    originalPrice: 8490000,
-    thumbnail: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80',
-    images: [
-      'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80',
-    ],
-    specs: {
-      driver: '30mm carbon fiber nhẹ và cứng cáp',
-      connection: 'Bluetooth 5.2, hỗ trợ âm thanh Hi-Res LDAC, jack 3.5mm',
-      batteryLife: '30 giờ (khi bật chống ồn ANC), 40 giờ (tắt ANC), sạc 3 phút dùng 3 giờ',
-      weight: '250 g',
-      features: 'Chip xử lý V1 + QN1, 8 micro khử ồn môi trường, Speak-to-Chat',
-    },
-    description: 'Vua chống ồn tai nghe chụp tai với thiết kế êm ái cả ngày, chất âm Hi-Res chi tiết và khả năng đàm thoại trong trẻo.',
-    warrantyMonths: 12,
+    "description": "Mẫu iPhone quốc dân sở hữu thiết kế vuông vức thời thượng, cụm camera kép chéo độc đáo tích hợp chế độ Điện ảnh Cinematic Mode và chip A15 Bionic bền bỉ, tối ưu mượt mà cho mọi tác vụ.",
+    "warrantyMonths": 12
   },
   {
-    id: 'p1000000-0000-0000-0000-000000000012',
-    categorySlug: 'accessory',
-    name: 'Tai nghe không dây Apple AirPods Pro 2 (Hộp sạc MagSafe USB-C)',
-    slug: 'apple-airpods-pro-2-usb-c',
-    brand: 'Apple',
-    price: 5190000,
-    originalPrice: 6190000,
-    thumbnail: 'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=800&q=80',
-    images: [
-      'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=800&q=80',
+    "id": "p2000000-0000-0000-0000-000000000004",
+    "categorySlug": "smartphone",
+    "name": "iPhone 13 256GB | Chính hãng VN/A",
+    "slug": "iphone-13-256gb-chinh-hang",
+    "brand": "Apple",
+    "price": 14990000,
+    "originalPrice": 21990000,
+    "thumbnail": "/images/ip13 hong.webp",
+    "images": [
+      "/images/13hong1.webp",
+      "/images/13hong2.webp"
     ],
-    specs: {
-      chipset: 'Apple H2 headphone chip, chip U1/U2 định vị trong hộp sạc',
-      connection: 'Bluetooth 5.3, cổng USB-C',
-      batteryLife: '6 giờ nghe liên tục (30 giờ kèm hộp sạc)',
-      features: 'Chống ồn chủ động ANC gấp đôi, Âm thanh thích ứng (Adaptive Audio), Âm thanh không gian cá nhân hóa',
-      waterproof: 'Chuẩn kháng bụi & nước IP54 cho cả tai nghe và hộp sạc',
+    "specs": {
+      "screen": "6.1 inch Super Retina XDR OLED, 2532 x 1170 Pixels, HDR10, True Tone, 1200 nits (peak)",
+      "chipset": "Apple A15 Bionic (6 nhân CPU, 4 nhân GPU, 16 nhân Neural Engine)",
+      "ram": "4GB",
+      "storage": "256GB NVMe",
+      "camera": "Kép 12MP: Camera góc rộng f/1.6 (chống rung Sensor-shift OIS) + Góc siêu rộng 12MP f/2.4 (120 độ)",
+      "selfieCamera": "12MP TrueDepth f/2.2, quay video 4K Dolby Vision HDR",
+      "battery": "Pin Li-Ion 3240 mAh, sạc nhanh 20W (50% trong 30 phút), sạc không dây MagSafe 15W",
+      "weight": "174 g",
+      "os": "iOS (Hỗ trợ cập nhật lâu dài)"
     },
-    description: 'Mẫu tai nghe true-wireless hoàn hảo cho người dùng iPhone/Mac với khả năng chuyển đổi thiết bị tức thì và chế độ xuyên âm tự nhiên nhất.',
-    warrantyMonths: 12,
+    "description": "Phiên bản bộ nhớ 256GB mang lại không gian lưu trữ thoải mái cho hình ảnh và video, sở hữu thiết kế cạnh phẳng sang trọng cùng vi xử lý Apple A15 Bionic mạnh mẽ đáp ứng mượt mà mọi ứng dụng.",
+    "warrantyMonths": 12
   },
   {
-    id: 'p1000000-0000-0000-0000-000000000013',
-    categorySlug: 'accessory',
-    name: 'Chuột không dây công thái học Logitech MX Master 3S (Xám Graphite)',
-    slug: 'logitech-mx-master-3s',
-    brand: 'Logitech',
-    price: 2090000,
-    originalPrice: 2490000,
-    thumbnail: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800&q=80',
-    images: [
-      'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800&q=80',
+    "id": "p2000000-0000-0000-0000-000000000005",
+    "categorySlug": "smartphone",
+    "name": "iPhone 14 256GB | Chính hãng VN/A",
+    "slug": "iphone-14-256gb-chinh-hang",
+    "brand": "Apple",
+    "price": 16990000,
+    "originalPrice": 24990000,
+    "thumbnail": "/images/14den.webp",
+    "images": [
+      "/images/ip14.webp"
     ],
-    specs: {
-      sensor: 'Darkfield công nghệ 8000 DPI (hoạt động mượt mà trên mặt kính)',
-      clicks: 'Quiet Clicks giảm 90% tiếng ồn click chuột',
-      scroll: 'Cuộn siêu tốc MagSpeed điện từ cuộn 1000 dòng/giây',
-      connection: 'Bluetooth Low Energy hoặc đầu thu Logi Bolt USB',
-      battery: 'Pin sạc 500mAh, sử dụng đến 70 ngày một lần sạc',
+    "specs": {
+      "screen": "6.1 inch Super Retina XDR OLED, 2532 x 1170 Pixels, HDR10, True Tone, 1200 nits (peak)",
+      "chipset": "Apple A15 Bionic (6 nhân CPU, 5 nhân GPU đồ họa vượt trội, 16 nhân Neural Engine)",
+      "ram": "6GB LPDDR4X",
+      "storage": "256GB NVMe",
+      "camera": "Kép 12MP: Camera chính f/1.5 khẩu độ lớn (Sensor-shift OIS, Photonic Engine) + Camera góc siêu rộng 12MP f/2.4 (120 độ)",
+      "selfieCamera": "12MP TrueDepth f/1.9 tự động lấy nét (Autofocus), quay video 4K HDR",
+      "battery": "Pin Li-Ion 3279 mAh, sạc nhanh 20W (50% trong 30 phút), sạc MagSafe 15W",
+      "weight": "172 g",
+      "os": "iOS (Hỗ trợ cập nhật lâu dài)"
     },
-    description: 'Chuột máy tính công thái học tốt nhất thế giới cho dân lập trình viên và thiết kế đồ họa, cuộn vô cực và kết nối cùng lúc 3 thiết bị.',
-    warrantyMonths: 12,
+    "description": "Thiết kế nhôm nguyên khối sang trọng, nâng cấp với chip A15 Bionic 5 nhân GPU mạnh mẽ, RAM 6GB đa nhiệm mượt mà, công nghệ quay video hành động Action Mode siêu chống rung và tính năng phát hiện va chạm an toàn.",
+    "warrantyMonths": 12
   },
   {
-    id: 'p1000000-0000-0000-0000-000000000014',
-    categorySlug: 'accessory',
-    name: 'Bàn phím cơ không dây Logitech MX Mechanical Mini (Tactile Quiet)',
-    slug: 'logitech-mx-mechanical-mini',
-    brand: 'Logitech',
-    price: 2790000,
-    originalPrice: 3290000,
-    thumbnail: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=800&q=80',
-    images: [
-      'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=800&q=80',
+    "id": "p2000000-0000-0000-0000-000000000006",
+    "categorySlug": "smartphone",
+    "name": "iPhone 17e 512GB | Chính hãng VN/A",
+    "slug": "iphone-17e-512gb-chinh-hang",
+    "brand": "Apple",
+    "price": 26990000,
+    "originalPrice": 28499000,
+    "thumbnail": "/images/ip17e.jpg",
+    "images": [
+      "/images/ip17e.jpg",
+      "/images/ip17e1.jpg"
     ],
-    specs: {
-      layout: 'Mini 75% gọn gàng tiết kiệm diện tích bàn làm việc',
-      switch: 'Low-profile Mechanical Tactile Quiet êm ái, đầm tay',
-      backlight: 'Đèn nền thông minh tự phát sáng khi tay đến gần',
-      connection: 'Bluetooth & Logi Bolt, tương thích đồng thời macOS và Windows',
-      battery: '15 ngày có đèn nền hoặc đến 10 tháng khi tắt đèn nền',
+    "specs": {
+      "screen": "6.1 inch Super Retina XDR OLED, 2532 x 1170 Pixels, 460 ppi, HDR10, True Tone, 1200 nits (peak), kính Ceramic Shield 2",
+      "chipset": "Apple A19 (tiến trình 3nm, CPU 6 lõi, GPU 4 lõi ray-tracing phần cứng, 16 lõi Neural Engine)",
+      "ram": "8GB",
+      "storage": "512GB NVMe",
+      "camera": "Camera 48MP Fusion f/1.6 (chống rung quang học OIS, Hybrid Focus Pixels, ảnh siêu phân giải 24MP & 48MP, hỗ trợ Telephoto 2x 12MP)",
+      "selfieCamera": "12MP TrueDepth f/1.9 tự động lấy nét Focus Pixels, quay 4K Dolby Vision 60fps",
+      "battery": "Pin Li-Ion 4005 mAh, xem video liên tục 26 giờ, sạc có dây 20W (50% trong 30 phút), sạc MagSafe 15W",
+      "weight": "169 g",
+      "os": "iOS 26 (Tích hợp Apple Intelligence & Siri AI)"
     },
-    description: 'Bàn phím cơ low-profile êm ái, gõ phím tốc độ cao không gây tiếng ồn nơi công sở, thiết kế kim loại sang trọng.',
-    warrantyMonths: 12,
+    "description": "Thế hệ iPhone hoàn toàn mới tối ưu chi phí và hiệu năng với chip Apple A19 tiến trình 3nm, dung lượng lưu trữ cực khủng 512GB, camera 48MP Fusion sắc nét cùng kính cường lực Ceramic Shield 2 siêu bền bỉ.",
+    "warrantyMonths": 12
   },
   {
-    id: 'p1000000-0000-0000-0000-000000000015',
-    categorySlug: 'accessory',
-    name: 'Củ sạc nhanh Anker Prime 67W GaN (3 cổng 2C1A)',
-    slug: 'anker-prime-67w-gan-charger',
-    brand: 'Anker',
-    price: 990000,
-    originalPrice: 1390000,
-    thumbnail: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&q=80',
-    images: [
-      'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&q=80',
+    "id": "p2000000-0000-0000-0000-000000000007",
+    "categorySlug": "smartphone",
+    "name": "iPhone 15 256GB | Chính hãng VN/A",
+    "slug": "iphone-15-256gb-chinh-hang",
+    "brand": "Apple",
+    "price": 20490000,
+    "originalPrice": 24990000,
+    "thumbnail": "/images/ip15.webp",
+    "images": [
+      "/images/ip15hi.webp"
     ],
-    specs: {
-      power: 'Tổng công suất 67W Max (sạc được MacBook Pro 14 inch, iPhone, iPad cùng lúc)',
-      ports: '2 cổng USB-C + 1 cổng USB-A',
-      technology: 'GaNPrime thế hệ mới nhất, kiểm soát nhiệt độ ActiveShield 2.0',
-      size: 'Nhỏ hơn 51% so với củ sạc MacBook 67W gốc của Apple',
+    "specs": {
+      "screen": "6.1 inch Super Retina XDR OLED, Dynamic Island, 2556 x 1179 Pixels, độ sáng tối đa 2000 nits ngoài trời",
+      "chipset": "Apple A16 Bionic (6 nhân CPU, 5 nhân GPU, 16 nhân Neural Engine)",
+      "ram": "6GB LPDDR5",
+      "storage": "256GB NVMe",
+      "camera": "Chính 48MP (khẩu độ f/1.6, Sensor-shift OIS, hỗ trợ ảnh siêu phân giải 24MP & 48MP, Telephoto 2x 12MP) + Góc siêu rộng 12MP f/2.4",
+      "selfieCamera": "12MP TrueDepth f/1.9 tự động lấy nét Focus Pixels",
+      "battery": "Pin Li-Ion 3349 mAh, xem video lên đến 20 giờ, sạc nhanh qua cổng USB-C (50% trong 30 phút), sạc MagSafe 15W",
+      "weight": "171 g",
+      "os": "iOS"
     },
-    description: 'Củ sạc GaN 67W siêu nhỏ gọn bỏ túi áo, cung cấp năng lượng an toàn cho toàn bộ hệ sinh thái laptop, điện thoại và tai nghe.',
-    warrantyMonths: 18,
+    "description": "Thiết kế mặt lưng kính pha màu nhám mịn sang trọng với khung viền bo cong êm tay, trang bị Dynamic Island thông minh, cổng sạc USB-C đồng bộ, camera chính 48MP cho ảnh chụp độ phân giải cực cao cùng chip A16 Bionic tốc độ cao.",
+    "warrantyMonths": 12
   },
+  {
+    "id": "p2000000-0000-0000-0000-000000000008",
+    "categorySlug": "smartphone",
+    "name": "iPhone 17 Pro Max 512GB | Chính hãng VN/A",
+    "slug": "iphone-17-pro-max-512gb-chinh-hang",
+    "brand": "Apple",
+    "price": 38990000,
+    "originalPrice": 41990000,
+    "thumbnail": "/images/ip17promax.webp",
+    "images": [
+      "/images/ip17promax1.webp"
+    ],
+    "specs": {
+      "screen": "6.9 inch Super Retina XDR OLED, 120Hz ProMotion, Dynamic Island, Always-On, Ceramic Shield thế hệ mới",
+      "chipset": "Apple A19 Pro (tiến trình 3nm, 6 nhân CPU, 6 nhân GPU hỗ trợ Ray Tracing, Neural Engine thế hệ mới)",
+      "ram": "12GB LPDDR5X",
+      "storage": "512GB NVMe",
+      "camera": "Chính 48MP Fusion (khẩu độ lớn, Sensor-shift OIS thế hệ mới) + Siêu rộng 48MP + Telephoto tiềm vọng 48MP zoom quang 5x",
+      "selfieCamera": "12MP TrueDepth, tự động lấy nét, quay video 4K HDR Dolby Vision",
+      "battery": "Khoảng 5000 mAh, sạc nhanh qua cổng USB-C chuẩn USB 3.0, sạc không dây MagSafe 25W",
+      "weight": "225 g",
+      "os": "iOS 19 (Hỗ trợ Apple Intelligence toàn diện)"
+    },
+    "description": "Phiên bản bộ nhớ lớn 512GB của siêu phẩm iPhone 17 Pro Max mang lại không gian lưu trữ thoải mái, hiệu năng đỉnh cao từ chip Apple A19 Pro cùng khung viền Titan sang trọng và cụm 3 camera 48MP chuyên nghiệp.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000009",
+    "categorySlug": "smartphone",
+    "name": "iPhone 16 Plus 256GB | Chính hãng VN/A",
+    "slug": "iphone-16-plus-256gb-chinh-hang",
+    "brand": "Apple",
+    "price": 25990000,
+    "originalPrice": 27990000,
+    "thumbnail": "/images/ip16plus.webp",
+    "images": [
+      "/images/ip16plus1.webp"
+    ],
+    "specs": {
+      "screen": "6.7 inch Super Retina XDR OLED, 2796 x 1290 Pixels, Dynamic Island, độ sáng tối đa 2000 nits, kính Ceramic Shield thế hệ mới nhất",
+      "chipset": "Apple A18 (tiến trình 3nm, 6 nhân CPU, 5 nhân GPU đồ họa console, 16 nhân Neural Engine)",
+      "ram": "8GB LPDDR5X",
+      "storage": "256GB NVMe",
+      "camera": "Chính 48MP Fusion (f/1.6, Sensor-shift OIS, Telephoto 2x 12MP chất lượng quang học) + Góc siêu rộng 12MP (hỗ trợ chụp Macro & quay video không gian Spatial)",
+      "selfieCamera": "12MP TrueDepth f/1.9 tự động lấy nét Focus Pixels",
+      "battery": "Pin Li-Ion 4674 mAh, xem video liên tục 27 giờ, sạc nhanh USB-C (50% trong 30 phút), sạc MagSafe 25W",
+      "weight": "199 g",
+      "os": "iOS 18 (Hỗ trợ Apple Intelligence toàn diện)"
+    },
+    "description": "Trải nghiệm màn hình lớn 6.7 inch mãn nhãn với thời lượng pin bứt phá, bổ sung Nút Điều Khiển Camera (Camera Control) cảm ứng lực cùng Nút Tác Vụ (Action Button) và chip Apple A18 cực mạnh hỗ trợ Apple Intelligence.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000010",
+    "categorySlug": "smartphone",
+    "name": "iPhone Duo 1TB | Chính hãng VN/A",
+    "slug": "iphone-duo-1tb-chinh-hang",
+    "brand": "Apple",
+    "price": 84490000,
+    "originalPrice": 84499000,
+    "thumbnail": "/images/ipduo.webp",
+    "images": [
+      "/images/ipduo.webp"
+    ],
+    "specs": {
+      "screen": "Màn hình trong: 7.6 inch Foldable Super Retina XDR OLED (2670 x 1878, 120Hz ProMotion, 3000 nits); Màn hình ngoài: 5.4 inch OLED",
+      "chipset": "Apple A20 Pro (tiến trình 2nm, 6 lõi CPU, 7 lõi GPU ray-tracing phần cứng, Dual Neural Engine 16 lõi)",
+      "ram": "12GB LPDDR5X",
+      "storage": "1TB NVMe",
+      "camera": "Chính 48MP Fusion (khẩu độ biến thiên, OIS thế hệ mới) + Góc siêu rộng 48MP 120 độ + Telephoto 12MP zoom quang học",
+      "selfieCamera": "Bên ngoài 12MP Center Stage; Bên trong Camera FaceTime ẩn dưới màn hình (UDC)",
+      "battery": "Hệ thống pin đôi 5100 mAh, sạc nhanh qua cổng USB-C chuẩn USB 3, sạc MagSafe 25W",
+      "weight": "255 g",
+      "os": "iOS (Tối ưu giao diện đa nhiệm cho màn hình gập)"
+    },
+    "description": "Thiết bị màn hình gập mang tính cách mạng của Apple kết hợp khung viền titan siêu bền và kính Ceramic Shield 2, mang đến khả năng mở rộng không gian làm việc tới 7.6 inch, sức mạnh chip A20 Pro cùng bộ nhớ 1TB khổng lồ.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000011",
+    "categorySlug": "smartphone",
+    "name": "Samsung Galaxy S20 (8GB RAM, 128GB ROM)",
+    "slug": "samsung-galaxy-s20",
+    "brand": "Samsung",
+    "price": 21490000,
+    "originalPrice": 21490000,
+    "thumbnail": "/images/samsungS20.webp",
+    "images": [
+      "/images/samsungS20.webp"
+    ],
+    "specs": {
+      "screen": "6.2 inch Dynamic AMOLED 2X, Quad HD+ (3200 x 1440 Pixels), 120Hz, HDR10+, kính cường lực Gorilla Glass 6",
+      "chipset": "Exynos 990 / Snapdragon 865 8 nhân (tiến trình 7nm+)",
+      "ram": "8GB LPDDR5",
+      "storage": "128GB UFS 3.0 (Hỗ trợ thẻ nhớ MicroSD tối đa 1TB)",
+      "camera": "3 camera sau: Chính 12MP f/1.8 OIS + Telephoto 64MP f/2.0 (Zoom quang học 3x, Space Zoom 30x) + Siêu rộng 12MP 120 độ; Quay video 8K",
+      "selfieCamera": "10MP f/2.2 Dual Pixel PDAF, quay video 4K",
+      "battery": "Pin Li-Ion 4000 mAh, sạc nhanh 25W, sạc nhanh không dây 15W, chia sẻ pin không dây PowerShare",
+      "weight": "163 g",
+      "os": "Android 10 (Nâng cấp tối đa Android 13, One UI)"
+    },
+    "description": "Flagship nhỏ gọn đỉnh cao của Samsung với màn hình Dynamic AMOLED 2X 120Hz siêu nét, camera telephoto 64MP quay video chuẩn 8K, chuẩn kháng nước bụi IP68 và thiết kế khung nhôm kính bo cong mềm mại.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000012",
+    "categorySlug": "smartphone",
+    "name": "Samsung Galaxy S20 Ultra (12GB RAM, 128GB ROM)",
+    "slug": "samsung-galaxy-s20-ultra",
+    "brand": "Samsung",
+    "price": 29990000,
+    "originalPrice": 29990000,
+    "thumbnail": "/images/samsungS20ultra.webp",
+    "images": [
+      "/images/samsungS20ultra.webp"
+    ],
+    "specs": {
+      "screen": "6.9 inch Dynamic AMOLED 2X, Quad HD+ (3200 x 1440 Pixels), 120Hz, HDR10+, độ sáng 1400 nits, Gorilla Glass 6",
+      "chipset": "Exynos 990 / Snapdragon 865 8 nhân (tiến trình 7nm+ cao cấp)",
+      "ram": "12GB LPDDR5",
+      "storage": "128GB UFS 3.0 (Hỗ trợ thẻ nhớ MicroSD mở rộng tối đa 1TB)",
+      "camera": "Chính 108MP f/1.8 OIS + Telephoto tiềm vọng 48MP (Zoom quang học 10x, Space Zoom 100x) + Siêu rộng 12MP + Cảm biến DepthVision TOF 3D; Quay video 8K 24fps",
+      "selfieCamera": "40MP f/2.2 PDAF, quay video 4K 60fps",
+      "battery": "Pin Li-Ion 5000 mAh, sạc siêu nhanh 45W, sạc không dây 15W, sạc ngược không dây Wireless PowerShare",
+      "weight": "220 g",
+      "os": "Android 10 (Hỗ trợ nâng cấp One UI mới)"
+    },
+    "description": "Siêu phẩm Ultra đầu tiên của Samsung định nghĩa lại nhiếp ảnh di động với cảm biến 108MP, zoom viễn vọng 100x Space Zoom, màn hình Infinity-O 6.9 inch 120Hz cùng thời lượng pin 5000mAh bền bỉ.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000013",
+    "categorySlug": "smartphone",
+    "name": "Samsung Galaxy Tab S10 FE WiFi 8GB 128GB | Chính hãng",
+    "slug": "samsung-galaxy-tab-s10-fe-wifi-8gb-128gb",
+    "brand": "Samsung",
+    "price": 11290000,
+    "originalPrice": 13690000,
+    "thumbnail": "/images/samsungTabS10FE.webp",
+    "images": [
+      "/images/samsungTabS10FE1.webp",
+      "/images/samsungTabS10FE2.webp"
+    ],
+    "specs": {
+      "screen": "10.9 inch LCD TFT, WUXGA+ (2304 x 1440 Pixels), 90Hz, Vision Booster 800 nits, chứng nhận giảm ánh sáng xanh SGS",
+      "chipset": "Samsung Exynos 1580 (tiến trình 4nm, 8 nhân xung nhịp tối đa 2.9GHz, GPU Xclipse 540)",
+      "ram": "8GB LPDDR5",
+      "storage": "128GB (Hỗ trợ mở rộng thẻ nhớ MicroSD tối đa 2TB)",
+      "camera": "Camera sau 13MP (quay video 4K@30fps, tự động lấy nét, quét tài liệu)",
+      "selfieCamera": "12MP góc siêu rộng, hỗ trợ gọi video và học trực tuyến sắc nét",
+      "battery": "Pin Li-Ion 8000 mAh, hỗ trợ sạc nhanh 45W",
+      "weight": "497 g (Độ mỏng ấn tượng 6.0 mm)",
+      "os": "Android 15 (One UI 7, hỗ trợ Samsung DeX và Galaxy AI)",
+      "accessories": "Tặng kèm bút S Pen đạt chuẩn IP68 trong hộp"
+    },
+    "description": "Thiết bị màn hình lớn phục vụ học tập và sáng tạo đỉnh cao với vỏ nhôm nguyên khối kháng nước bụi IP68, bút S Pen thông minh đi kèm, hỗ trợ đa nhiệm mạnh mẽ cùng bộ công cụ Galaxy AI tiên tiến.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000014",
+    "categorySlug": "smartphone",
+    "name": "Samsung Galaxy S25 Edge 5G 12GB 256GB | Chính hãng",
+    "slug": "samsung-galaxy-s25-edge-5g-12gb-256gb",
+    "brand": "Samsung",
+    "price": 24990000,
+    "originalPrice": 27990000,
+    "thumbnail": "/images/samsungS25edge.webp",
+    "images": [
+      "/images/samsungS25edge1.webp"
+    ],
+    "specs": {
+      "screen": "6.7 inch Dynamic AMOLED 2X, QHD+ (3120 x 1440 Pixels), cong tràn 2 cạnh viền, 120Hz LTPO, 2600 nits, kính Gorilla Armor",
+      "chipset": "Qualcomm Snapdragon 8 Elite for Galaxy (tiến trình 3nm, NPU AI thế hệ mới)",
+      "ram": "12GB LPDDR5X",
+      "storage": "256GB UFS 4.0",
+      "camera": "Chính 200MP f/1.7 OIS + Siêu rộng 50MP 120 độ + Telephoto 50MP zoom quang 3x OIS; Quay video 8K@30fps",
+      "selfieCamera": "12MP Dual Pixel PDAF, quay video 4K@60fps",
+      "battery": "Pin Li-Ion 4900 mAh, sạc siêu nhanh 45W, sạc nhanh không dây 15W, Wireless PowerShare",
+      "weight": "192 g",
+      "os": "Android 15 (One UI 7, tích hợp bộ công cụ Galaxy AI toàn diện)"
+    },
+    "description": "Siêu phẩm đánh dấu sự trở lại của thiết kế màn hình cong tràn viền Edge kinh điển, trang bị chip Snapdragon 8 Elite cực khủng, camera độ phân giải siêu cao 200MP cùng các tính năng Galaxy AI thông minh thế hệ mới.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000015",
+    "categorySlug": "smartphone",
+    "name": "Samsung Galaxy Z Fold 6 12GB 256GB | Chính hãng",
+    "slug": "samsung-galaxy-z-fold-6-12gb-256gb",
+    "brand": "Samsung",
+    "price": 37990000,
+    "originalPrice": 43990000,
+    "thumbnail": "/images/samsungZfold6.webp",
+    "images": [
+      "/images/samsungZfold6hi.webp"
+    ],
+    "specs": {
+      "screen": "Màn hình chính: 7.6 inch Dynamic AMOLED 2X (2160 x 1856, 120Hz LTPO, 2600 nits); Màn hình phụ: 6.3 inch Dynamic AMOLED 2X (968 x 2376, 120Hz, Gorilla Glass Victus 2)",
+      "chipset": "Qualcomm Snapdragon 8 Gen 3 for Galaxy (tiến trình 4nm, xung nhịp tối đa 3.39GHz)",
+      "ram": "12GB LPDDR5X",
+      "storage": "256GB UFS 4.0",
+      "camera": "Chính 50MP f/1.8 Dual Pixel PDAF, OIS + Siêu rộng 12MP 123 độ + Telephoto 10MP zoom quang 3x OIS; Quay video 8K@30fps",
+      "selfieCamera": "Màn hình ngoài 10MP f/2.2; Màn hình trong 4MP ẩn dưới màn hình (UDC)",
+      "battery": "Pin Li-Po 4400 mAh, sạc nhanh 25W, sạc không dây 15W, sạc ngược không dây Wireless PowerShare",
+      "weight": "239 g (Khung viền Armor Aluminum cải tiến, chuẩn kháng nước IP48)",
+      "os": "Android 14 (One UI 6.1.1, tích hợp Galaxy AI và hỗ trợ cập nhật OS 7 năm)"
+    },
+    "description": "Flagship màn hình gập đỉnh cao của Samsung với thiết kế vuông vức mỏng nhẹ vượt bậc, bản lề FlexHinge bền bỉ cùng bộ tính năng Galaxy AI tối ưu riêng cho màn hình lớn như khoanh vùng tìm kiếm, trợ lý ghi chú và phác họa thông minh.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000016",
+    "categorySlug": "smartphone",
+    "name": "Samsung Galaxy S26 5G 12GB 512GB | Chính hãng",
+    "slug": "samsung-galaxy-s26-5g-12gb-512gb",
+    "brand": "Samsung",
+    "price": 27990000,
+    "originalPrice": 35990000,
+    "thumbnail": "/images/samsungS26.webp",
+    "images": [
+      "/images/samsungS26hi.webp"
+    ],
+    "specs": {
+      "screen": "6.2 inch Dynamic AMOLED 2X, FHD+ (2340 x 1080 Pixels), 120Hz LTPO thích ứng, độ sáng tối đa 2600 nits, kính cường lực Gorilla Armor thế hệ mới",
+      "chipset": "Qualcomm Snapdragon 8 Elite / Exynos 2600 (tiến trình 2nm, tích hợp NPU AI tăng cường)",
+      "ram": "12GB LPDDR5X",
+      "storage": "512GB UFS 4.0",
+      "camera": "Chính 50MP f/1.8 Dual Pixel OIS + Siêu rộng 50MP 120 độ + Telephoto 10MP zoom quang 3x OIS; Quay video 8K@30fps",
+      "selfieCamera": "12MP Dual Pixel PDAF f/2.2, quay video 4K@60fps",
+      "battery": "Pin Li-Ion 4200 mAh, sạc nhanh 30W, sạc nhanh không dây 15W, Wireless PowerShare",
+      "weight": "167 g",
+      "os": "Android 16 (One UI 8, hỗ trợ trọn bộ Galaxy AI thế hệ mới và cập nhật 7 năm)"
+    },
+    "description": "Thế hệ flagship tiêu chuẩn mới của Samsung nổi bật với thân máy siêu mỏng nhẹ, hiệu năng vượt trội từ vi xử lý tiến trình 2nm tiên tiến, dung lượng bộ nhớ lớn 512GB cùng hệ sinh thái Galaxy AI đa tác vụ trực quan.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000017",
+    "categorySlug": "smartphone",
+    "name": "Samsung Galaxy S26 Ultra 5G 16GB 1TB | Chính hãng",
+    "slug": "samsung-galaxy-s26-ultra-5g-16gb-1tb",
+    "brand": "Samsung",
+    "price": 41990000,
+    "originalPrice": 44990000,
+    "thumbnail": "/images/samsungS26ultra.webp",
+    "images": [
+      "/images/samsungS26ultrahi.webp"
+    ],
+    "specs": {
+      "screen": "6.9 inch Dynamic AMOLED 2X, QHD+ (3120 x 1440 Pixels), 1-120Hz LTPO thích ứng, độ sáng đỉnh 3000 nits, kính Corning Gorilla Armor 2 chống chói",
+      "chipset": "Qualcomm Snapdragon 8 Elite Gen 2 for Galaxy (tiến trình 2nm, tích hợp NPU AI và tản nhiệt buồng hơi siêu lớn)",
+      "ram": "16GB LPDDR5X",
+      "storage": "1TB UFS 4.1",
+      "camera": "Chính 200MP f/1.7 OIS thế hệ mới + Siêu rộng 50MP f/1.9 120 độ + Telephoto 50MP zoom quang 5x OIS + Telephoto 10MP zoom quang 3x (100x Space Zoom AI); Quay video 8K@60fps",
+      "selfieCamera": "12MP Dual Pixel PDAF f/2.2, quay video 4K@60fps",
+      "battery": "Pin Li-Ion 5200 mAh, sạc siêu nhanh 65W, sạc không dây 25W, Wireless PowerShare",
+      "weight": "232 g (Khung viền Titanium cấp độ 5, tích hợp bút S Pen chống nước IP68 trong thân máy)",
+      "os": "Android 16 (One UI 8, hỗ trợ bộ công cụ Galaxy AI chuyên sâu và 7 năm cập nhật hệ điều hành)"
+    },
+    "description": "Đỉnh cao công nghệ di động của Samsung với khung viền Titanium siêu bền, bút S Pen tích hợp, cấu hình cực khủng 16GB RAM cùng 1TB bộ nhớ trong, kết hợp cụm 4 camera 200MP chụp zoom viễn vọng chuẩn xác nhờ Galaxy AI.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000018",
+    "categorySlug": "smartphone",
+    "name": "Samsung Galaxy Tab S11 WiFi 12GB 256GB | Chính hãng",
+    "slug": "samsung-galaxy-tab-s11-wifi-12gb-256gb",
+    "brand": "Samsung",
+    "price": 20990000,
+    "originalPrice": 23990000,
+    "thumbnail": "/images/samsungTabS11wifi.webp",
+    "images": [
+      "/images/samsungTabS11wifihi.webp"
+    ],
+    "specs": {
+      "screen": "11.0 inch Dynamic AMOLED 2X, WQXGA (2560 x 1600 Pixels), 120Hz LTPO, HDR10+, Vision Booster, lớp phủ chống chói phản xạ thấp",
+      "chipset": "MediaTek Dimensity 9400+ / Snapdragon thế hệ mới (tiến trình 3nm, NPU AI hiệu năng cao)",
+      "ram": "12GB LPDDR5X",
+      "storage": "256GB UFS 4.0 (Hỗ trợ mở rộng thẻ nhớ MicroSD tối đa 2TB)",
+      "camera": "Camera sau 13MP f/2.0 + Góc siêu rộng 8MP; Quay video 4K@60fps",
+      "selfieCamera": "12MP góc siêu rộng f/2.2, tối ưu cho học trực tuyến và hội họp video",
+      "battery": "Pin Li-Po 8400 mAh, hỗ trợ sạc siêu nhanh 45W",
+      "weight": "485 g (Thân máy Armor Aluminum siêu mỏng 5.7 mm, chuẩn kháng nước IP68)",
+      "os": "Android 16 (One UI 8, hỗ trợ Samsung DeX không dây và Galaxy AI thế hệ mới)",
+      "accessories": "Tặng kèm bút S Pen thế hệ mới độ trễ siêu thấp đạt chuẩn IP68"
+    },
+    "description": "Thiết bị màn hình lớn cao cấp hội tụ màn hình Dynamic AMOLED 2X 120Hz rực rỡ, bút S Pen cải tiến thông minh, chip xử lý tiến trình 3nm mạnh mẽ cùng bộ công cụ Galaxy AI chuyên biệt cho ghi chú và sáng tạo đồ họa.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000019",
+    "categorySlug": "smartphone",
+    "name": "Apple Watch Series 12 46mm (5G) Viền Nhôm Dây Thép Size S/M | Chính hãng",
+    "slug": "apple-watch-series-12-46mm-5g-vien-nhom-day-thep-sm",
+    "brand": "Apple",
+    "price": 15490000,
+    "originalPrice": 16990000,
+    "thumbnail": "/images/applewatch12.webp",
+    "images": [
+      "/images/applewatch12.webp"
+    ],
+    "specs": {
+      "screen": "46mm LTPO3 Always-On Retina OLED góc nhìn rộng, độ phân giải 416 x 496 Pixels, độ sáng đỉnh 2000 nits, kính cường lực Ion-X",
+      "chipset": "Apple S12 SiP lõi kép 64-bit, Neural Engine 4 lõi xử lý AI trực tiếp trên thiết bị",
+      "ram": "2GB",
+      "storage": "64GB",
+      "connectivity": "Hỗ trợ eSIM kết nối mạng di động 5G độc lập, Wi-Fi băng tần kép, Bluetooth 5.4, GPS tần số kép L1/L5",
+      "sensors": "Cảm biến nhịp tim quang học thế hệ mới, đo điện tâm đồ ECG, SpO2, cảm biến nhiệt độ da, phát hiện ngưng thở khi ngủ và phát hiện va chạm",
+      "battery": "Thời lượng sử dụng lên đến 18 giờ (chế độ tiết kiệm pin tới 36 giờ), sạc nhanh 80% trong khoảng 30 phút",
+      "weight": "36.4 g (chưa bao gồm dây đeo)",
+      "os": "watchOS",
+      "accessories": "Dây thép lưới Milanese Loop / Dây thép cao cấp size S/M đi kèm"
+    },
+    "description": "Thiết bị đeo thông minh thế hệ mới với màn hình Retina góc nhìn siêu rộng 46mm, kết nối mạng di động 5G độc lập qua eSIM, hỗ trợ đầy đủ các cảm biến sức khỏe chuyên sâu và dây thép sang trọng.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000020",
+    "categorySlug": "smartphone",
+    "name": "Apple Watch Ultra 4 49mm (5G) Viền Titan Dây Trail Size S/M | Chính hãng",
+    "slug": "apple-watch-ultra-4-49mm-5g-vien-titan-day-trail-sm",
+    "brand": "Apple",
+    "price": 22990000,
+    "originalPrice": 24990000,
+    "thumbnail": "/images/applewatchUltra4.webp",
+    "images": [
+      "/images/applewatchUltra4.webp"
+    ],
+    "specs": {
+      "screen": "49mm LTPO3 Always-On Retina OLED, 410 x 502 Pixels, độ sáng đỉnh 3500 nits, mặt kính tinh thể Sapphire phẳng chống trầy xước",
+      "chipset": "Apple S12 SiP lõi kép 64-bit, Neural Engine 4 lõi xử lý AI trực tiếp trên thiết bị",
+      "ram": "2GB",
+      "storage": "64GB",
+      "connectivity": "eSIM kết nối mạng di động 5G độc lập, Wi-Fi 7, Bluetooth 5.4, GPS băng tần kép chính xác (L1/L5), kết nối vệ tinh khẩn cấp SOS",
+      "sensors": "Cảm biến độ sâu & nhiệt độ nước (chuẩn lặn EN13319 tới 40m), còi báo động 86dB, đo điện tâm đồ ECG, SpO2, đo nhịp tim thế hệ mới, phát hiện ngưng thở khi ngủ và va chạm",
+      "battery": "Pin Li-Ion bền bỉ lên đến 36-40 giờ sử dụng thông thường (lên đến 72 giờ ở Chế độ Tiết kiệm pin), hỗ trợ sạc nhanh",
+      "weight": "61.4 g (Khung vỏ Titanium Hàng không vũ trụ cấp độ 5, chống nước 100m chuẩn WR100, chuẩn quân đội MIL-STD 810H)",
+      "os": "watchOS",
+      "accessories": "Dây vải dệt Trail Loop siêu nhẹ, co giãn thoải mái size S/M"
+    },
+    "description": "Đỉnh cao đồng hồ thể thao chuyên nghiệp và thám hiểm ngoài trời của Apple với khung vỏ Titan 49mm siêu cứng cáp, màn hình Sapphire sáng tới 3500 nits, kết nối di động 5G độc lập cùng dây đeo Trail Loop êm ái cho vận động viên đường dài.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000021",
+    "categorySlug": "smartphone",
+    "name": "Điện thoại Sony Xperia 1 V (12GB RAM, 256GB ROM) - Đã Kích Hoạt",
+    "slug": "sony-xperia-1-v-12gb-256gb-da-kich-hoat",
+    "brand": "Sony",
+    "price": 23490000,
+    "originalPrice": 35990000,
+    "thumbnail": "/images/sonyXperia.webp",
+    "images": [
+      "/images/sonyXperiahi.webp"
+    ],
+    "specs": {
+      "screen": "6.5 inch OLED 4K (3840 x 1644 Pixels), tỉ lệ chuẩn điện ảnh 21:9, 120Hz, 100% DCI-P3, kính Gorilla Glass Victus 2",
+      "chipset": "Qualcomm Snapdragon 8 Gen 2 8 nhân (tiến trình 4nm, GPU Adreno 740)",
+      "ram": "12GB LPDDR5X",
+      "storage": "256GB UFS 4.0 (Hỗ trợ khe cắm thẻ nhớ microSDXC lên đến 1TB)",
+      "camera": "Chính 48MP f/1.9 cảm biến xếp chồng Exmor T for mobile (OIS) + Telephoto tiềm vọng 12MP zoom quang liên tục 3.5x - 5.2x OIS + Siêu rộng 12MP 123 độ, ống kính Zeiss phủ lớp ZEISS T*",
+      "selfieCamera": "12MP f/2.0 cảm biến Exmor RS, quay video 4K@60fps HDR",
+      "battery": "Pin Li-Po 5000 mAh, sạc nhanh 30W USB Power Delivery 3.0 (50% trong 30 phút), sạc không dây Qi",
+      "weight": "187 g (Mặt lưng nhám vân hạt độc quyền, khung viền rãnh xẻ, giữ nguyên jack tai nghe 3.5mm và chuẩn kháng nước IP65/IP68)",
+      "os": "Android (Giao diện thuần hỗ trợ bộ ứng dụng Photography Pro, Videography Pro và Cinema Pro)"
+    },
+    "description": "Flagship chuyên nghiệp cho người sáng tạo nội dung với cảm biến Exmor T thế hệ mới khử nhiễu vượt trội, màn hình 4K OLED 120Hz không khiếm khuyết, ống kính zoom quang học thực sự và nút chụp ảnh cứng 2 nấc chuyên dụng.",
+    "warrantyMonths": 6
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000022",
+    "categorySlug": "smartphone",
+    "name": "Điện thoại Sony Xperia 1 VIII 5G 12GB 256GB | Chính hãng",
+    "slug": "sony-xperia-1-viii-5g-12gb-256gb-chinh-hang",
+    "brand": "Sony",
+    "price": 37990000,
+    "originalPrice": 38990000,
+    "thumbnail": "/images/sonyXperia8.webp",
+    "images": [
+      "/images/sonyXperia8.webp"
+    ],
+    "specs": {
+      "screen": "6.5 inch LTPO OLED, 1-120Hz thích ứng, độ sáng đỉnh 2200 nits, hiển thị chuẩn màu Master Edition powered by CineAlta, kính Gorilla Glass Armor",
+      "chipset": "Qualcomm Snapdragon 8 Elite (tiến trình 3nm, NPU AI thế hệ mới, tản nhiệt buồng hơi cải tiến)",
+      "ram": "12GB LPDDR5X",
+      "storage": "256GB UFS 4.0 (Hỗ trợ khe cắm thẻ nhớ microSDXC mở rộng tới 2TB)",
+      "camera": "Chính 48MP Exmor T for mobile f/1.9 OIS + Telephoto tiềm vọng zoom quang học biến thiên 3.5x - 7.1x (85mm - 170mm) OIS + Siêu rộng 48MP 120 độ; Lớp phủ ống kính ZEISS T* chống lóa",
+      "selfieCamera": "12MP Exmor RS f/2.0, quay video 4K HDR 60fps",
+      "battery": "Pin Li-Po 5000 mAh, sạc nhanh PD 30W (50% trong 30 phút), sạc không dây Qi & chia sẻ pin không dây",
+      "weight": "192 g (Khung viền kim loại xẻ rãnh, mặt kính họa tiết vân vi mô chống trơn, jack cắm 3.5mm chuẩn Hi-Res và kháng nước bụi IP65/IP68)",
+      "os": "Android 16 (Tích hợp AI tracking nhận diện dáng người, mắt và nét mặt thừa hưởng từ dòng máy ảnh chuyên nghiệp Alpha)"
+    },
+    "description": "Chiếc flagship chuẩn studio tối tân từ Sony sở hữu cảm biến Exmor T thế hệ mới nhất, ống kính zoom quang học thực tế vươn tới tiêu cự 170mm, màn hình LTPO OLED rực rỡ và vẫn bảo toàn trọn vẹn khe cắm thẻ microSD cùng jack tai nghe 3.5mm cho giới chuyên nghiệp.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000023",
+    "categorySlug": "smartphone",
+    "name": "iPad Pro M4 13 inch 5G 2TB | Chính hãng Apple Việt Nam",
+    "slug": "ipad-pro-m4-13-inch-5g-2tb-chinh-hang",
+    "brand": "Apple",
+    "price": 66990000,
+    "originalPrice": 69499000,
+    "thumbnail": "/images/ipadproM4.webp",
+    "images": [
+      "/images/ipadproM4.webp"
+    ],
+    "specs": {
+      "screen": "13.0 inch Ultra Retina XDR (OLED hai lớp - Tandem OLED), 2752 x 2064 Pixels, ProMotion 10-120Hz, độ sáng toàn màn hình 1000 nits, đỉnh HDR 1600 nits",
+      "chipset": "Apple M4 bản Full 10 lõi CPU (4 lõi hiệu năng cao, 6 lõi tiết kiệm điện), 10 lõi GPU ray-tracing phần cứng, 16 lõi Neural Engine 38 nghìn tỷ phép tính/giây",
+      "ram": "16GB",
+      "storage": "2TB NVMe",
+      "camera": "Camera sau 12MP f/1.8, quay video 4K ProRes, máy quét LiDAR 3D, đèn flash True Tone thích ứng",
+      "selfieCamera": "12MP Ultra Wide đặt ngang viền màn hình (Landscape), Center Stage, Face ID",
+      "battery": "Pin Li-Po 38.99 Wh (xem video qua mạng di động/Wi-Fi lên đến 10 giờ), hỗ trợ sạc nhanh qua cổng Thunderbolt / USB 4",
+      "weight": "582 g (Độ mỏng kỷ lục 5.1 mm, vỏ nhôm tái chế 100%)",
+      "connectivity": "Hỗ trợ 5G qua eSIM độc lập, Wi-Fi 6E, Bluetooth 5.3, GPS/GNSS",
+      "os": "iPadOS (Hỗ trợ Apple Intelligence và các phần mềm đồ họa chuyên sâu Logic Pro, Final Cut Pro)",
+      "accessories": "Tương thích Apple Pencil Pro, Apple Pencil (USB-C) và Magic Keyboard mới"
+    },
+    "description": "Thiết bị di động đỉnh cao mỏng nhất từng được Apple chế tạo với độ dày chỉ 5.1mm, màn hình OLED hai lớp Tandem đột phá, cấu hình tối đa 16GB RAM cùng 2TB bộ nhớ, kết nối mạng di động 5G độc lập và sức mạnh không đối thủ từ chip Apple M4.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000024",
+    "categorySlug": "smartphone",
+    "name": "iPad Air 13 inch M4 5G 256GB 2026 | Chính hãng Apple Việt Nam",
+    "slug": "ipad-air-13-inch-m4-5g-256gb-2026-chinh-hang",
+    "brand": "Apple",
+    "price": 31490000,
+    "originalPrice": 33499000,
+    "thumbnail": "/images/ipadairM4.webp",
+    "images": [
+      "/images/ipadairM4.webp"
+    ],
+    "specs": {
+      "screen": "13.0 inch Liquid Retina IPS, 2732 x 2048 Pixels (264 ppi), dải màu rộng DCI-P3, True Tone, lớp phủ chống chói, độ sáng 600 nits",
+      "chipset": "Apple M4 (8 lõi CPU gồm 4 lõi hiệu năng & 4 lõi tiết kiệm điện, 9 lõi GPU ray-tracing phần cứng, 16 lõi Neural Engine cho Apple Intelligence)",
+      "ram": "12GB",
+      "storage": "256GB NVMe",
+      "camera": "Camera sau Wide 12MP f/1.8, tự động lấy nét Focus Pixels, quay video 4K@60fps, hỗ trợ Smart HDR",
+      "selfieCamera": "12MP Ultra Wide đặt ngang thân máy (Landscape), góc rộng 122 độ, tính năng Center Stage",
+      "battery": "Pin Li-Po 9705 mAh (36.59 Wh), thời lượng lướt web và xem video qua mạng di động/Wi-Fi lên đến 10 giờ, sạc qua cổng USB-C",
+      "weight": "617 g (Thân máy nhôm nguyên khối siêu mỏng 6.1 mm)",
+      "connectivity": "Kết nối mạng di động 5G qua eSIM, Wi-Fi 7 / Wi-Fi 6E dual-band, Bluetooth 5.4, GPS/GNSS",
+      "os": "iPadOS (Được thiết kế tối ưu cho Apple Intelligence)",
+      "accessories": "Tương thích Apple Pencil Pro, Apple Pencil (USB-C) và Magic Keyboard"
+    },
+    "description": "Phiên bản iPad Air màn hình cực đại 13 inch thế hệ 2026 kết hợp sức mạnh đột phá của chip Apple M4, kết nối mạng di động 5G độc lập siêu tốc cùng khả năng sáng tạo không giới hạn với Apple Pencil Pro.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000025",
+    "categorySlug": "smartphone",
+    "name": "iPad mini 7 2024 Wifi 256GB | Chính hãng Apple Việt Nam",
+    "slug": "ipad-mini-7-2024-wifi-256gb-chinh-hang",
+    "brand": "Apple",
+    "price": 19090000,
+    "originalPrice": 19990000,
+    "thumbnail": "/images/ipadmini7.webp",
+    "images": [
+      "/images/ipadmini7.webp"
+    ],
+    "specs": {
+      "screen": "8.3 inch Liquid Retina IPS, độ phân giải 2266 x 1488 Pixels (326 ppi), True Tone, dải màu rộng P3, độ sáng 500 nits, lớp phủ chống phản chiếu",
+      "chipset": "Apple A17 Pro (tiến trình 3nm, 6 lõi CPU gồm 2 lõi hiệu năng cao & 4 lõi tiết kiệm điện, 5 lõi GPU ray-tracing, 16 lõi Neural Engine)",
+      "ram": "8GB LPDDR5",
+      "storage": "256GB NVMe",
+      "camera": "Camera sau Wide 12MP f/1.8, Focus Pixels, Smart HDR 4, quay video 4K@60fps, đèn flash True Tone",
+      "selfieCamera": "12MP Ultra Wide ở mặt trước, góc rộng 122 độ f/2.4, tính năng Center Stage",
+      "battery": "Pin Li-Po 19.3 Wh (lên đến 10 giờ lướt web hoặc xem video qua Wi-Fi), sạc nhanh qua cổng USB-C tốc độ 10Gbps",
+      "weight": "293 g (Thân máy nhôm siêu nhỏ gọn mỏng chỉ 6.3 mm)",
+      "connectivity": "Wi-Fi 6E (802.11ax), Bluetooth 5.3, cổng USB-C 3.1 Gen 2",
+      "os": "iPadOS (Được thiết kế sẵn sàng cho hệ thống Apple Intelligence)",
+      "accessories": "Tương thích Apple Pencil Pro và Apple Pencil (USB-C)"
+    },
+    "description": "Chiếc máy tính bảng nhỏ gọn và tiện lợi nhất của Apple trang bị chip A17 Pro hỗ trợ Apple Intelligence, kết nối Wi-Fi 6E siêu tốc, cổng USB-C băng thông cao gấp đôi và tương thích toàn diện với bút Apple Pencil Pro.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000026",
+    "categorySlug": "smartphone",
+    "name": "iPad Pro chip M5 13 inch Wifi 2TB Nano | Chính hãng Apple Việt Nam",
+    "slug": "ipad-pro-chip-m5-13-inch-wifi-2tb-nano-chinh-hang",
+    "brand": "Apple",
+    "price": 64990000,
+    "originalPrice": 67990000,
+    "thumbnail": "/images/ipadproM5.webp",
+    "images": [
+      "/images/ipadproM5.webp"
+    ],
+    "specs": {
+      "screen": "13.0 inch Ultra Retina XDR (Tandem OLED hai lớp), 2752 x 2064 Pixels, ProMotion 10-120Hz, độ sáng toàn màn hình 1000 nits (đỉnh HDR 1600 nits), mặt kính kết cấu Nano-texture khắc chính xác cấp độ nanomet chống chói vượt trội",
+      "chipset": "Apple M5 (10 lõi CPU gồm 4 lõi hiệu năng & 6 lõi tiết kiệm điện, 10 lõi GPU ray-tracing thế hệ mới, Neural Engine nâng cấp cho Apple Intelligence chuyên sâu)",
+      "ram": "16GB LPDDR5X băng thông cực cao",
+      "storage": "2TB NVMe",
+      "camera": "Chính 12MP f/1.8 Wide, quay video 4K ProRes 60fps, máy quét LiDAR 3D, đèn flash True Tone thích ứng",
+      "selfieCamera": "12MP Ultra Wide đặt ngang viền (Landscape), góc rộng 122 độ, tính năng Center Stage và Face ID",
+      "battery": "Pin Li-Po 38.99 Wh (thời lượng sử dụng lên đến 10 giờ lướt web hoặc xem video qua Wi-Fi), sạc nhanh qua cổng Thunderbolt / USB 4",
+      "weight": "579 g (Độ mỏng ấn tượng chỉ 5.1 mm, hoàn thiện từ nhôm tái chế 100%)",
+      "connectivity": "Wi-Fi 7 (802.11be) đa băng tần, Bluetooth 5.4, Thunderbolt / USB 4 tốc độ truyền tải 40Gbps",
+      "os": "iPadOS (Tối ưu hóa toàn diện cho Apple Intelligence và các ứng dụng đồ họa chuyên nghiệp)",
+      "accessories": "Tương thích Apple Pencil Pro, Apple Pencil (USB-C) và Magic Keyboard"
+    },
+    "description": "Đỉnh cao máy tính bảng chuyên nghiệp với sức mạnh bứt phá từ chip Apple M5, màn hình Tandem OLED 13 inch trang bị mặt kính khắc cấu trúc Nano triệt tiêu hiện tượng phản chiếu ánh sáng, dung lượng lưu trữ cực đại 2TB cùng RAM 16GB đồ họa mượt mà.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000027",
+    "categorySlug": "smartphone",
+    "name": "iPad A16 5G 128GB 2025 | Chính hãng Apple Việt Nam",
+    "slug": "ipad-a16-5g-128gb-2025-chinh-hang",
+    "brand": "Apple",
+    "price": 13490000,
+    "originalPrice": 14990000,
+    "thumbnail": "/images/ipadA16.webp",
+    "images": [
+      "/images/ipadA16.webp"
+    ],
+    "specs": {
+      "screen": "10.9 inch Liquid Retina IPS, độ phân giải 2360 x 1640 Pixels (264 ppi), công nghệ True Tone, độ sáng 500 nits, lớp phủ kháng dầu chống bám vân tay",
+      "chipset": "Apple A16 Bionic (tiến trình 4nm, 6 lõi CPU gồm 2 lõi hiệu năng & 4 lõi tiết kiệm điện, 5 lõi GPU, 16 lõi Neural Engine)",
+      "ram": "6GB",
+      "storage": "128GB NVMe",
+      "camera": "Camera sau 12MP khẩu độ f/1.8, tự động lấy nét với Focus Pixels, quay video 4K@60fps, Smart HDR",
+      "selfieCamera": "12MP Ultra Wide đặt ngang (Landscape), góc rộng 122 độ f/2.4, tính năng Center Stage",
+      "battery": "Pin Li-Po 28.6 Wh (lên đến 10 giờ lướt web hoặc xem video qua mạng di động/Wi-Fi), hỗ trợ sạc nhanh qua cổng USB-C",
+      "weight": "481 g (Thân máy hoàn thiện từ nhôm tái chế 100%, độ mỏng 7.0 mm)",
+      "connectivity": "Hỗ trợ mạng di động 5G qua eSIM, Wi-Fi 6 (802.11ax), Bluetooth 5.3, GPS/GNSS",
+      "os": "iPadOS",
+      "accessories": "Tương thích Apple Pencil (USB-C), Apple Pencil thế hệ 1 (kèm adapter) và Magic Keyboard Folio"
+    },
+    "description": "Chiếc iPad tiêu chuẩn thế hệ mới trang bị chip A16 Bionic mạnh mẽ, thiết kế viền mỏng hiện đại với màn hình Liquid Retina 10.9 inch sắc nét, hỗ trợ kết nối mạng di động 5G tốc độ cao và camera trước đặt ngang tối ưu cho gọi video.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000028",
+    "categorySlug": "smartphone",
+    "name": "Điện thoại Samsung Galaxy Z Flip 7 FE 5G (8GB RAM, 128GB ROM) - Cũ đẹp",
+    "slug": "samsung-galaxy-z-flip-7-fe-5g-8gb-128gb-cu-dep",
+    "brand": "Samsung",
+    "price": 12490000,
+    "originalPrice": 18990000,
+    "thumbnail": "/images/samsungZflip.webp",
+    "images": [
+      "/images/samsungZflip.webp"
+    ],
+    "specs": {
+      "screen": "Màn hình chính: 6.7 inch Dynamic AMOLED 2X, FHD+ (2640 x 1080 Pixels), 120Hz thích ứng, 2600 nits; Màn hình phụ: 3.4 inch Super AMOLED Flex Window (720 x 748 Pixels)",
+      "chipset": "Samsung Exynos 2400e / Snapdragon 8 Gen 3 (tiến trình 4nm, NPU hỗ trợ Galaxy AI)",
+      "ram": "8GB LPDDR5X",
+      "storage": "128GB UFS 4.0",
+      "camera": "Chính 50MP f/1.8 Dual Pixel OIS + Siêu rộng 12MP 123 độ; Hỗ trợ FlexCam quay chụp góc nghiêng đa năng",
+      "selfieCamera": "10MP f/2.2 ở màn hình trong, hỗ trợ chụp selfie bằng camera chính qua màn hình phụ",
+      "battery": "Pin Li-Po 4000 mAh, sạc nhanh 25W, sạc không dây 15W, sạc ngược không dây Wireless PowerShare",
+      "weight": "187 g (Bản lề FlexHinge gập phẳng, khung nhôm Armor Aluminum, kháng nước IPX8)",
+      "os": "Android (One UI, tích hợp các tính năng Galaxy AI thông minh)"
+    },
+    "description": "Phiên bản Fan Edition của dòng gập vỏ sò cao cấp mang thiết kế thời thượng nhỏ gọn bỏ túi, màn hình phụ Flex Window tiện dụng, hiệu năng mượt mà và camera 50MP chụp linh hoạt ở mọi góc độ với mức giá dễ tiếp cận.",
+    "warrantyMonths": 6
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000029",
+    "categorySlug": "smartphone",
+    "name": "Điện thoại Xiaomi 17T Pro 5G (12GB RAM, 1TB ROM) | Chính hãng",
+    "slug": "xiaomi-17t-pro-5g-12gb-1tb-chinh-hang",
+    "brand": "Xiaomi",
+    "price": 18490000,
+    "originalPrice": 19990000,
+    "thumbnail": "/images/xiaomi17tpro.webp",
+    "images": [
+      "/images/xiaomi17tpro.webp"
+    ],
+    "specs": {
+      "screen": "6.67 inch CrystalRes AMOLED, 1.5K (2712 x 1220 Pixels), 144Hz thích ứng, 4000 nits cực đỉnh, Dolby Vision, HDR10+",
+      "chipset": "MediaTek Dimensity 9400+ (tiến trình 3nm, GPU Immortalis mạnh mẽ, NPU tối ưu xử lý AI đa luồng)",
+      "ram": "12GB LPDDR5X",
+      "storage": "1TB UFS 4.0",
+      "camera": "Hệ thống ống kính Leica chuyên nghiệp: Chính 50MP (Light Fusion 900, OIS) + Telephoto tiềm vọng 50MP zoom quang 5x (OIS) + Góc siêu rộng 12MP",
+      "selfieCamera": "32MP HDR, hỗ trợ chụp góc rộng và quay video 4K sắc nét",
+      "battery": "Pin Li-Po 5500 mAh, sạc siêu tốc 120W HyperCharge (đầy 100% trong khoảng 19 phút)",
+      "weight": "209 g (Khung viền hợp kim nhôm cao cấp, kính cường lực thế hệ mới, kháng nước/bụi IP68)",
+      "os": "Android (Xiaomi HyperOS, tích hợp đầy đủ công cụ AI sáng tạo)"
+    },
+    "description": "Chiếc flagship killer sở hữu cấu hình đỉnh cao với dung lượng bộ nhớ khổng lồ 1TB, camera tinh chỉnh bởi Leica danh tiếng, vi xử lý 3nm siêu mạnh và công nghệ sạc thần tốc 120W đáp ứng hoàn hảo mọi nhu cầu sáng tạo lẫn giải trí nặng.",
+    "warrantyMonths": 18
+  },
+  {
+    "id": "p2000000-0000-0000-0000-000000000030",
+    "categorySlug": "smartphone",
+    "name": "Điện thoại Xiaomi 15 Ultra 5G (16GB RAM, 1TB ROM) | Chính hãng",
+    "slug": "xiaomi-15-ultra-5g-16gb-1tb-chinh-hang",
+    "brand": "Xiaomi",
+    "price": 31990000,
+    "originalPrice": 34990000,
+    "thumbnail": "/images/xiaomi15Ultra.webp",
+    "images": [
+      "/images/xiaomi15Ultra.webp"
+    ],
+    "specs": {
+      "screen": "6.73 inch LTPO AMOLED, 2K WQHD+ (3200 x 1440 Pixels), 1-120Hz thích ứng, 3200 nits đỉnh, Dolby Vision, HDR10+, kính cường lực Xiaomi Shield Glass",
+      "chipset": "Qualcomm Snapdragon 8 Elite (tiến trình 3nm, CPU Oryon thế hệ mới, NPU xử lý HyperAI)",
+      "ram": "16GB LPDDR5X",
+      "storage": "1TB UFS 4.0",
+      "camera": "Cụm 4 camera Leica Vario-Summilux: Chính 50MP 1 inch (OIS) + Tele tiềm vọng 200MP zoom quang 4.3x/10x (OIS) + Tele 50MP zoom 3.2x (OIS) + Siêu rộng 50MP 115 độ",
+      "selfieCamera": "32MP f/2.0 góc rộng, hỗ trợ quay video 4K 60fps và chế độ chân dung xóa phông điện ảnh",
+      "battery": "Pin Silicon-Carbon 6000 mAh, sạc nhanh có dây 90W HyperCharge, sạc nhanh không dây 80W, sạc ngược không dây 10W",
+      "weight": "229 g (Khung hợp kim nhôm gia cường, mặt lưng gốm/da nano sinh học cao cấp, kháng nước/bụi chuẩn IP68)",
+      "os": "Android (Xiaomi HyperOS 2.0, tối ưu hóa AI toàn diện)"
+    },
+    "description": "Đỉnh cao nhiếp ảnh di động với hệ thống 4 camera Leica cảm biến 1 inch kết hợp ống kính tiềm vọng 200MP siêu nét, hiệu năng hủy diệt từ Snapdragon 8 Elite và viên pin Silicon-Carbon dung lượng khủng 6000 mAh.",
+    "warrantyMonths": 18
+  },
+  {
+    "id": "p3000000-0000-0000-0000-000000000001",
+    "categorySlug": "accessory",
+    "name": "Chuột Apple Magic Mouse 3 2024 USB-C (MXK53) | Chính hãng Apple Việt Nam",
+    "slug": "apple-magic-mouse-3-2024-usb-c-mxk53",
+    "brand": "Apple",
+    "price": 1890000,
+    "originalPrice": 2290000,
+    "thumbnail": "/images/applemagicmouse.webp",
+    "images": [
+      "/images/applemagicmouse.webp"
+    ],
+    "specs": {
+      "compatibility": "Máy Mac hỗ trợ Bluetooth chạy OS X 10.11 trở lên, iPad chạy iPadOS 13.4 trở lên",
+      "connection": "Bluetooth, Wireless không dây, cổng sạc chuẩn USB-C",
+      "sensor": "Cảm biến quang học chính xác cao, nhận diện bề mặt mượt mà",
+      "batteryLife": "Pin sạc tích hợp sẵn, thời lượng sử dụng lên đến khoảng 1 tháng hoặc hơn cho mỗi lần sạc đầy",
+      "weight": "99 g",
+      "dimensions": "2.16 x 5.71 x 11.35 cm",
+      "features": "Bề mặt cảm ứng Multi-Touch hỗ trợ vuốt chuyển trang và cuộn tài liệu mượt mà, chân đế thiết kế tối ưu giảm ma sát, đi kèm cáp bện USB-C sang USB-C cao cấp"
+    },
+    "description": "Chuột không dây thế hệ mới từ Apple nâng cấp cổng sạc USB-C hiện đại, sở hữu bề mặt Multi-Touch liền mạch giúp bạn thực hiện các thao tác cử chỉ lướt web và cuộn trang một cách trực quan, chính xác.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p3000000-0000-0000-0000-000000000002",
+    "categorySlug": "accessory",
+    "name": "Chuột không dây Asus Marshmallow MD100 Lite | Chính hãng",
+    "slug": "chuot-khong-day-asus-marshmallow-md100-lite",
+    "brand": "ASUS",
+    "price": 390000,
+    "originalPrice": 490000,
+    "thumbnail": "/images/khongdayASUS.webp",
+    "images": [
+      "/images/khongdayASUS.webp"
+    ],
+    "specs": {
+      "compatibility": "Windows 10/11, macOS, ChromeOS, iPadOS",
+      "connection": "Không dây 2.4GHz qua đầu thu USB Nano receiver",
+      "dpi": "Độ phân giải quang học 1600 DPI có thể chuyển đổi linh hoạt (800 / 1200 / 1600 DPI)",
+      "batteryLife": "Sử dụng 1 viên pin AA cho thời gian dùng thực tế lên đến 12 tháng",
+      "weight": "56 g (chưa pin), thiết kế siêu nhẹ đối xứng cầm thoải mái cả hai tay",
+      "dimensions": "10.7 x 6.0 x 2.78 cm",
+      "features": "Switch bấm Silent switch giảm hơn 90% tiếng ồn click chuột, lớp phủ kháng khuẩn ASUS Antibacterial Guard bền bỉ bảo vệ bề mặt"
+    },
+    "description": "Chuột không dây mỏng nhẹ mang ngôn ngữ thiết kế kẹo ngọt Marshmallow độc đáo từ Asus, switch silent êm ái chống ồn phù hợp văn phòng hoặc quán cà phê, cùng lớp phủ kháng khuẩn an toàn và thời lượng pin cả năm.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p3000000-0000-0000-0000-000000000003",
+    "categorySlug": "accessory",
+    "name": "Chuột không dây Logitech B175 | Chính hãng",
+    "slug": "chuot-khong-day-logitech-b175-chinh-hang",
+    "brand": "Logitech",
+    "price": 169000,
+    "originalPrice": 229000,
+    "thumbnail": "/images/khongdayLogitech.webp",
+    "images": [
+      "/images/khongdayLogitech.webp"
+    ],
+    "specs": {
+      "compatibility": "Windows 10/11 trở lên, macOS 10.10 trở lên, ChromeOS, Linux Kernel 2.6+",
+      "connection": "Không dây 2.4GHz qua đầu thu USB Nano receiver (phạm vi hoạt động 10m)",
+      "dpi": "1000 DPI (công nghệ theo dõi quang học mượt mà)",
+      "batteryLife": "Lên đến 12 tháng với 1 viên pin AA đi kèm (hỗ trợ chế độ ngủ tự động và công tắc bật/tắt)",
+      "weight": "70.5 g (đã bao gồm pin)",
+      "dimensions": "9.9 x 6.0 x 3.9 cm",
+      "features": "Thiết kế đối xứng vừa vặn lòng bàn tay cầm được cả hai tay, cắm là chạy (Plug and Play) không cần cài đặt phần mềm"
+    },
+    "description": "Mẫu chuột không dây văn phòng quốc dân từ Logitech với kết nối không dây 2.4GHz ổn định, thời lượng pin bền bỉ đến 1 năm cùng thiết kế công thái học đối xứng nhỏ gọn, tiện lợi mang theo hàng ngày.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p3000000-0000-0000-0000-000000000004",
+    "categorySlug": "accessory",
+    "name": "Chuột không dây Lenovo ThinkPad Essential | Chính hãng",
+    "slug": "chuot-khong-day-lenovo-thinkpad-essential",
+    "brand": "Lenovo",
+    "price": 250000,
+    "originalPrice": 350000,
+    "thumbnail": "/images/khongdayLenovo.webp",
+    "images": [
+      "/images/khongdayLenovo.webp"
+    ],
+    "specs": {
+      "compatibility": "Windows 11/10/7, macOS, Linux, ChromeOS",
+      "connection": "Không dây 2.4GHz qua USB Nano receiver tiện lợi",
+      "dpi": "Cảm biến quang học chính xác 1200 DPI",
+      "batteryLife": "Lên đến 12 tháng với 1 viên pin AA (có công tắc bật/tắt tiết kiệm pin)",
+      "weight": "60 g (chưa pin), thiết kế gọn nhẹ dễ dàng mang theo cùng laptop",
+      "dimensions": "10.6 x 6.1 x 3.3 cm",
+      "features": "Ngôn ngữ thiết kế ThinkPad cổ điển với con lăn đỏ nổi bật, form đối xứng công thái học thuận cả hai tay, switch bấm nảy và bền bỉ"
+    },
+    "description": "Chuột không dây văn phòng mang phong cách ThinkPad đặc trưng với con lăn đỏ huyền thoại, cảm biến quang học 1200 DPI mượt mà cùng thời lượng pin 1 năm ổn định, bền bỉ cho công việc hàng ngày.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p3000000-0000-0000-0000-000000000005",
+    "categorySlug": "accessory",
+    "name": "Chuột có dây Gaming Logitech G102 LightSync Gen 2 | Chính hãng",
+    "slug": "chuot-gaming-logitech-g102-lightsync-gen-2",
+    "brand": "Logitech",
+    "price": 399000,
+    "originalPrice": 599000,
+    "thumbnail": "/images/codayLogitech.webp",
+    "images": [
+      "/images/codayLogitech.webp"
+    ],
+    "specs": {
+      "compatibility": "Windows 10/11 trở lên, macOS 10.13 trở lên, ChromeOS",
+      "connection": "Có dây qua cổng USB 2.0 (chiều dài dây 2.1 m)",
+      "dpi": "200 - 8000 DPI (cảm biến cấp độ chơi game chính xác, tùy chỉnh 5 mức trong phần mềm G HUB)",
+      "reportRate": "1000 Hz (1ms)",
+      "weight": "85 g (chỉ tính chuột, nhẹ nhàng kiểm soát khi chơi game tốc độ cao)",
+      "dimensions": "11.66 x 6.21 x 3.82 cm",
+      "features": "Hệ thống đèn LED RGB LightSync 16.8 triệu màu dạng sóng cầu vồng, 6 nút bấm có thể lập trình macro, hệ thống ứng lực nút bằng lò xo kim loại cơ học cho độ nảy đanh và chính xác"
+    },
+    "description": "Mẫu chuột gaming quốc dân huyền thoại từ Logitech với thiết kế 6 nút đối xứng kinh điển, cảm biến 8000 DPI chuẩn xác, hệ thống nút cơ học siêu nảy cùng dải đèn RGB LightSync rực rỡ.",
+    "warrantyMonths": 24
+  },
+  {
+    "id": "p3000000-0000-0000-0000-000000000006",
+    "categorySlug": "accessory",
+    "name": "Chuột gaming không dây Logitech G304 X Superlight | Chính hãng",
+    "slug": "chuot-gaming-khong-day-logitech-g304-x-superlight",
+    "brand": "Logitech",
+    "price": 1390000,
+    "originalPrice": 1690000,
+    "thumbnail": "/images/khongdayGaming.webp",
+    "images": [
+      "/images/khongdayGaming.webp"
+    ],
+    "specs": {
+      "compatibility": "Windows 10/11, macOS 10.15 trở lên, ChromeOS",
+      "connection": "Không dây chuẩn Lightspeed siêu tốc (độ trễ 1ms) qua USB Receiver, hỗ trợ Bluetooth",
+      "sensor": "Cảm biến HERO 25K thế hệ mới, độ nhạy 100 - 25.600 DPI, tốc độ theo dõi > 400 IPS",
+      "batteryLife": "Pin sạc lithium tích hợp cổng USB-C, thời lượng pin liên tục lên đến 70 - 80 giờ chơi game",
+      "weight": "59 g (thiết kế cấu trúc siêu nhẹ Superlight tối ưu cho eSports)",
+      "dimensions": "11.66 x 6.21 x 3.82 cm",
+      "features": "Form cầm đối xứng kinh điển của dòng G304, feet chuột 100% PTFE không pha tạp lướt êm ái, switch lai cơ-quang học Lightforce bền bỉ hạn chế double-click"
+    },
+    "description": "Bản nâng cấp trọng lượng siêu nhẹ Superlight kế thừa form cầm quốc dân của dòng G304, kết hợp cảm biến HERO 25K chính xác từng pixel và kết nối không dây Lightspeed độ trễ cực thấp cho các trận đấu eSports căng thẳng.",
+    "warrantyMonths": 24
+  },
+  {
+    "id": "p3000000-0000-0000-0000-000000000007",
+    "categorySlug": "accessory",
+    "name": "Tai nghe True Wireless Samsung Galaxy Buds 4 Pro | Chính hãng",
+    "slug": "tai-nghe-samsung-galaxy-buds-4-pro",
+    "brand": "Samsung",
+    "price": 4790000,
+    "originalPrice": 5490000,
+    "thumbnail": "/images/samsungBuds4pro.webp",
+    "images": [
+      "/images/samsungBuds4pro.webp"
+    ],
+    "specs": {
+      "compatibility": "Android 10 trở lên, tối ưu tính năng cao cấp trên hệ sinh thái Samsung Galaxy",
+      "connection": "Bluetooth 5.4, codec Samsung Seamless Codec (SSC) Hi-Fi 24-bit/96kHz, AAC, SBC",
+      "driver": "Hệ thống loa 2 chiều (Woofer 11mm tăng cường dải trầm + Tweeter màng phẳng 6.1mm tái tạo âm cao chi tiết)",
+      "batteryLife": "6 giờ nghe nhạc liên tục (bật ANC), mở rộng lên đến 26 giờ cùng hộp sạc; sạc nhanh không dây chuẩn Qi",
+      "weight": "5.4 g mỗi tai nghe; Hộp sạc 46.5 g",
+      "features": "Chống ồn chủ động thích ứng ANC thông minh với Galaxy AI, âm thanh không gian 360 Audio theo dõi chuyển động đầu, kháng nước bụi IP57, micro khử ồn chuẩn phòng thu"
+    },
+    "description": "Tai nghe true wireless cao cấp thế hệ mới của Samsung với thiết kế blade thanh thoát, trang bị hệ thống loa 2 chiều tinh chỉnh âm thanh Hi-Fi 24-bit sắc nét kết hợp tính năng chống ồn chủ động thích ứng tối ưu bởi Galaxy AI.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p3000000-0000-0000-0000-000000000008",
+    "categorySlug": "accessory",
+    "name": "Tai nghe Bluetooth True Wireless Samsung Galaxy Buds 3 Pro | Chính hãng",
+    "slug": "tai-nghe-samsung-galaxy-buds-3-pro-chinh-hang",
+    "brand": "Samsung",
+    "price": 3690000,
+    "originalPrice": 5490000,
+    "thumbnail": "/images/samsungBuds3pro.webp",
+    "images": [
+      "/images/samsungBuds3pro.webp"
+    ],
+    "specs": {
+      "compatibility": "Android 10 trở lên, Windows, iOS (tối ưu tính năng nâng cao trong hệ sinh thái Galaxy)",
+      "connection": "Bluetooth 5.4, codec SSC Hi-Fi / SSC UHQ (24-bit/96kHz), AAC, SBC, hỗ trợ Auracast",
+      "driver": "Hệ thống loa kép 2 chiều: Woofer Dynamic 10.5mm + Tweeter màng phẳng Planar 6.1mm với bộ khuếch đại kép Dual Amp",
+      "batteryLife": "6 giờ nghe nhạc (bật ANC) hoặc 7 giờ (tắt ANC), mở rộng lên đến 30 giờ cùng hộp sạc; sạc không dây Qi & Type-C",
+      "weight": "5.4 g mỗi tai nghe; Hộp sạc 46.5 g",
+      "features": "Dải đèn Blade Lights phát sáng cá tính, chống ồn chủ động thích ứng Adaptive ANC điều chỉnh bởi Galaxy AI, nhận diện giọng nói Voice Detect tự chuyển xuyên âm, âm thanh không gian 360 Audio và kháng nước bụi chuẩn IP57"
+    },
+    "description": "Tai nghe True Wireless cao cấp dạng in-ear với thiết kế vát góc Blade Lights sang trọng, sở hữu chất âm chuẩn phòng thu Hi-Fi 24-bit nhờ củ loa kép Planar kết hợp Dynamic cùng tính năng chống ồn thông minh tối ưu bởi Galaxy AI.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p3000000-0000-0000-0000-000000000009",
+    "categorySlug": "accessory",
+    "name": "Tai nghe chụp tai Sony MDR-ZX110AP có micro | Chính hãng",
+    "slug": "tai-nghe-chup-tai-sony-mdr-zx110ap-co-micro",
+    "brand": "Sony",
+    "price": 380000,
+    "originalPrice": 530000,
+    "thumbnail": "/images/chuptaiSony.webp",
+    "images": [
+      "/images/chuptaiSony.webp"
+    ],
+    "specs": {
+      "type": "On-ear (Chụp tai có đệm êm ái, thiết kế closed-back khép kín cách âm)",
+      "driver": "Dynamic 30mm nam châm Neodymium mang lại âm thanh cân bằng, dải bass chắc khỏe",
+      "frequencyResponse": "12 Hz – 22.000 Hz",
+      "connection": "Jack cắm 3.5mm dạng chữ L mạ vàng chống gãy gập, tương thích máy tính, laptop và điện thoại",
+      "cableLength": "1.2 m (dạng cáp dẹt Y-type hạn chế chống rối)",
+      "weight": "120 g (siêu nhẹ, không gây mỏi đầu khi đeo lâu)",
+      "features": "Tích hợp micro đàm thoại và nút bấm đa năng nhận cuộc gọi / chuyển bài hát ngay trên dây, khớp nối Swivel gập xoay phẳng gọn gàng bỏ balo"
+    },
+    "description": "Chiếc tai nghe chụp tai có dây quốc dân từ Sony sở hữu màng loa Dynamic 30mm sắc nét, dải tần rộng 12Hz - 22kHz, tích hợp micro đàm thoại rõ ràng cùng khớp gập xoay thông minh lý tưởng cho học tập và nghe nhạc hàng ngày.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p3000000-0000-0000-0000-000000000010",
+    "categorySlug": "accessory",
+    "name": "Tai nghe Apple EarPods Lightning (MWTY3ZA/A) | Chính hãng Apple Việt Nam",
+    "slug": "tai-nghe-apple-earpods-lightning-mwty3za-a",
+    "brand": "Apple",
+    "price": 510000,
+    "originalPrice": 790000,
+    "thumbnail": "/images/appleEarpods.webp",
+    "images": [
+      "/images/appleEarpods.webp"
+    ],
+    "specs": {
+      "compatibility": "Tất cả các thiết bị Apple sử dụng cổng kết nối Lightning hỗ trợ iOS 10 trở lên (iPhone 7 đến iPhone 14 Series, iPad cổng Lightning)",
+      "connection": "Cổng Lightning cắm trực tiếp (Plug and Play, không cần sạc hay kết nối Bluetooth)",
+      "audioQuality": "Loa tối ưu hóa âm thanh đầu ra, dải bass sâu trầm chắc nịch và âm treble sáng rõ",
+      "cableLength": "1.2 m bọc nhựa cao cấp dẻo dai",
+      "weight": "Khoảng 10 g (siêu nhẹ, đeo không gây đau cấn vành tai)",
+      "features": "Cụm phím Remote tích hợp micro đàm thoại chất lượng cao, hỗ trợ điều chỉnh âm lượng, chuyển đổi bài hát và nhận/ngắt cuộc gọi tiện lợi"
+    },
+    "description": "Tai nghe có dây chính hãng từ Apple sở hữu thiết kế hạt đậu công thái học ôm sát vành tai, đầu nối Lightning truyền tải âm thanh kỹ thuật số trong trẻo cùng cụm mic đàm thoại tiện lợi.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p3000000-0000-0000-0000-000000000011",
+    "categorySlug": "accessory",
+    "name": "Tai nghe Bluetooth True Wireless Xiaomi Redmi Buds 6 | Chính hãng",
+    "slug": "tai-nghe-khong-day-xiaomi-redmi-buds-6",
+    "brand": "Xiaomi",
+    "price": 790000,
+    "originalPrice": 1090000,
+    "thumbnail": "/images/khongdayXiaomi.webp",
+    "images": [
+      "/images/khongdayXiaomi.webp"
+    ],
+    "specs": {
+      "compatibility": "Android, iOS, Windows, macOS (hỗ trợ ghép nối nhanh Google Fast Pair)",
+      "connection": "Bluetooth 5.4, codec AAC và SBC, hỗ trợ kết nối đồng thời 2 thiết bị",
+      "driver": "Củ loa mạ titan kích thước lớn 12.4mm, dải âm trầm sâu lắng và âm cao trong trẻo",
+      "batteryLife": "Lên đến 10 giờ nghe nhạc độc lập (tắt ANC), mở rộng lên đến 42 giờ khi dùng kèm hộp sạc; sạc nhanh 10 phút dùng 4 giờ",
+      "weight": "5.0 g mỗi bên tai nghe; Thiết kế in-ear gọn nhẹ vừa khít ống tai",
+      "features": "Chống ồn chủ động Hybrid ANC độ sâu 49dB, micro kép lọc gió và khử tiếng ồn đàm thoại bằng thuật toán AI, chuẩn kháng nước bụi IP54, tùy chỉnh 4 chế độ EQ qua app Xiaomi Earbuds"
+    },
+    "description": "Mẫu tai nghe không dây phân khúc phổ thông ấn tượng từ Xiaomi sở hữu khả năng khử ồn ANC lên tới 49dB, màng loa titan 12.4mm sống động và thời lượng pin vượt trội tới 42 giờ.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p3000000-0000-0000-0000-000000000012",
+    "categorySlug": "accessory",
+    "name": "Tai nghe chụp tai chống ồn không dây Sony WH-1000XM6 | Chính hãng",
+    "slug": "tai-nghe-chup-tai-sony-wh-1000xm6",
+    "brand": "Sony",
+    "price": 9790000,
+    "originalPrice": 10390000,
+    "thumbnail": "/images/chuptaiSonyWH.webp",
+    "images": [
+      "/images/chuptaiSonyWH.webp"
+    ],
+    "specs": {
+      "type": "Over-ear (Chụp tai ôm kín vành tai, đệm da mềm cao cấp phân bổ đều áp lực)",
+      "processor": "Chip xử lý chống ồn thế hệ mới QN3 cùng bộ xử lý tích hợp V2 và hệ thống 12 microphone thu âm thích ứng",
+      "driver": "Driver 30mm sợi carbon gia cường, chuẩn âm thanh phòng thu Hi-Res Audio / Hi-Res Wireless",
+      "connection": "Bluetooth 5.3, hỗ trợ codec LDAC, LC3 (LE Audio), AAC, SBC, jack cắm rời 3.5mm mạ vàng",
+      "batteryLife": "30 giờ (bật chống ồn ANC) hoặc lên đến 40 giờ (tắt ANC); sạc nhanh 3 phút cho 3 giờ nghe nhạc qua USB-C",
+      "weight": "254 g",
+      "features": "Cơ chế bản lề gập gọn (Foldable design) kèm hộp khóa từ tính cao cấp, công nghệ chống ồn thích ứng thời gian thực Adaptive NC Optimizer, nhận diện giọng nói Speak-to-Chat, kết nối đa điểm Multi-Point chuyển đổi linh hoạt giữa 2 thiết bị"
+    },
+    "description": "Đỉnh cao tai nghe chống ồn over-ear thế hệ mới từ Sony với vi xử lý QN3 đột phá, thiết kế bản lề gập gọn tiện lợi, hỗ trợ chuẩn Hi-Res LDAC sắc nét và thời lượng pin ấn tượng lên đến 40 giờ.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p3000000-0000-0000-0000-000000000013",
+    "categorySlug": "accessory",
+    "name": "Củ sạc Apple 96W USB-C Power Adapter (MW2L3ZA/A) | Chính hãng",
+    "slug": "cu-sac-apple-96w-usb-c-power-adapter",
+    "brand": "Apple",
+    "price": 1890000,
+    "originalPrice": 1962000,
+    "thumbnail": "/images/sacMacbook.webp",
+    "images": [
+      "/images/sacMacbook.webp"
+    ],
+    "specs": {
+      "compatibility": "Tối ưu cho MacBook Pro 14 inch, MacBook Pro 16 inch (hỗ trợ sạc nhanh qua cáp MagSafe 3 hoặc C-to-C), tương thích MacBook Air, iPad Pro, iPhone 15/16 Series",
+      "powerOutput": "Công suất tối đa 96W (hỗ trợ chuẩn sạc nhanh Power Delivery)",
+      "inputPort": "100-240V ~ 1.5A 50-60Hz (chuẩn điện áp toàn cầu)",
+      "outputPort": "1 cổng USB Type-C",
+      "dimensions": "8.0 x 8.0 x 2.86 cm",
+      "weight": "Khoảng 290 g",
+      "features": "Hỗ trợ sạc nhanh 50% pin chỉ trong vòng 30 phút cho MacBook Pro tương thích, cơ chế bảo vệ quá nhiệt, đoản mạch và tự động điều chỉnh dòng điện an toàn theo tiêu chuẩn Apple"
+    },
+    "description": "Bộ tiếp hợp nguồn sạc nhanh chính hãng Apple với công suất 96W mạnh mẽ qua cổng USB-C, giải pháp sạc tối ưu và an toàn tuyệt đối cho các dòng máy tính MacBook Pro và thiết bị cao cấp.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p3000000-0000-0000-0000-000000000014",
+    "categorySlug": "accessory",
+    "name": "Sạc nhanh Apple 20W USB-C (MHJE3ZA/A) | Chính hãng Apple Việt Nam",
+    "slug": "sac-nhanh-apple-20w-usb-c-chinh-hang-apple-viet-nam",
+    "brand": "Apple",
+    "price": 520000,
+    "originalPrice": 549000,
+    "thumbnail": "/images/sacApple.webp",
+    "images": [
+      "/images/sacApple.webp"
+    ],
+    "specs": {
+      "compatibility": "Tối ưu cho iPhone 8 đến iPhone 16 Series, iPad mini, iPad gen, iPad Air, Apple Watch và AirPods",
+      "powerOutput": "20W Power Delivery (5V/3A, 9V/2.22A)",
+      "inputPort": "100-240V ~ 50/60Hz 0.5A (chuẩn quốc tế)",
+      "outputPort": "1 x USB Type-C",
+      "dimensions": "4.2 x 4.0 x 2.7 cm",
+      "weight": "Khoảng 60 g",
+      "features": "Hỗ trợ sạc nhanh 50% pin trong 30 phút cho iPhone tương thích, tích hợp mạch kiểm soát điện áp và chống quá nhiệt theo chuẩn bảo vệ nghiêm ngặt của Apple"
+    },
+    "description": "Củ sạc nhanh quốc dân chính hãng Apple với cổng ra USB-C 20W nhỏ gọn và an toàn, mang lại tốc độ hồi pin vượt trội và tuổi thọ pin bền bỉ cho toàn bộ hệ sinh thái iPhone, iPad.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p3000000-0000-0000-0000-000000000015",
+    "categorySlug": "accessory",
+    "name": "Cáp Type C - Lightning Apple 1m (MM0A3ZA/A) | Chính hãng Apple Việt Nam",
+    "slug": "cap-type-c-lightning-apple-1m-chinh-hang",
+    "brand": "Apple",
+    "price": 490000,
+    "originalPrice": 539000,
+    "thumbnail": "/images/capTypeC.webp",
+    "images": [
+      "/images/capTypeC.webp"
+    ],
+    "specs": {
+      "compatibility": "Tất cả các dòng iPhone, iPad, AirPods và phụ kiện Apple sử dụng cổng kết nối Lightning",
+      "connection": "Đầu vào USB Type-C, đầu ra Lightning chuẩn MFi (Made for iPhone/iPad)",
+      "powerSupport": "Hỗ trợ sạc nhanh chuẩn Power Delivery (PD) lên tới 20W - 27W khi kết hợp với củ sạc USB-C",
+      "dataTransferRate": "Lên đến 480 Mbps (chuẩn USB 2.0 đồng bộ hóa dữ liệu mượt mà với Mac/PC)",
+      "cableLength": "1.0 m",
+      "weight": "Khoảng 20 g",
+      "features": "Chất liệu vỏ nhựa TPE dẻo dai thân thiện môi trường, chip bảo vệ dòng điện thông minh chống quá tải và chai pin, tối ưu sạc 50% pin chỉ trong 30 phút"
+    },
+    "description": "Cáp sạc và truyền dữ liệu USB-C sang Lightning chính hãng Apple chiều dài 1m tiêu chuẩn, hỗ trợ sạc nhanh chuẩn PD cho iPhone và kết nối đồng bộ hóa dữ liệu tốc độ cao với máy Mac.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p3000000-0000-0000-0000-000000000016",
+    "categorySlug": "accessory",
+    "name": "Bút cảm ứng Xiaomi Pen Pro 2026 | Chính hãng Xiaomi",
+    "slug": "but-cam-ung-xiaomi-pen-pro-2026",
+    "brand": "Xiaomi",
+    "price": 1790000,
+    "originalPrice": 2190000,
+    "thumbnail": "/images/butcamungxiaomi.webp",
+    "images": [
+      "/images/butcamungxiaomi.webp"
+    ],
+    "specs": {
+      "compatibility": "Tương thích tối ưu các dòng Xiaomi Pad 6 Series, Pad 7 Series và Xiaomi Pad Pro chạy Xiaomi HyperOS",
+      "pressureSensitivity": "8.192 mức cảm ứng lực nhấn chuyên nghiệp, độ trễ siêu thấp chỉ 3ms cho trải nghiệm viết vẽ liền mạch",
+      "samplingRate": "Tần số lấy mẫu cảm ứng 240Hz, phản hồi tức thì mọi chuyển động nét bút",
+      "charging": "Sạc không dây từ tính bằng cách hít vào cạnh máy tính bảng Xiaomi (Magnetic Snap-and-Charge)",
+      "batteryLife": "Lên đến 150 giờ sử dụng liên tục sau một lần sạc đầy, sạc nhanh 1 phút dùng được 7 giờ",
+      "weight": "13 g (thân bút phủ lớp sơn kháng khuẩn, thiết kế công thái học cầm nắm đầm tay)",
+      "features": "Cụm 3 phím bấm chức năng đa nhiệm (Phím Spotlight hỗ trợ làm con trỏ laser thuyết trình ảo, phím viết nhanh ghi chú Mi Canvas, phím chụp màn hình tức thì), ngòi bút phủ chất liệu elastomer giảm tiếng ồn và chống mài mòn"
+    },
+    "description": "Bút cảm ứng cao cấp thế hệ mới dành cho máy tính bảng Xiaomi với độ nhạy lực 8192 cấp độ, độ trễ tiệm cận 0 cùng phím ảo thông minh kiêm con trỏ laser hỗ trợ làm việc và hội thảo chuyên nghiệp.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p3000000-0000-0000-0000-000000000017",
+    "categorySlug": "accessory",
+    "name": "Bút cảm ứng Samsung S-Pen Creator Edition | Chính hãng Samsung",
+    "slug": "but-cam-ung-samsung-s-pen-creator-edition",
+    "brand": "Samsung",
+    "price": 1490000,
+    "originalPrice": 1890000,
+    "thumbnail": "/images/butcamungsamsung.webp",
+    "images": [
+      "/images/butcamungsamsung.webp"
+    ],
+    "specs": {
+      "compatibility": "Tương thích tất cả các dòng thiết bị hỗ trợ S-Pen của Samsung: Galaxy Tab S9/S10 Series, Galaxy Tab S FE, Galaxy S Ultra, Galaxy Book và Galaxy Note",
+      "pressureSensitivity": "4.096 mức cảm ứng lực nhấn chuẩn xác, nhận diện độ nghiêng ngòi bút lên đến 60 độ",
+      "technology": "Cộng hưởng điện từ (EMR - Electro-Magnetic Resonance) độc quyền của Wacom, không cần sạc pin để viết/vẽ",
+      "tip": "Đầu ngòi bút siêu mảnh 0.7mm bằng chất liệu cao su đàn hồi cho cảm giác viết chân thực êm ái như trên giấy",
+      "waterResistance": "Chuẩn kháng nước và bụi bẩn IP68 (hoạt động bền bỉ trong mọi điều kiện thời tiết)",
+      "weight": "10.6 g (thiết kế thân tròn dẹt công thái học chống trơn trượt)",
+      "features": "Phím bấm vật lý hỗ trợ thao tác Air Command (lệnh không chạm: tạo ghi chú tức thì, dịch văn bản, chụp cuộn màn hình), hít nam châm từ tính tiện lợi vào cạnh lưng máy tính bảng"
+    },
+    "description": "Bút cảm ứng S-Pen chính hãng từ Samsung với công nghệ cộng hưởng từ EMR không cần sạc pin, ngòi bút 0.7mm mô phỏng cảm giác viết tự nhiên trên giấy, chuẩn kháng nước IP68 bền bỉ và hỗ trợ tối đa cho học tập, sáng tạo.",
+    "warrantyMonths": 12
+  },
+  {
+    "id": "p3000000-0000-0000-0000-000000000018",
+    "categorySlug": "accessory",
+    "name": "Bàn di chuột gaming Asus ROG Strix Edge khổ dọc | Chính hãng",
+    "slug": "ban-di-chuot-asus-rog-strix-edge",
+    "brand": "ASUS",
+    "price": 650000,
+    "originalPrice": 890000,
+    "thumbnail": "/images/lotchuotAsus.webp",
+    "images": [
+      "/images/lotchuotAsus.webp"
+    ],
+    "specs": {
+      "compatibility": "Tối ưu cho mọi loại cảm biến chuột (quang học Optical và Laser), phù hợp các tựa game FPS, MOBA",
+      "dimensions": "400 x 450 x 2 mm (thiết kế khổ dọc đặc trưng, tối ưu kê tay trùm mép bàn làm việc)",
+      "material": "Bề mặt vải dệt mật độ cao tối ưu tốc độ lướt (Speed & Control), đế cao su tự nhiên chống trượt ROG Red Rubber",
+      "stitching": "Bo viền chỉ công nghệ dập nhiệt chống tưa rách toàn dải màu sắc (Full-color anti-fray stitching)",
+      "weight": "Khoảng 260 g",
+      "features": "Họa tiết logo mắt cú ROG sắc nét đa màu chống phai, độ dày siêu mỏng 2mm linh hoạt dễ cuộn mang đi thi đấu, bề mặt trơn láng giảm tối đa ma sát cổ tay khi di chuột trong thời gian dài"
+    },
+    "description": "Bàn di chuột gaming khổ dọc độc đáo từ Asus ROG với bề mặt dệt tối ưu cho cả tốc độ lẫn kiểm soát lực dừng, đường may viền màu chống tưa cao cấp cùng độ mỏng 2mm bảo vệ cổ tay êm ái khi thi đấu.",
+    "warrantyMonths": 12
+  }
 ];
 
 export const sampleOrders = [
   {
-    id: 'ord-1024',
-    orderCode: '#BK-1024',
-    userId: 'u-customer-001',
-    customerName: 'Nguyễn Văn An',
-    phone: '0912345678',
-    address: 'Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội',
-    note: 'Giao giờ hành chính, gọi trước khi đến',
-    totalAmount: 31990000,
-    paymentMethod: 'COD',
-    status: 'delivered',
-    trackingInfo: 'Đơn hàng đã được giao thành công vào lúc 14:30 ngày 15/09/2026. Người nhận: Nguyễn Văn An.',
-    createdAt: '2026-09-15T14:30:00.000Z',
-    items: [
+    "id": "ord-1024",
+    "orderCode": "#BK-1024",
+    "userId": "u-customer-001",
+    "customerName": "Nguyễn Văn An",
+    "phone": "0912345678",
+    "address": "Số 18 Hoàng Quốc Việt, Phường Nghĩa Đô, Cầu Giấy, Hà Nội",
+    "note": "Giao giờ hành chính, gọi trước khi đến",
+    "totalAmount": 25990000,
+    "paymentMethod": "COD",
+    "status": "delivered",
+    "trackingInfo": "Đơn hàng đã được giao thành công vào lúc 14:30 ngày 15/09/2026. Người nhận: Nguyễn Văn An.",
+    "createdAt": "2026-09-15T14:30:00.000Z",
+    "items": [
       {
-        productId: 'p1000000-0000-0000-0000-000000000001',
-        productSlug: 'macbook-air-m3-13-16gb-512gb',
-        productName: 'Apple MacBook Air 13 M3 (16GB RAM / 512GB SSD)',
-        quantity: 1,
-        unitPrice: 31990000,
-        price: 31990000,
-      },
-    ],
+        "productId": "p1000000-0000-0000-0000-000000000001",
+        "productSlug": "asus-tuf-gaming-a15-fa506ncg-hn396w",
+        "productName": "Laptop ASUS TUF Gaming A15 FA506NCG-HN396W (Ryzen 7 155, RTX 3050 4GB, 8GB, 512GB)",
+        "quantity": 1,
+        "unitPrice": 25990000,
+        "price": 25990000
+      }
+    ]
   },
   {
-    id: 'ord-2048',
-    orderCode: '#BK-2048',
-    customerName: 'Trần Thị Mai',
-    phone: '0987654321',
-    address: 'Tòa nhà Landmark 81, 720A Điện Biên Phủ, Phường 22, Bình Thạnh, TP. Hồ Chí Minh',
-    note: 'Chuyển khoản QR trước',
-    totalAmount: 35480000,
-    paymentMethod: 'QR_PAY',
-    status: 'shipping',
-    trackingInfo: 'Kiện hàng đã rời kho trung chuyển Tân Bình lúc 08:15 sáng nay và đang trên đường giao hàng bởi shipper.',
-    createdAt: '2026-10-09T08:15:00.000Z',
-    items: [
+    "id": "ord-2048",
+    "orderCode": "#BK-2048",
+    "customerName": "Trần Thị Mai",
+    "phone": "0987654321",
+    "address": "Tòa nhà Landmark 81, 720A Điện Biên Phủ, Phường 22, Bình Thạnh, TP. Hồ Chí Minh",
+    "note": "Chuyển khoản QR trước",
+    "totalAmount": 49010000,
+    "paymentMethod": "QR_PAY",
+    "status": "shipping",
+    "trackingInfo": "Kiện hàng đã rời kho trung chuyển Tân Bình lúc 08:15 sáng nay và đang trên đường giao hàng bởi shipper.",
+    "createdAt": "2026-10-09T08:15:00.000Z",
+    "items": [
       {
-        productId: 'p1000000-0000-0000-0000-000000000008',
-        productSlug: 'iphone-16-pro-max-256gb',
-        productName: 'Apple iPhone 16 Pro Max 256GB Titan Tự Nhiên',
-        quantity: 1,
-        unitPrice: 34490000,
-        price: 34490000,
+        "productId": "p2000000-0000-0000-0000-000000000001",
+        "productSlug": "iphone-18-pro-max-512gb-chinh-hang",
+        "productName": "iPhone 18 Pro Max 512GB | Chính hãng VN/A",
+        "quantity": 1,
+        "unitPrice": 48490000,
+        "price": 48490000
       },
       {
-        productId: 'p1000000-0000-0000-0000-000000000015',
-        productSlug: 'anker-prime-67w-gan-charger',
-        productName: 'Củ sạc nhanh Anker 735 GaNPrime 65W (3 Cổng)',
-        quantity: 1,
-        unitPrice: 990000,
-        price: 990000,
-      },
-    ],
+        "productId": "p3000000-0000-0000-0000-000000000014",
+        "productSlug": "sac-nhanh-apple-20w-usb-c-chinh-hang-apple-viet-nam",
+        "productName": "Sạc nhanh Apple 20W USB-C (MHJE3ZA/A) | Chính hãng Apple Việt Nam",
+        "quantity": 1,
+        "unitPrice": 520000,
+        "price": 520000
+      }
+    ]
   },
   {
-    id: 'ord-3072',
-    orderCode: '#BK-3072',
-    customerName: 'Lê Hoàng Long',
-    phone: '0905123987',
-    address: 'Khu Công Nghệ Phần Mềm, Đường 2/9, Hải Châu, Đà Nẵng',
-    note: 'Thanh toán tiền mặt khi nhận hàng',
-    totalAmount: 2090000,
-    paymentMethod: 'COD',
-    status: 'pending',
-    trackingInfo: 'Đơn hàng đã được tiếp nhận trên hệ thống lúc 10:00 sáng. Quản trị viên đang kiểm tra tồn kho tại chi nhánh Đà Nẵng để đóng gói.',
-    createdAt: '2026-10-10T10:00:00.000Z',
-    items: [
+    "id": "ord-3072",
+    "orderCode": "#BK-3072",
+    "customerName": "Lê Hoàng Long",
+    "phone": "0905123987",
+    "address": "Khu Công Nghệ Phần Mềm, Đường 2/9, Hải Châu, Đà Nẵng",
+    "note": "Thanh toán tiền mặt khi nhận hàng",
+    "totalAmount": 399000,
+    "paymentMethod": "COD",
+    "status": "pending",
+    "trackingInfo": "Đơn hàng đã được tiếp nhận trên hệ thống lúc 10:00 sáng. Quản trị viên đang kiểm tra tồn kho tại chi nhánh Đà Nẵng để đóng gói.",
+    "createdAt": "2026-10-10T10:00:00.000Z",
+    "items": [
       {
-        productId: 'p1000000-0000-0000-0000-000000000013',
-        productSlug: 'logitech-mx-master-3s',
-        productName: 'Chuột Không Dây Logitech MX Master 3S',
-        quantity: 1,
-        unitPrice: 2090000,
-        price: 2090000,
-      },
-    ],
-  },
+        "productId": "p3000000-0000-0000-0000-000000000005",
+        "productSlug": "chuot-gaming-logitech-g102-lightsync-gen-2",
+        "productName": "Chuột có dây Gaming Logitech G102 LightSync Gen 2 | Chính hãng",
+        "quantity": 1,
+        "unitPrice": 399000,
+        "price": 399000
+      }
+    ]
+  }
 ];
 
 export const sampleKnowledgePolicies = [
   {
-    title: 'Chính sách bảo hành thiết bị công nghệ BK-Store',
-    category: 'chinh_sach_bao_hanh',
-    content: `CHÍNH SÁCH BẢO HÀNH CHÍNH HÃNG BK-STORE:
-1. Thời hạn bảo hành tiêu chuẩn:
-- Toàn bộ sản phẩm Laptop (Apple MacBook, ASUS, Dell, Lenovo, Acer) và Điện thoại thông minh (iPhone, Samsung, Xiaomi) được bảo hành chính hãng từ 12 đến 24 tháng theo đúng tiêu chuẩn nhà sản xuất.
-- Phụ kiện cao cấp (Sony, Logitech, Apple, Anker) bảo hành chính hãng từ 12 đến 18 tháng.
-2. Chính sách bảo hành 1 ĐỔI 1:
-- Trong vòng 30 ngày đầu tiên kể từ ngày mua hàng (hoặc ngày nhận máy thành công), nếu sản phẩm phát sinh lỗi phần cứng từ nhà sản xuất (lỗi mainboard, màn hình sọc, không lên nguồn, camera hỏng), BK-Store áp dụng chính sách 1 ĐỔI 1 ngay lập tức bằng máy mới 100% nguyên seal hộp.
-3. Quy định cụ thể về màn hình và pin:
-- Đối với màn hình Laptop và Điện thoại: Áp dụng bảo hành khi có từ 3 điểm chết (dead pixel) trở lên, hoặc có điểm sáng lớn hơn 1mm, hoặc có hiện tượng sọc màn hình, chớp nháy.
-- Đối với Pin: Được bảo hành thay pin mới miễn phí nếu dung lượng pin (Battery Health) chai giảm xuống dưới 80% trong vòng 12 tháng đầu sử dụng.
-4. Trường hợp từ chối bảo hành miễn phí:
-- Máy bị rơi vỡ, va đập biến dạng, có dấu hiệu vào nước hoặc hóa chất ăn mòn.
-- Máy đã bị tự ý can thiệp phần cứng hoặc sửa chữa tại các cơ sở không được ủy quyền.`,
+    "title": "Chính sách bảo hành thiết bị công nghệ BK-Store",
+    "category": "chinh_sach_bao_hanh",
+    "content": "CHÍNH SÁCH BẢO HÀNH CHÍNH HÃNG BK-STORE:\n1. Thời hạn bảo hành tiêu chuẩn:\n- Toàn bộ sản phẩm Laptop (Apple MacBook, ASUS, Dell, Lenovo, Acer) và Điện thoại thông minh (iPhone, Samsung, Xiaomi) được bảo hành chính hãng từ 12 đến 24 tháng theo đúng tiêu chuẩn nhà sản xuất.\n- Phụ kiện cao cấp (Sony, Logitech, Apple, Anker) bảo hành chính hãng từ 12 đến 18 tháng.\n2. Chính sách bảo hành 1 ĐỔI 1:\n- Trong vòng 30 ngày đầu tiên kể từ ngày mua hàng (hoặc ngày nhận máy thành công), nếu sản phẩm phát sinh lỗi phần cứng từ nhà sản xuất (lỗi mainboard, màn hình sọc, không lên nguồn, camera hỏng), BK-Store áp dụng chính sách 1 ĐỔI 1 ngay lập tức bằng máy mới 100% nguyên seal hộp.\n3. Quy định cụ thể về màn hình và pin:\n- Đối với màn hình Laptop và Điện thoại: Áp dụng bảo hành khi có từ 3 điểm chết (dead pixel) trở lên, hoặc có điểm sáng lớn hơn 1mm, hoặc có hiện tượng sọc màn hình, chớp nháy.\n- Đối với Pin: Được bảo hành thay pin mới miễn phí nếu dung lượng pin (Battery Health) chai giảm xuống dưới 80% trong vòng 12 tháng đầu sử dụng.\n4. Trường hợp từ chối bảo hành miễn phí:\n- Máy bị rơi vỡ, va đập biến dạng, có dấu hiệu vào nước hoặc hóa chất ăn mòn.\n- Máy đã bị tự ý can thiệp phần cứng hoặc sửa chữa tại các cơ sở không được ủy quyền."
   },
   {
-    title: 'Chính sách đổi trả và hoàn tiền BK-Store',
-    category: 'chinh_sach_doi_tra',
-    content: `CHÍNH SÁCH ĐỔI TRẢ VÀ HOÀN TIỀN TẠI BK-STORE:
-1. Đổi trả do lỗi kỹ thuật của sản phẩm:
-- Trong 30 ngày đầu tiên: Đổi sản phẩm mới miễn phí 100%. Nếu sản phẩm cùng loại hết hàng trong kho, khách hàng được hoàn tiền 100% hoặc đổi sang dòng sản phẩm khác bù/trừ chênh lệch giá.
-2. Đổi trả theo nhu cầu khách hàng (Không có lỗi kỹ thuật):
-- Trong vòng 14 ngày kể từ ngày mua: Khách hàng có thể yêu cầu đổi sang mẫu mã khác hoặc trả hàng hoàn tiền.
-- Điều kiện: Sản phẩm phải còn nguyên seal niêm phong của nhà sản xuất, hộp không rách nát, đầy đủ phụ kiện và hóa đơn mua hàng.
-- Phí thu hồi (nếu trả hàng hoàn tiền do đổi ý): 10% giá trị đơn hàng trên hóa đơn để bù chi phí vận hành và khấu hao niêm phong.
-3. Thời gian hoàn tiền:
-- Hoàn tiền mặt ngay tại chi nhánh cửa hàng hoặc chuyển khoản ngân hàng trong vòng 24 đến 48 giờ làm việc.`,
+    "title": "Chính sách đổi trả và hoàn tiền BK-Store",
+    "category": "chinh_sach_doi_tra",
+    "content": "CHÍNH SÁCH ĐỔI TRẢ VÀ HOÀN TIỀN TẠI BK-STORE:\n1. Đổi trả do lỗi kỹ thuật của sản phẩm:\n- Trong 30 ngày đầu tiên: Đổi sản phẩm mới miễn phí 100%. Nếu sản phẩm cùng loại hết hàng trong kho, khách hàng được hoàn tiền 100% hoặc đổi sang dòng sản phẩm khác bù/trừ chênh lệch giá.\n2. Đổi trả theo nhu cầu khách hàng (Không có lỗi kỹ thuật):\n- Trong vòng 14 ngày kể từ ngày mua: Khách hàng có thể yêu cầu đổi sang mẫu mã khác hoặc trả hàng hoàn tiền.\n- Điều kiện: Sản phẩm phải còn nguyên seal niêm phong của nhà sản xuất, hộp không rách nát, đầy đủ phụ kiện và hóa đơn mua hàng.\n- Phí thu hồi (nếu trả hàng hoàn tiền do đổi ý): 10% giá trị đơn hàng trên hóa đơn để bù chi phí vận hành và khấu hao niêm phong.\n3. Thời gian hoàn tiền:\n- Hoàn tiền mặt ngay tại chi nhánh cửa hàng hoặc chuyển khoản ngân hàng trong vòng 24 đến 48 giờ làm việc."
   },
   {
-    title: 'Chính sách vận chuyển và giao hàng BK-Store',
-    category: 'van_chuyen',
-    content: `CHÍNH SÁCH VẬN CHUYỂN & GIAO HÀNG TẬN NƠI:
-1. Cước phí vận chuyển:
-- MIỄN PHÍ VẬN CHUYỂN TOÀN QUỐC (Free Shipping) cho tất cả các đơn hàng có tổng giá trị từ 1.000.000 VNĐ trở lên.
-- Đơn hàng dưới 1.000.000 VNĐ áp dụng mức phí vận chuyển đồng giá: 30.000 VNĐ trên phạm vi toàn quốc.
-2. Thời gian giao hàng dự kiến:
-- Giao hàng hỏa tốc trong 2 giờ: Áp dụng cho các quận nội thành thuộc Hà Nội, TP. Hồ Chí Minh và Đà Nẵng (khi đặt hàng từ 08:30 đến 18:00 hàng ngày).
-- Giao hàng tiêu chuẩn liên tỉnh: Từ 2 đến 3 ngày làm việc đối với các tỉnh thành khác.
-3. Kiểm tra hàng trước khi thanh toán (Đồng kiểm):
-- Khách hàng được quyền mở hộp kiểm tra ngoại quan sản phẩm (đúng màu, đúng dòng máy, không móp méo rơi vỡ) trước khi thanh toán tiền cho nhân viên giao hàng (COD).`,
+    "title": "Chính sách vận chuyển và giao hàng BK-Store",
+    "category": "van_chuyen",
+    "content": "CHÍNH SÁCH VẬN CHUYỂN & GIAO HÀNG TẬN NƠI:\n1. Cước phí vận chuyển:\n- MIỄN PHÍ VẬN CHUYỂN TOÀN QUỐC (Free Shipping) cho tất cả các đơn hàng có tổng giá trị từ 1.000.000 VNĐ trở lên.\n- Đơn hàng dưới 1.000.000 VNĐ áp dụng mức phí vận chuyển đồng giá: 30.000 VNĐ trên phạm vi toàn quốc.\n2. Thời gian giao hàng dự kiến:\n- Giao hàng hỏa tốc trong 2 giờ: Áp dụng cho các quận nội thành thuộc Hà Nội, TP. Hồ Chí Minh và Đà Nẵng (khi đặt hàng từ 08:30 đến 18:00 hàng ngày).\n- Giao hàng tiêu chuẩn liên tỉnh: Từ 2 đến 3 ngày làm việc đối với các tỉnh thành khác.\n3. Kiểm tra hàng trước khi thanh toán (Đồng kiểm):\n- Khách hàng được quyền mở hộp kiểm tra ngoại quan sản phẩm (đúng màu, đúng dòng máy, không móp méo rơi vỡ) trước khi thanh toán tiền cho nhân viên giao hàng (COD)."
   },
   {
-    title: 'Thông tin hệ sinh thái các thương hiệu công nghệ chính hãng tại BK-Store',
-    category: 'thuong_hieu_chinh_hang',
-    content: `THÔNG TIN THƯƠNG HIỆU CÔNG NGHỆ CHÍNH HÃNG PHÂN PHỐI TẠI BK-STORE:
-1. Apple (Hoa Kỳ): MacBook Air M2/M3, MacBook Pro M3 Pro/Max, iPhone 16 Pro Max, iPad Pro, AirPods.
-2. Dell (Hoa Kỳ): Dell XPS 13/14/16, Dell Inspiron, Dell Precision.
-3. ASUS (Đài Loan): ASUS Zenbook Lumina OLED, ROG Zephyrus G14/G16 OLED & TUF Gaming.
-4. Samsung (Hàn Quốc): Galaxy S24 Ultra, Galaxy Z Fold6, Galaxy AI.
-5. Sony (Nhật Bản): WH-1000XM5, WF-1000XM5, Hi-Res Audio LDAC.
-6. Keychron (Hồng Kông): Keychron Q1 Pro/Q3 Max nhôm CNC, K2 Pro, QMK/VIA.
-7. Anker (Hoa Kỳ): Củ sạc nhanh GaNPrime 65W/100W, ActiveShield 2.0.`,
+    "title": "Thông tin hệ sinh thái các thương hiệu công nghệ chính hãng tại BK-Store",
+    "category": "thuong_hieu_chinh_hang",
+    "content": "THÔNG TIN THƯƠNG HIỆU CÔNG NGHỆ CHÍNH HÃNG PHÂN PHỐI TẠI BK-STORE:\n1. Apple (Hoa Kỳ): MacBook Air M2/M3, MacBook Pro M3 Pro/Max, iPhone 16 Pro Max, iPad Pro, AirPods.\n2. Dell (Hoa Kỳ): Dell XPS 13/14/16, Dell Inspiron, Dell Precision.\n3. ASUS (Đài Loan): ASUS Zenbook Lumina OLED, ROG Zephyrus G14/G16 OLED & TUF Gaming.\n4. Samsung (Hàn Quốc): Galaxy S24 Ultra, Galaxy Z Fold6, Galaxy AI.\n5. Sony (Nhật Bản): WH-1000XM5, WF-1000XM5, Hi-Res Audio LDAC.\n6. Keychron (Hồng Kông): Keychron Q1 Pro/Q3 Max nhôm CNC, K2 Pro, QMK/VIA.\n7. Anker (Hoa Kỳ): Củ sạc nhanh GaNPrime 65W/100W, ActiveShield 2.0."
   },
   {
-    title: 'Chính sách và hướng dẫn đánh giá sản phẩm thực tế (Verified Reviews) BK-Store',
-    category: 'danh_gia_san_pham',
-    content: `CHÍNH SÁCH VÀ HƯỚNG DẪN ĐÁNH GIÁ SẢN PHẨM BK-STORE:
-1. Nguyên tắc xác thực người mua (Verified Purchase):
-- Chỉ những khách hàng đã mua sản phẩm và đơn hàng ở trạng thái "Giao hàng thành công" (delivered) mới có quyền viết đánh giá.
-- Các đơn hàng đang chờ duyệt (pending), đã duyệt (confirmed), đang vận chuyển (shipping) hoặc đã hủy (cancelled) sẽ KHÔNG THỂ gửi đánh giá. Khách hàng cần nhận máy và trải nghiệm thực tế trước khi gửi nhận xét.
-2. Thông tin xác thực bắt buộc:
-- Khách hàng nhập Mã đơn hàng (ví dụ: #BK-1024) và Số điện thoại đặt hàng để hệ thống tự động kiểm tra tính hợp lệ.
-3. Ba hình thức gửi đánh giá trên website:
-- Cách 1: Bấm nút "⭐ Đánh giá" trên thanh Header hoặc Footer của website.
-- Cách 2: Vào mục "Tra cứu vận đơn" (nhập mã đơn + SĐT), bên cạnh mỗi sản phẩm đã giao thành công sẽ có nút "⭐ Đánh giá".
-- Cách 3: Tại trang chi tiết sản phẩm (/products/[slug]), kéo xuống mục "Đánh giá từ khách hàng đã mua sản phẩm" và bấm nút "Viết đánh giá sản phẩm".
-4. Tiêu chuẩn đánh giá và chống trùng lặp:
-- Chấm điểm số sao từ 1 đến 5 sao (★) kèm nhận xét chân thực về chất lượng máy, pin, màn hình, hiệu năng, đóng gói.
-- Chống trùng lặp: Mỗi sản phẩm trong một đơn hàng chỉ được gửi đánh giá tối đa 01 lần. Đánh giá được gắn huy hiệu uy tín "✓ Đã mua hàng tại BK-Store".`,
-  },
+    "title": "Chính sách và hướng dẫn đánh giá sản phẩm thực tế (Verified Reviews) BK-Store",
+    "category": "danh_gia_san_pham",
+    "content": "CHÍNH SÁCH VÀ HƯỚNG DẪN ĐÁNH GIÁ SẢN PHẨM BK-STORE:\n1. Nguyên tắc xác thực người mua (Verified Purchase):\n- Chỉ những khách hàng đã mua sản phẩm và đơn hàng ở trạng thái \"Giao hàng thành công\" (delivered) mới có quyền viết đánh giá.\n- Các đơn hàng đang chờ duyệt (pending), đã duyệt (confirmed), đang vận chuyển (shipping) hoặc đã hủy (cancelled) sẽ KHÔNG THỂ gửi đánh giá. Khách hàng cần nhận máy và trải nghiệm thực tế trước khi gửi nhận xét.\n2. Thông tin xác thực bắt buộc:\n- Khách hàng nhập Mã đơn hàng (ví dụ: #BK-1024) và Số điện thoại đặt hàng để hệ thống tự động kiểm tra tính hợp lệ.\n3. Ba hình thức gửi đánh giá trên website:\n- Cách 1: Bấm nút \"⭐ Đánh giá\" trên thanh Header hoặc Footer của website.\n- Cách 2: Vào mục \"Tra cứu vận đơn\" (nhập mã đơn + SĐT), bên cạnh mỗi sản phẩm đã giao thành công sẽ có nút \"⭐ Đánh giá\".\n- Cách 3: Tại trang chi tiết sản phẩm (/products/[slug]), kéo xuống mục \"Đánh giá từ khách hàng đã mua sản phẩm\" và bấm nút \"Viết đánh giá sản phẩm\".\n4. Tiêu chuẩn đánh giá và chống trùng lặp:\n- Chấm điểm số sao từ 1 đến 5 sao (★) kèm nhận xét chân thực về chất lượng máy, pin, màn hình, hiệu năng, đóng gói.\n- Chống trùng lặp: Mỗi sản phẩm trong một đơn hàng chỉ được gửi đánh giá tối đa 01 lần. Đánh giá được gắn huy hiệu uy tín \"✓ Đã mua hàng tại BK-Store\"."
+  }
 ];

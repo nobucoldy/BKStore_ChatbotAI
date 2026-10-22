@@ -163,16 +163,16 @@ export const ProductQuickView: React.FC<ProductQuickViewProps> = ({
                     </span>
                   ) : stock === 1 ? (
                     <span className="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-300 text-rose-700 font-bold flex items-center gap-1.5 animate-pulse">
-                      🔥 <span>Chỉ còn 1 máy duy nhất!</span>
+                      🔥 <span>Chỉ còn 1 sản phẩm duy nhất!</span>
                     </span>
                   ) : stock <= 10 ? (
                     <span className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-300 text-amber-800 font-bold flex items-center gap-1.5">
-                      ⚡ <span>Sắp hết hàng: Còn <strong>{stock}</strong> máy</span>
+                      ⚡ <span>Sắp hết hàng: Còn <strong>{stock}</strong> sản phẩm</span>
                     </span>
                   ) : (
                     <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 flex items-center gap-1.5">
                       <Package className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Kho: <strong>{stock}</strong> máy</span>
+                      <span>Kho: <strong>{stock}</strong> sản phẩm</span>
                       {cartQty > 0 && (
                         <span className="text-blue-600 font-semibold">({cartQty} trong giỏ)</span>
                       )}
@@ -232,7 +232,7 @@ export const ProductQuickView: React.FC<ProductQuickViewProps> = ({
 
                 {availableToAdd > 0 && availableToAdd <= 10 && (
                   <span className="text-[11px] text-amber-700 font-mono font-medium">
-                    {availableToAdd === 1 ? '🔥 Chỉ có thể thêm 1 máy cuối cùng' : `(Có thể thêm tối đa ${availableToAdd} máy)`}
+                    {availableToAdd === 1 ? '🔥 Chỉ có thể thêm 1 sản phẩm cuối cùng' : `(Có thể thêm tối đa ${availableToAdd} sản phẩm)`}
                   </span>
                 )}
               </div>

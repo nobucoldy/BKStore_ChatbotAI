@@ -210,7 +210,7 @@ export default function MyOrdersPage() {
               Đơn hàng của tôi
             </h1>
             <p className="text-xs text-slate-500 mt-1">
-              Xem chi tiết tiến trình vận đơn, chi nhánh xuất kho và đánh giá sản phẩm sau khi nhận máy.
+              Xem chi tiết tiến trình vận đơn, chi nhánh xuất kho và đánh giá sản phẩm sau khi nhận sản phẩm.
             </p>
           </div>
 

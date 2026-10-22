@@ -317,7 +317,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                               onClick={() => handleUpdate(product.id, quantity + 1)}
                               disabled={isMaxReached || isOutOfStock}
                               className="px-2.5 py-0.5 text-slate-600 hover:bg-slate-100 font-bold disabled:opacity-40 disabled:hover:bg-white cursor-pointer"
-                              title={isMaxReached ? `Đã đạt giới hạn tồn kho (${maxStock} máy)` : 'Tăng số lượng'}
+                              title={isMaxReached ? `Đã đạt giới hạn tồn kho (${maxStock} sản phẩm)` : 'Tăng số lượng'}
                             >
                               +
                             </button>

@@ -449,7 +449,7 @@ export default function HomePage() {
                     </div>
                     <div>
                       <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                        Phụ Kiện và âm thanh
+                        Phụ Kiện và ngoại vi
                       </h2>
                     </div>
                   </div>
