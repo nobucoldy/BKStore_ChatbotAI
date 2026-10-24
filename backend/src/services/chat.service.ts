@@ -132,7 +132,7 @@ NGUYÊN TẮC BẮT BUỘC:
 - TUYỆT ĐỐI KHÔNG liệt kê bảng thông số kỹ thuật chi tiết (như danh sách dài dòng CPU, GPU, RAM, SSD, độ phân giải màn hình, dung lượng pin, cổng kết nối, chuẩn Wi-Fi/Bluetooth...) vào trong nội dung tin nhắn văn bản, vì sẽ làm câu trả lời quá dài, choán hết màn hình và che khuất thẻ card sản phẩm.
 - Cách trình bày tư vấn chuẩn:
   + Đưa ra nhận xét ngắn gọn 1-2 câu giải thích tiêu chí chọn cấu hình phù hợp với nhu cầu/ngân sách của khách (ví dụ: sinh viên kinh tế cần mỏng nhẹ pin trâu; AI/Data Science cần 32GB RAM + GPU CUDA; gaming cần tản nhiệt tốt & tần số quét cao).
-  + Khi gợi ý các dòng máy (tối đa 2–3 mẫu máy): Chỉ nêu Tên máy + Mức giá + 1 đến 2 ưu điểm đắt giá nhất giải quyết đúng nỗi đau hoặc nhu cầu của khách (Ví dụ: "MacBook Air M3 (26.990.000₫): Siêu mỏng nhẹ 1.2kg, pin trâu 18 tiếng liên tục, màn Retina sắc nét" hoặc "ASUS ROG Zephyrus G14 (48.990.000₫): Trang bị RTX 4060 và màn OLED 120Hz chuyên trị đồ họa 3D/gaming").
+  + Khi gợi ý các dòng máy (tối đa 2–3 mẫu máy): BẮT BUỘC chỉ nêu Tên máy + Mức giá + 1 đến 2 ưu điểm đắt giá nhất của các sản phẩm nằm trong danh sách THẺ SẢN PHẨM (Product Cards) hiển thị bên dưới, TUYỆT ĐỐI không nhắc tên các mẫu máy ngoài danh sách thẻ (Ví dụ: "ASUS Vivobook 14 (22.490.000₫): Thiết kế thanh lịch, Core 7 đa nhiệm mượt mà, pin bền bỉ cho sinh viên" hoặc "Lenovo ThinkBook 16 (26.590.000₫): Màn hình 16 inch lớn, chip i5-H xử lý đồ họa & dữ liệu cực tốt").
   + Ở cuối tin nhắn, hướng dẫn ngắn gọn: "Anh/chị có thể xem ảnh thực tế và cấu hình chi tiết tại thẻ sản phẩm ngay bên dưới nhé ạ!" và hỏi bước tiếp theo (muốn kiểm tra tồn kho chi nhánh nào hay cần tư vấn thêm).
 3. ĐƠN HÀNG & TÌNH TRẠNG DUYỆT ĐƠN:
 - Khi khách hàng hỏi về số lượng hoặc danh sách đơn hàng chưa được xác nhận, chưa được duyệt đơn:
@@ -227,6 +227,9 @@ class ChatService {
       'laptop', 'may', 'tinh', 'dien', 'thoai', 'tai', 'nghe', 'chuot', 'ban', 'phim', 'cu', 'sac', 'nhanh',
       'chong', 'on', 'khong', 'day', 'co', 'ram', 'ssd', 'gb', 'tb', '16gb', '32gb', '512gb', '256gb', '1tb',
       '18gb', '12gb', 'inch', 'chinh', 'hang', 'vn', 'den', 'trang', 'xam', 'titan', 'tu', 'nhien', 'pin', 'du', 'phong',
+      'vien', 'nhom', 'thep', 'size', 'sm', 'series', 'bac', 'mau', 'sac', 'van', 'sinh', 'hoc', 'tap',
+      'cho', 'nguoi', 'dung', 'gia', 're', 'tot', 'dep', 'cao', 'cap', 'tien', 'trieu', 'mua', 'xem', 'nao',
+      'dong', 'chiec', 'cai', 'loai', 'watch', 'pro', 'max', 'plus', 'ultra',
     ]);
 
     for (const p of seedProducts) {
@@ -235,7 +238,7 @@ class ChatService {
       const pBrandNorm = normalizeText(p.brand);
 
       let score = 0;
-      const modelWords = pSlugWords.filter((w) => !stopWords.has(w));
+      const modelWords = pSlugWords.filter((w) => !stopWords.has(w) && w.length >= 3);
       const matchedModelWords = modelWords.filter((w) => {
         const regex = new RegExp(`\\b${w}\\b`, 'i');
         return regex.test(norm);
@@ -247,7 +250,17 @@ class ChatService {
         score += 2;
       }
 
-      // Các cụm từ nhận diện nhanh dòng máy phổ biến
+      // Các cụm từ nhận diện nhanh dòng máy thực tế tại BK-Store
+      if ((norm.includes('vivobook') || norm.includes('x1404')) && pNameNorm.includes('vivobook')) score += 6;
+      if ((norm.includes('thinkbook') || norm.includes('21us008fvn')) && pNameNorm.includes('thinkbook')) score += 6;
+      if ((norm.includes('tuf gaming') || norm.includes('fa506')) && pNameNorm.includes('tuf gaming')) score += 6;
+      if ((norm.includes('loq') || norm.includes('83dv01alvn')) && pNameNorm.includes('loq')) score += 6;
+      if ((norm.includes('thinkpad e14') || norm.includes('e14 gen 7')) && pNameNorm.includes('thinkpad e14')) score += 6;
+      if ((norm.includes('thinkpad t14s') || norm.includes('t14s gen 6')) && pNameNorm.includes('thinkpad t14s')) score += 6;
+      if ((norm.includes('apple watch') || norm.includes('dong ho apple')) && pNameNorm.includes('apple watch')) score += 6;
+      if ((norm.includes('watch ultra') || norm.includes('ultra 4')) && pNameNorm.includes('watch ultra')) score += 6;
+
+      // Các dòng máy khác
       if (norm.includes('macbook air') && pNameNorm.includes('macbook air')) score += 6;
       if (norm.includes('macbook pro') && pNameNorm.includes('macbook pro')) score += 6;
       if ((norm.includes('iphone 16') || norm.includes('ip16') || norm.includes('16 pro')) && pNameNorm.includes('iphone 16')) score += 6;
@@ -270,7 +283,7 @@ class ChatService {
       }
     }
 
-    return bestScore >= 3 ? bestProduct : null;
+    return bestScore >= 5 ? bestProduct : null;
   }
 
   /**
@@ -1000,20 +1013,35 @@ class ChatService {
     }
 
     // 3. Kiểm tra xem người dùng có đang hỏi trực tiếp về 1 sản phẩm cụ thể không
-    const directMatchedProduct = this.matchProductFromText(text);
+    // LƯU Ý: Nếu câu hỏi là nhu cầu tư vấn mua/gợi ý theo đối tượng/tầm tiền (ví dụ: "tư vấn laptop sinh viên", "máy tính cho sinh viên", "laptop văn phòng"),
+    // thì ưu tiên đưa vào bộ lọc filter_products thay vì ép sang chi tiết một sản phẩm riêng lẻ!
+    const isGeneralConsultNeed =
+      norm.includes('tu van laptop') ||
+      norm.includes('tu van may') ||
+      norm.includes('tu van dien thoai') ||
+      norm.includes('laptop sinh vien') ||
+      norm.includes('cho sinh vien') ||
+      norm.includes('dan van phong') ||
+      norm.includes('hoc sinh') ||
+      norm.includes('goi y') ||
+      norm.includes('nen mua') ||
+      (norm.includes('laptop') && (norm.includes('sinh vien') || norm.includes('van phong') || norm.includes('gaming') || norm.includes('lap trinh')));
+
+    const directMatchedProduct = isGeneralConsultNeed ? null : this.matchProductFromText(text);
     const isConsultProductKeyword =
-      norm.includes('thong so') ||
-      norm.includes('cau hinh') ||
-      norm.includes('ram') ||
-      norm.includes('chip') ||
-      norm.includes('cpu') ||
-      norm.includes('man hinh') ||
-      norm.includes('gia bao nhieu') ||
-      norm.includes('tu van cho toi ve san pham') ||
-      norm.includes('ve san pham') ||
-      norm.includes('may nay') ||
-      norm.includes('san pham nay') ||
-      norm.includes('chiec nay');
+      !isGeneralConsultNeed &&
+      (norm.includes('thong so') ||
+        norm.includes('cau hinh') ||
+        norm.includes('ram') ||
+        norm.includes('chip') ||
+        norm.includes('cpu') ||
+        norm.includes('man hinh') ||
+        norm.includes('gia bao nhieu') ||
+        norm.includes('tu van cho toi ve san pham') ||
+        norm.includes('ve san pham') ||
+        norm.includes('may nay') ||
+        norm.includes('san pham nay') ||
+        norm.includes('chiec nay'));
 
     if (directMatchedProduct || isConsultProductKeyword) {
       const targetProd = directMatchedProduct || this.findProductInContext(text, history);
@@ -1786,12 +1814,38 @@ class ChatService {
         .join('\n');
     }
 
-    const userPromptWithData = `${ragContextText ? `=== NGỮ CẢNH TRI THỨC CHUẨN XÁC TỪ BK-STORE (RAG) ===\n${ragContextText}\n\n` : ''}${toolResultData ? `=== DỮ LIỆU THỜI GIAN THỰC TỪ HỆ THỐNG / DATABASE (LIVE DATA) ===\nCông cụ: ${toolUsed}\nKết quả: ${JSON.stringify(toolResultData, null, 2)}\n\n` : ''}${conversationHistoryText ? `=== LỊCH SỬ HỘI THOẠI GẦN ĐÂY ===\n${conversationHistoryText}\n\n` : ''}Khách hàng vừa hỏi: "${message}"
+    // Ràng buộc đồng bộ thẻ sản phẩm (Card-First Synchronization)
+    let cardSyncConstraint = '';
+    if (
+      cardPayload &&
+      cardPayload.type === 'products' &&
+      Array.isArray(cardPayload.data) &&
+      cardPayload.data.length > 0
+    ) {
+      const cardItemsText = cardPayload.data
+        .map(
+          (p: any, idx: number) =>
+            `${idx + 1}. ${p.name} (Giá bán niêm yết: ${p.formattedPrice}) - Điểm nổi bật: ${p.specsSummary || 'Cấu hình mạnh mẽ, chính hãng 100%'}`
+        )
+        .join('\n');
+
+      cardSyncConstraint =
+        `=== RÀNG BUỘC ĐỒNG BỘ THẺ SẢN PHẨM (CARD SYNCHRONIZATION - BẮT BUỘC) ===\n` +
+        `Giao diện tương tác bên dưới câu trả lời của bạn ĐANG VÀ SẼ HIỂN THỊ CHÍNH XÁC ${cardPayload.data.length} THẺ SẢN PHẨM SAU:\n` +
+        `${cardItemsText}\n\n` +
+        `QUY TẮC BẮT BUỘC ĐỂ TRÁNH MÂU THUẪN DỮ LIỆU:\n` +
+        `1. Trong nội dung câu trả lời, bạn CHỈ ĐƯỢC PHÉP tư vấn, nhận xét và nêu tên đúng các sản phẩm có trong danh sách ${cardPayload.data.length} thẻ trên.\n` +
+        `2. TUYỆT ĐỐI KHÔNG tự ý gợi ý, nêu tên hay đề xuất bất kỳ dòng máy nào khác không nằm trong danh sách thẻ trên (kể cả những mẫu máy xuất hiện trong tài liệu cẩm nang tham khảo).\n` +
+        `3. Tên sản phẩm và mức giá bạn nhắc tới trong câu trả lời văn bản phải trùng khớp 100% với danh sách thẻ ở trên.\n\n`;
+    }
+
+    const userPromptWithData = `${cardSyncConstraint}${ragContextText ? `=== NGỮ CẢNH TRI THỨC CHUẨN XÁC TỪ BK-STORE (RAG) ===\n${ragContextText}\n\n` : ''}${toolResultData ? `=== DỮ LIỆU THỜI GIAN THỰC TỪ HỆ THỐNG / DATABASE (LIVE DATA) ===\nCông cụ: ${toolUsed}\nKết quả: ${JSON.stringify(toolResultData, null, 2)}\n\n` : ''}${conversationHistoryText ? `=== LỊCH SỬ HỘI THOẠI GẦN ĐÂY ===\n${conversationHistoryText}\n\n` : ''}Khách hàng vừa hỏi: "${message}"
 
 LƯU Ý QUAN TRỌNG VỀ ĐỘ DÀI & ĐỊNH DẠNG:
 - Giao diện thẻ tương tác (Product Cards) ngay phía dưới tin nhắn đã hiển thị đầy đủ hình ảnh, giá bán, link xem chi tiết và tóm tắt cấu hình của các máy.
 - TUYỆT ĐỐI KHÔNG liệt kê lại toàn bộ bảng thông số kỹ thuật chi tiết (như danh sách dài CPU, GPU, RAM, SSD, màn hình, pin, cổng kết nối...) trong tin nhắn văn bản vì sẽ làm câu trả lời quá dài.
 - Chỉ tư vấn ngắn gọn, súc tích (tối đa 2-3 máy, mỗi máy 1-2 dòng nêu điểm nổi bật nhất phù hợp với nhu cầu khách), và hướng dẫn khách xem chi tiết tại thẻ sản phẩm bên dưới.
+- ĐỒNG BỘ 100%: Chỉ tư vấn và nhắc tên các sản phẩm nằm trong danh sách thẻ tương tác (Product Cards) được cung cấp ở trên, tuyệt đối không nhắc máy ngoài danh sách thẻ.
 
 Hãy đưa ra câu trả lời trực tiếp cho khách hàng (chỉ xuất lời thoại tư vấn, tuyệt đối không in bất kỳ dòng checklist hoặc siêu dữ liệu tự kiểm tra nào):`;
 
@@ -1948,27 +2002,48 @@ Hãy đưa ra câu trả lời trực tiếp cho khách hàng (chỉ xuất lờ
           }
         } else if (toolUsed === 'filterProducts') {
           const missingSlots = detected.extracted?.missingSlots || [];
+          const previewProducts =
+            cardPayload && Array.isArray(cardPayload.data) && cardPayload.data.length > 0
+              ? cardPayload.data
+              : (toolResultData.products || []).slice(0, 2);
+
+          const previewListText =
+            previewProducts.length > 0
+              ? `Em có gửi trước ${previewProducts.length} mẫu máy tiêu biểu phù hợp nhất tại BK-Store ngay bên dưới:\n` +
+                previewProducts
+                  .map((p: any) => `• **${p.name}** (Giá: **${p.formattedPrice}**): ${p.specsSummary || 'Hàng chính hãng, bảo hành 1 đổi 1'}`)
+                  .join('\n') +
+                `\n\n`
+              : '';
+
           if (missingSlots.includes('budget')) {
             const introAdvice = toolResultData.advice
               ? `${toolResultData.advice}\n\n`
               : `Dạ chào anh/chị! Dòng máy này tại BK-Store có khá nhiều phân khúc giá khác nhau.\n\n`;
-            replyText = `Dạ chào anh/chị! ${introAdvice}` +
-              `Để em lọc ra đúng các mẫu máy phù hợp nhất trong tầm giá của mình, **anh/chị dự định đầu tư khoảng bao nhiêu triệu** ạ? (Ví dụ: *Dưới 20 triệu*, *20 - 30 triệu*, hoặc *Trên 30 triệu*).\n\n` +
-              `Em có gửi trước 2 mẫu máy tiêu biểu đang được yêu thích nhất ngay bên dưới để anh/chị tham khảo trước nhé!`;
+            replyText =
+              `Dạ chào anh/chị! ${introAdvice}` +
+              previewListText +
+              `Để em chọn lọc chính xác hơn nữa theo mức ngân sách của mình, **anh/chị dự định đầu tư khoảng bao nhiêu triệu** ạ? (Ví dụ: *Dưới 20 triệu*, *20 - 30 triệu*, hoặc *Trên 30 triệu*).\n\n` +
+              `Anh/chị có thể bấm chọn gợi ý bên dưới hoặc xem ảnh thực tế và cấu hình chi tiết tại thẻ sản phẩm nhé ạ!`;
           } else if (missingSlots.includes('useCase')) {
-            replyText = `Dạ chào anh/chị! Trong tầm ngân sách này tại BK-Store có khá nhiều sự lựa chọn chất lượng.\n\n` +
+            replyText =
+              `Dạ chào anh/chị! Trong tầm ngân sách này tại BK-Store có khá nhiều sự lựa chọn chất lượng.\n\n` +
+              previewListText +
               `Để em chọn lọc chuẩn xác nhất, **nhu cầu sử dụng chính của anh/chị là gì** ạ?\n` +
               `• **Học tập / Văn phòng:** Cần pin trâu, máy mỏng nhẹ mang đi lại thường xuyên.\n` +
               `• **Lập trình / Kỹ thuật (IT):** Cần CPU mạnh, RAM từ 16GB–32GB, bàn phím gõ êm.\n` +
               `• **Gaming / Đồ họa 3D:** Cần card đồ họa rời NVIDIA RTX, tản nhiệt tốt, màn hình tần số quét cao.\n\n` +
-              `Anh/chị có thể bấm chọn gợi ý bên dưới hoặc nhắn trực tiếp cho em nhé! Em có gửi trước 2 mẫu máy tiêu biểu trong tầm giá này bên dưới ạ.`;
+              `Anh/chị có thể bấm chọn gợi ý bên dưới hoặc nhắn trực tiếp cho em nhé!`;
           } else {
             const introAdvice = toolResultData.advice
               ? `${toolResultData.advice}\n\n`
               : `Dạ chào anh/chị! Dựa trên nhu cầu và tầm ngân sách của mình, em gợi ý các mẫu máy tối ưu nhất đang sẵn hàng tại BK-Store:\n\n`;
             replyText = `Dạ chào anh/chị! ${introAdvice}`;
-            replyText += toolResultData.products
-              .slice(0, 3)
+            const targetProducts =
+              cardPayload && Array.isArray(cardPayload.data) && cardPayload.data.length > 0
+                ? cardPayload.data
+                : (toolResultData.products || []).slice(0, 3);
+            replyText += targetProducts
               .map((p: any) => `• **${p.name}** (Giá: **${p.formattedPrice}**): ${p.specsSummary || 'Hiệu năng mạnh mẽ, thiết kế cao cấp.'}`)
               .join('\n');
             replyText += `\n\nAnh/chị có thể xem ảnh thực tế và cấu hình chi tiết tại các thẻ sản phẩm bên dưới. Anh/chị cần em kiểm tra máy sẵn tại chi nhánh nào ạ?`;

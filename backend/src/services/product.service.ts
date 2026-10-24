@@ -72,7 +72,7 @@ export function slugify(str: string): string {
 
 export const getProducts = async (options: ProductFilterOptions) => {
   const page = Math.max(1, Number(options.page) || 1);
-  const limit = Math.max(1, Math.min(50, Number(options.limit) || 12));
+  const limit = Math.max(1, Math.min(100, Number(options.limit) || 12));
   const offset = (page - 1) * limit;
 
   const isDbConnected = await checkDbConnection();

@@ -31,6 +31,24 @@ import {
   RotateCcw,
 } from 'lucide-react';
 
+function getDiscountPercent(p: Product): number {
+  if (!p.originalPrice || p.originalPrice <= p.price) return 0;
+  return ((p.originalPrice - p.price) / p.originalPrice) * 100;
+}
+
+function getDiscountAmount(p: Product): number {
+  if (!p.originalPrice || p.originalPrice <= p.price) return 0;
+  return p.originalPrice - p.price;
+}
+
+function sortProductsByBestDiscount(a: Product, b: Product): number {
+  const pctDiff = getDiscountPercent(b) - getDiscountPercent(a);
+  if (Math.abs(pctDiff) > 0.01) {
+    return pctDiff;
+  }
+  return getDiscountAmount(b) - getDiscountAmount(a);
+}
+
 export default function HomePage() {
   // Data state
   const [products, setProducts] = useState<Product[]>([]);
@@ -122,7 +140,7 @@ export default function HomePage() {
       maxPrice: priceRangeFilter.maxPrice,
       search: searchQuery,
       sort: selectedSort,
-      limit: 50,
+      limit: 100,
     })
       .then((res) => {
         if (!ignore) {
@@ -141,9 +159,31 @@ export default function HomePage() {
   }, [selectedCategory, selectedBrand, priceRangeFilter, searchQuery, selectedSort]);
 
   // Curated product slices for the Home Page sections
+  // HOT DEALS: 4 sản phẩm có mức giảm giá tốt nhất theo từng loại (2 laptop, 1 điện thoại, 1 phụ kiện)
   const featuredProducts = useMemo(() => {
-    const discounted = products.filter((p) => p.originalPrice && p.originalPrice > p.price);
-    return discounted.length >= 4 ? discounted.slice(0, 4) : products.slice(0, 4);
+    const getTopByCategory = (catSlug: string, count: number) => {
+      const items = products.filter(
+        (p) => p.categorySlug?.toLowerCase() === catSlug.toLowerCase()
+      );
+      return [...items].sort(sortProductsByBestDiscount).slice(0, count);
+    };
+
+    const topLaptops = getTopByCategory('laptop', 2);
+    const topSmartphones = getTopByCategory('smartphone', 1);
+    const topAccessories = getTopByCategory('accessory', 1);
+
+    const selected = [...topLaptops, ...topSmartphones, ...topAccessories];
+
+    // Dự phòng nếu danh mục nào đó không đủ sản phẩm
+    if (selected.length < 4) {
+      const selectedIds = new Set(selected.map((p) => p.id));
+      const remaining = [...products]
+        .filter((p) => !selectedIds.has(p.id))
+        .sort(sortProductsByBestDiscount);
+      return [...selected, ...remaining].slice(0, 4);
+    }
+
+    return selected;
   }, [products]);
 
   const laptopProducts = useMemo(() => {

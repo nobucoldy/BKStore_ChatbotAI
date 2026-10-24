@@ -440,9 +440,9 @@ export const filterProducts = async (params: FilterProductsParams): Promise<Prod
 
   let rawProducts = [...(res.products || [])];
 
-  // Sắp xếp ưu tiên theo nhu cầu sử dụng (useCase)
+  // Sắp xếp ưu tiên theo nhu cầu sử dụng (useCase) khớp với danh mục thực tế tại BK-Store
   if (useCase === 'sinh_vien' || useCase === 'van_phong') {
-    const priorityOrder = ['zenbook', 'macbook-air', 'predator', 'xps', 'thinkpad'];
+    const priorityOrder = ['vivobook', 'thinkbook', 'zenbook', 'macbook-air', 'tuf-gaming', 'loq', 'xps', 'thinkpad'];
     rawProducts.sort((a: any, b: any) => {
       const idxA = priorityOrder.findIndex((k) => (a.slug || '').includes(k));
       const idxB = priorityOrder.findIndex((k) => (b.slug || '').includes(k));
@@ -452,22 +452,24 @@ export const filterProducts = async (params: FilterProductsParams): Promise<Prod
       return Number(a.price) - Number(b.price);
     });
   } else if (useCase === 'lap_trinh') {
-    const priorityOrder = ['macbook-pro', 'zephyrus', 'thinkpad', 'macbook-air', 'legion', 'predator'];
+    const priorityOrder = ['thinkpad', 'thinkbook', 'macbook-pro', 'zephyrus', 'loq', 'vivobook', 'macbook-air', 'predator'];
     rawProducts.sort((a: any, b: any) => {
       const idxA = priorityOrder.findIndex((k) => (a.slug || '').includes(k));
       const idxB = priorityOrder.findIndex((k) => (b.slug || '').includes(k));
       const scoreA = idxA === -1 ? 99 : idxA;
       const scoreB = idxB === -1 ? 99 : idxB;
-      return scoreA - scoreB;
+      if (scoreA !== scoreB) return scoreA - scoreB;
+      return Number(a.price) - Number(b.price);
     });
   } else if (useCase === 'gaming_dohoa') {
-    const priorityOrder = ['predator', 'zephyrus', 'legion', 'macbook-pro'];
+    const priorityOrder = ['loq', 'tuf-gaming', 'predator', 'zephyrus', 'legion', 'macbook-pro'];
     rawProducts.sort((a: any, b: any) => {
       const idxA = priorityOrder.findIndex((k) => (a.slug || '').includes(k));
       const idxB = priorityOrder.findIndex((k) => (b.slug || '').includes(k));
       const scoreA = idxA === -1 ? 99 : idxA;
       const scoreB = idxB === -1 ? 99 : idxB;
-      return scoreA - scoreB;
+      if (scoreA !== scoreB) return scoreA - scoreB;
+      return Number(a.price) - Number(b.price);
     });
   }
 
@@ -512,11 +514,11 @@ export const filterProducts = async (params: FilterProductsParams): Promise<Prod
 
   let advice = '';
   if (useCase === 'sinh_vien' || useCase === 'van_phong') {
-    advice = `Đối với nhu cầu **Sinh viên & Dân văn phòng**, BK-Store khuyến nghị ưu tiên máy có **tối thiểu 16GB RAM**, ổ cứng **512GB SSD**, trọng lượng mỏng nhẹ (**1.1kg – 1.4kg**) và pin bền bỉ (8–18 tiếng) để tiện mang lên giảng đường (hoặc chọn dòng có card rời RTX nếu học Kỹ thuật/Đồ họa). Đặc biệt, BK-Store hỗ trợ **trả góp 0% lãi suất cho sinh viên chỉ cần CCCD** (duyệt trong 15 phút)!`;
+    advice = `Đối với nhu cầu **Sinh viên & Dân văn phòng**, BK-Store khuyến nghị ưu tiên máy có **tối thiểu 16GB RAM**, ổ cứng **512GB SSD**, thiết kế gọn gàng và pin bền bỉ để tiện mang lên giảng đường (hoặc chọn dòng có card đồ họa rời RTX nếu học khối Kỹ thuật/Đồ họa). Đặc biệt, BK-Store hỗ trợ **trả góp 0% lãi suất cho sinh viên chỉ cần CCCD** (duyệt trong 15 phút)!`;
   } else if (useCase === 'lap_trinh') {
-    advice = `Đối với **Sinh viên CNTT, Kỹ sư Phần mềm & Lập trình viên (Web/Mobile/AI)**, BK-Store khuyến nghị chọn CPU đa nhân hiệu năng cao (**Apple M3 / M3 Pro, Ryzen 9 hoặc Intel Core Ultra 7**), **RAM từ 16GB – 18GB trở lên** và SSD PCIe 4.0 tốc độ cao để biên dịch code, chạy Docker và máy ảo mượt mà.`;
+    advice = `Đối với **Sinh viên CNTT, Kỹ sư Phần mềm & Lập trình viên (Web/Mobile/AI)**, BK-Store khuyến nghị chọn CPU đa nhân hiệu năng cao (**Intel Core 7 thế hệ mới, Core Ultra hoặc AMD Ryzen**), **RAM từ 16GB – 32GB trở lên** và SSD tốc độ cao để biên dịch code, chạy Docker và máy ảo mượt mà.`;
   } else if (useCase === 'gaming_dohoa') {
-    advice = `Đối với nhu cầu **Chơi Game (Gaming), Thiết kế Đồ họa 2D/3D, Kiến trúc & Dựng Video**, BK-Store khuyến nghị chọn máy trang bị card đồ họa rời **NVIDIA GeForce RTX 4050 / RTX 4060**, màn hình chuẩn màu **100% sRGB / OLED 120Hz–165Hz** và tản nhiệt kép công suất lớn.`;
+    advice = `Đối với nhu cầu **Chơi Game (Gaming), Thiết kế Đồ họa 2D/3D, Kiến trúc & Dựng Video**, BK-Store khuyến nghị chọn máy trang bị card đồ họa rời **NVIDIA GeForce RTX (RTX 3050, RTX 4050)**, màn hình tần số quét cao và tản nhiệt quạt kép công suất lớn.`;
   } else if (productsList.length > 0) {
     advice = `Tìm thấy ${res.pagination?.total || productsList.length} sản phẩm phù hợp tại BK-Store. Tất cả đều là hàng chính hãng 100%, bảo hành 1 đổi 1 trong 30 ngày.`;
   } else {
