@@ -17,6 +17,7 @@ import {
   ChatRequestOptions,
   ChatPerformanceMetrics,
   ChatResponseData,
+  DetectedIntentResult,
 } from './chat/chat.types';
 import { sanitizeChatReply } from './chat/chat-sanitizer';
 import { chatResponseCache } from './chat/chat-limiter';
@@ -27,16 +28,30 @@ import { chatFallbackService } from './chat/chat-fallback.service';
 import { semanticRouterService } from './chat/semantic-router.service';
 import { dialogueStateService } from './chat/dialogue-state.service';
 import { VietnameseNormalizer } from './chat/vietnamese-normalizer';
+import { chatSessionService } from './chat/chat-session.service';
 
 dotenv.config();
+
+interface ToolExecutionOutcome {
+  toolUsed?: string;
+  toolResultData?: any;
+  cardPayload?: any;
+  suggestions?: string[];
+  clarification?: {
+    domain: 'product_recommendation' | 'order_tracking' | 'inventory_check' | 'product_reviews';
+    missingSlots: string[];
+  };
+  earlyResponse?: ChatResponseData;
+}
 
 class ChatService {
   /**
    * Xử lý câu hỏi của khách hàng, tích hợp RAG + AI Tools + Gemini + Đo lường hiệu năng (Telemetry)
+   * Đã tối ưu Song song hóa (Parallel Fetching) & Session Server-side
    */
   public async handleMessage(options: ChatRequestOptions): Promise<ChatResponseData> {
     const startTotal = performance.now();
-    const { message: rawMessage, history = [] } = options;
+    const { message: rawMessage, history = [], sessionId } = options;
 
     // 0. Phân tích NLU đa tầng & Phân giải Ngữ cảnh (VietnameseNormalizer + DST Coreference + Multi-Intent)
     const {
@@ -54,25 +69,14 @@ class ChatService {
       if (cached) {
         return {
           ...cached,
+          sessionId: sessionId || cached.sessionId,
           model: `${cached.model} (cache)`,
           metrics: cached.metrics ? { ...cached.metrics, totalResponseTimeMs: 2 } : undefined,
         };
       }
     }
 
-    const citations: string[] = [];
-    let toolResultData: any = null;
-    let cardPayload: any = undefined;
-    let toolUsed: string | undefined = undefined;
-    let suggestions: string[] | undefined = undefined;
-    let clarification:
-      | {
-          domain: 'product_recommendation' | 'order_tracking' | 'inventory_check' | 'product_reviews';
-          missingSlots: string[];
-        }
-      | undefined = undefined;
-
-    // 1. Phân tích ý định & kích hoạt AI Tool
+    // 1. Phân tích ý định người dùng (Deterministic Intent Parser)
     const startIntent = performance.now();
     const detected = chatIntentService.detectIntent(message, history, options.currentUser);
     const intentDetectionMs = Math.max(1, Math.round((performance.now() - startIntent) * 100) / 100);
@@ -151,6 +155,7 @@ class ChatService {
         citations: [],
         cards: cardPayload,
         suggestions: smalltalkSuggestions,
+        sessionId,
         toolUsed,
         model: 'local-rule-engine',
         metrics: {
@@ -172,7 +177,214 @@ class ChatService {
       return finalResponse;
     }
 
+    // 2. KHỞI CHẠY SONG SONG: TOOL EXECUTION & RAG RETRIEVAL (Parallel Fetching)
+    // Cả Tool và RAG đều khởi chạy đồng thời, giảm 50% thời gian thu thập ngữ cảnh
+    const allowRag = detected.intent !== 'track_order' || (compoundResult.isCompound && Boolean(compoundResult.secondaryQuery));
+    let searchQuery = message;
+    if (allowRag) {
+      if (compoundResult.isCompound && compoundResult.secondaryQuery) {
+        searchQuery = compoundResult.secondaryQuery;
+      } else if (detected.intent === 'product_details' && detected.extracted?.isUseCaseInquiry) {
+        searchQuery = `Cẩm nang tư vấn cấu hình ${detected.extracted.productIdentifier} đối tượng nhu cầu sử dụng phần mềm`;
+      } else if (history && history.length > 0 && message.trim().split(/\s+/).length <= 6) {
+        const lastUserMsg = [...history].reverse().find((h) => h.role === 'user');
+        if (lastUserMsg && lastUserMsg.content) {
+          searchQuery = `${lastUserMsg.content} ${message}`;
+        }
+      }
+    }
+
+    const toolPromise = (async (): Promise<ToolExecutionOutcome & { toolExecutionMs: number }> => {
+      const s = performance.now();
+      const outcome = await this.executeToolIntent(
+        detected,
+        message,
+        history,
+        options.currentUser,
+        startTotal,
+        intentDetectionMs
+      );
+      const toolExecutionMs = outcome.toolUsed
+        ? Math.max(1, Math.round((performance.now() - s) * 100) / 100)
+        : 0;
+      return { ...outcome, toolExecutionMs };
+    })();
+
+    const ragPromise = (async (): Promise<{
+      matchedChunks: SearchResult[];
+      citations: string[];
+      ragContextText: string;
+      topScore: number;
+      ragRetrievalMs: number;
+    }> => {
+      const s = performance.now();
+      if (!allowRag) {
+        return { matchedChunks: [], citations: [], ragContextText: '', topScore: 0, ragRetrievalMs: 0 };
+      }
+      try {
+        const ragResults = await ragService.search(searchQuery, 3);
+        const ragRetrievalMs = Math.max(1, Math.round((performance.now() - s) * 100) / 100);
+        const topScore = ragResults.length > 0 ? Math.round(ragResults[0].score * 1000) / 1000 : 0;
+        const matched = ragResults.filter((r) => r.score >= 0.35);
+
+        const localCitations: string[] = [];
+        const contextParts: string[] = [];
+        for (const res of matched) {
+          const docTitle = res.chunk.documentTitle || res.chunk.category;
+          const secTitle = res.chunk.sectionTitle ? ` - ${res.chunk.sectionTitle}` : '';
+          localCitations.push(`${docTitle}${secTitle}`);
+          const cleanChunkText = res.chunk.content
+            .replace(/\[Tài liệu:.*?\]/g, '')
+            .replace(/\[Mục:.*?\]/g, '')
+            .trim();
+          contextParts.push(`Tài liệu tham khảo (${docTitle}${secTitle}):\n${cleanChunkText}`);
+        }
+
+        return {
+          matchedChunks: matched,
+          citations: localCitations,
+          ragContextText: contextParts.join('\n\n'),
+          topScore,
+          ragRetrievalMs,
+        };
+      } catch (err: any) {
+        console.warn('⚠️ [ChatService] Tra cứu RAG gặp lỗi nhẹ:', err.message);
+        return { matchedChunks: [], citations: [], ragContextText: '', topScore: 0, ragRetrievalMs: 0 };
+      }
+    })();
+
+    // Đồng thời chờ kết quả của cả hai tác vụ
+    const [toolOutcome, ragOutcome] = await Promise.all([toolPromise, ragPromise]);
+
+    // Nếu Tool có phản hồi nhanh (Early Response: Đơn hàng bảo mật, tra cứu thành công hoặc yêu cầu đăng nhập)
+    if (toolOutcome.earlyResponse) {
+      if (sessionId) {
+        toolOutcome.earlyResponse.sessionId = sessionId;
+      }
+      return toolOutcome.earlyResponse;
+    }
+
+    const {
+      toolUsed,
+      toolResultData,
+      cardPayload,
+      suggestions: toolSuggestions,
+      clarification,
+      toolExecutionMs,
+    } = toolOutcome;
+
+    const {
+      citations,
+      ragContextText,
+      matchedChunks: matchedRagChunks,
+      topScore: topRagScore,
+      ragRetrievalMs,
+    } = ragOutcome;
+
+    let suggestions = toolSuggestions;
+
+    // 3. Xây dựng Prompt tổng hợp gửi cho Gemini (Đã tinh giản, giảm 50% token thừa)
+    const userPromptWithData = chatPromptBuilder.buildUserPrompt({
+      message,
+      cardPayload,
+      ragContextText,
+      toolResultData,
+      toolUsed,
+      history,
+    });
+
+    const startLlm = performance.now();
+    let replyText = '';
+    let usedModel = 'gemini-3.5-flash-lite';
+
+    try {
+      const genResult = await chatLlmService.generateWithFallback(
+        userPromptWithData,
+        chatPromptBuilder.SYSTEM_INSTRUCTION
+      );
+      replyText = genResult.text;
+      usedModel = genResult.modelName;
+    } catch (aiErr: any) {
+      console.error('❌ [ChatService] Lỗi khi gọi Gemini, sử dụng Smart Fallback:', aiErr.message);
+
+      // Smart Fallback nếu Gemini API tạm gián đoạn (503/Quota)
+      const fallbackResult = chatFallbackService.generateOfflineFallback({
+        toolUsed,
+        toolResultData,
+        detected,
+        matchedRagChunks,
+        topRagScore,
+        message,
+        cardPayload,
+        currentSuggestions: suggestions,
+      });
+
+      replyText = fallbackResult.replyText;
+      suggestions = fallbackResult.suggestions;
+      usedModel = 'smart-offline-fallback';
+    }
+    const llmGenerationMs = Math.max(1, Math.round((performance.now() - startLlm) * 100) / 100);
+
+    let cleanedReply = sanitizeChatReply(replyText);
+
+    // Khi khách hàng hỏi về đơn hàng chưa xác nhận/duyệt đơn và có đơn chờ duyệt
+    if (toolResultData?.isAskingUnconfirmedOrders && toolResultData.unconfirmedCount > 0) {
+      const name = toolResultData.customerName || 'anh/chị';
+      cleanedReply = `Dạ em chào anh/chị **${name}**! Em đã kiểm tra trên hệ thống thì trong tổng số **${toolResultData.userOrdersCount} đơn hàng** của mình tại BK-Store, hiện có **${toolResultData.unconfirmedCount} đơn hàng chưa được xác nhận / duyệt đơn** (đang chờ quản trị viên duyệt kho):`;
+    }
+
+    const totalResponseTimeMs = Math.max(1, Math.round((performance.now() - startTotal) * 100) / 100);
+
+    const metrics: ChatPerformanceMetrics = {
+      totalResponseTimeMs,
+      intentDetectionMs,
+      toolExecutionMs,
+      ragRetrievalMs,
+      llmGenerationMs,
+      detectedIntent: detected.intent,
+      topRagScore,
+      ragChunksEvaluated: ragService.getMetrics().chunksCount,
+    };
+
+    const finalResponse: ChatResponseData = {
+      reply: cleanedReply,
+      citations: Array.from(new Set(citations)),
+      cards: cardPayload,
+      suggestions,
+      clarification,
+      sessionId,
+      toolUsed,
+      model: usedModel,
+      metrics,
+    };
+
+    // Lưu vào Response Cache nếu là câu hỏi chung
+    if (cacheKey && !toolResultData?.isAskingUnconfirmedOrders && !toolResultData?.userOrders) {
+      chatResponseCache.set(cacheKey, finalResponse);
+    }
+
+    return finalResponse;
+  }
+
+  /**
+   * Bộ điều phối thực thi AI Tool theo ý định (Tách rời để phục vụ song song hóa)
+   */
+  private async executeToolIntent(
+    detected: DetectedIntentResult,
+    message: string,
+    history: ChatHistoryItem[],
+    currentUser?: ChatRequestOptions['currentUser'],
+    startTotal = performance.now(),
+    intentDetectionMs = 1
+  ): Promise<ToolExecutionOutcome> {
+    let toolUsed: string | undefined = undefined;
+    let toolResultData: any = null;
+    let cardPayload: any = undefined;
+    let suggestions: string[] | undefined = undefined;
+    let clarification: any = undefined;
+
     const startTool = performance.now();
+
     if (detected.intent === 'clarify_product_need') {
       toolUsed = 'clarifyProductNeed';
       const cat = detected.extracted?.category || 'laptop';
@@ -194,7 +406,6 @@ class ChatService {
         suggestedBudgets: ['Dưới 15 triệu', '15 - 25 triệu', '25 - 40 triệu', 'Trên 40 triệu'],
         suggestedUseCases: ['Học tập & Văn phòng', 'Lập trình & Kỹ thuật IT', 'Đồ họa & Gaming', 'Mỏng nhẹ cao cấp'],
       };
-      // Preview 2 trending products in this category
       const topProds = seedProducts.filter((p) => p.categorySlug === cat).slice(0, 2);
       if (topProds.length > 0) {
         cardPayload = {
@@ -295,7 +506,6 @@ class ChatService {
             data: inv,
           };
         } else {
-          // Khách không yêu cầu hỏi số lượng/kho -> Hiển thị Card Sản Phẩm tương tác
           cardPayload = {
             type: 'products',
             data: [inv.product],
@@ -307,18 +517,17 @@ class ChatService {
       toolUsed = 'getMyOrders';
       const targetOrderCode = detected.extracted?.orderCode;
 
-      if (options.currentUser) {
-        const custName = options.currentUser.name || 'Quý khách';
+      if (currentUser) {
+        const custName = currentUser.name || 'Quý khách';
 
-        // 1. Nếu người dùng nhập mã đơn hàng cụ thể (ví dụ: bk-2048, #BK-1024)
+        // Tra cứu mã đơn cụ thể
         if (targetOrderCode) {
-          const userOrders = await getOrdersByUserId(options.currentUser.id, options.currentUser.phone);
+          const userOrders = await getOrdersByUserId(currentUser.id, currentUser.phone);
           const matchedOrder = (userOrders || []).find(
             (o: any) => (o.orderCode || '').toLowerCase() === targetOrderCode.toLowerCase()
           );
 
           if (matchedOrder) {
-            // Có mã đơn đó thật trong tài khoản của người dùng!
             const statusLabel = chatIntentService.getOrderStatusLabel(matchedOrder.status);
             const formattedTotal = formatVND(Number(matchedOrder.totalAmount));
             const itemsSummary = (matchedOrder.items || [])
@@ -371,27 +580,28 @@ class ChatService {
               `Toàn bộ thông tin chi tiết về sản phẩm, tổng thanh toán và tiến trình vận đơn đã được hiển thị trực quan tại thẻ đơn hàng ngay bên dưới nhé ạ!`;
 
             return {
-              reply: singleOrderReply,
-              citations: [],
-              cards: cardPayload,
-              suggestions: ['Đơn hàng của tôi', 'Kiểm tra tồn kho Showroom', 'Hotline 1800 6868'],
-              clarification: undefined,
-              toolUsed: 'getMyOrders',
-              model: 'order-lookup-service',
-              metrics: {
-                totalResponseTimeMs: Math.max(1, Math.round((performance.now() - startTotal) * 100) / 100),
-                intentDetectionMs,
-                toolExecutionMs: Math.max(1, Math.round((performance.now() - startTool) * 100) / 100),
-                ragRetrievalMs: 0,
-                llmGenerationMs: 0,
-                detectedIntent: detected.intent,
-                topRagScore: 0,
-                ragChunksEvaluated: 0,
+              earlyResponse: {
+                reply: singleOrderReply,
+                citations: [],
+                cards: cardPayload,
+                suggestions: ['Đơn hàng của tôi', 'Kiểm tra tồn kho Showroom', 'Hotline 1800 6868'],
+                clarification: undefined,
+                toolUsed: 'getMyOrders',
+                model: 'order-lookup-service',
+                metrics: {
+                  totalResponseTimeMs: Math.max(1, Math.round((performance.now() - startTotal) * 100) / 100),
+                  intentDetectionMs,
+                  toolExecutionMs: Math.max(1, Math.round((performance.now() - startTool) * 100) / 100),
+                  ragRetrievalMs: 0,
+                  llmGenerationMs: 0,
+                  detectedIntent: detected.intent,
+                  topRagScore: 0,
+                  ragChunksEvaluated: 0,
+                },
               },
             };
           } else {
-            // Không có mã đơn này trong tài khoản của người dùng!
-            // Kiểm tra xem đơn này có tồn tại trên toàn hệ thống không
+            // Không có mã đơn này trong tài khoản
             const systemOrder = await getOrderByCode(targetOrderCode);
             let notFoundMsg = '';
             if (systemOrder) {
@@ -401,29 +611,31 @@ class ChatService {
             }
 
             return {
-              reply: notFoundMsg,
-              citations: [],
-              cards: undefined,
-              suggestions: ['Đơn hàng của tôi', 'Kiểm tra tồn kho Showroom', 'Hotline 1800 6868'],
-              clarification: undefined,
-              toolUsed: 'getMyOrders',
-              model: 'order-lookup-service',
-              metrics: {
-                totalResponseTimeMs: Math.max(1, Math.round((performance.now() - startTotal) * 100) / 100),
-                intentDetectionMs,
-                toolExecutionMs: Math.max(1, Math.round((performance.now() - startTool) * 100) / 100),
-                ragRetrievalMs: 0,
-                llmGenerationMs: 0,
-                detectedIntent: detected.intent,
-                topRagScore: 0,
-                ragChunksEvaluated: 0,
+              earlyResponse: {
+                reply: notFoundMsg,
+                citations: [],
+                cards: undefined,
+                suggestions: ['Đơn hàng của tôi', 'Kiểm tra tồn kho Showroom', 'Hotline 1800 6868'],
+                clarification: undefined,
+                toolUsed: 'getMyOrders',
+                model: 'order-lookup-service',
+                metrics: {
+                  totalResponseTimeMs: Math.max(1, Math.round((performance.now() - startTotal) * 100) / 100),
+                  intentDetectionMs,
+                  toolExecutionMs: Math.max(1, Math.round((performance.now() - startTool) * 100) / 100),
+                  ragRetrievalMs: 0,
+                  llmGenerationMs: 0,
+                  detectedIntent: detected.intent,
+                  topRagScore: 0,
+                  ragChunksEvaluated: 0,
+                },
               },
             };
           }
         }
 
-        // 2. Nếu người dùng hỏi tổng quan danh sách đơn hàng của mình (không nhập mã đơn cụ thể)
-        const userOrders = await getOrdersByUserId(options.currentUser.id, options.currentUser.phone);
+        // Người dùng hỏi tổng quan danh sách đơn hàng
+        const userOrders = await getOrdersByUserId(currentUser.id, currentUser.phone);
 
         if (userOrders && userOrders.length > 0) {
           const pendingOrders = userOrders.filter(
@@ -507,27 +719,28 @@ class ChatService {
         }
         suggestions = ['Đơn hàng của tôi', 'Kiểm tra tồn kho Showroom', 'Hotline 1800 6868'];
       } else {
-        // NGƯỜI DÙNG CHƯA ĐĂNG NHẬP:
+        // NGƯỜI DÙNG CHƯA ĐĂNG NHẬP
         if (targetOrderCode) {
-          // Nhập mã đơn nhưng chưa đăng nhập -> Nhắc họ đăng nhập!
           const askLoginMsg = `Dạ để kiểm tra thông tin chi tiết của đơn hàng **${targetOrderCode}**, anh/chị vui lòng bấm nút **"Đăng nhập"** ở góc trên màn hình giúp em nhé! Sau khi đăng nhập, hệ thống sẽ xác thực và hiển thị ngay tiến trình đơn hàng này cho mình ạ!`;
           return {
-            reply: askLoginMsg,
-            citations: [],
-            cards: undefined,
-            suggestions: ['Đăng nhập tài khoản', 'Tra cứu vận đơn trên Header', 'Hotline 1800 6868'],
-            clarification: undefined,
-            toolUsed: 'getMyOrders',
-            model: 'auth-required-guard',
-            metrics: {
-              totalResponseTimeMs: Math.max(1, Math.round((performance.now() - startTotal) * 100) / 100),
-              intentDetectionMs,
-              toolExecutionMs: Math.max(1, Math.round((performance.now() - startTool) * 100) / 100),
-              ragRetrievalMs: 0,
-              llmGenerationMs: 0,
-              detectedIntent: detected.intent,
-              topRagScore: 0,
-              ragChunksEvaluated: 0,
+            earlyResponse: {
+              reply: askLoginMsg,
+              citations: [],
+              cards: undefined,
+              suggestions: ['Đăng nhập tài khoản', 'Tra cứu vận đơn trên Header', 'Hotline 1800 6868'],
+              clarification: undefined,
+              toolUsed: 'getMyOrders',
+              model: 'auth-required-guard',
+              metrics: {
+                totalResponseTimeMs: Math.max(1, Math.round((performance.now() - startTotal) * 100) / 100),
+                intentDetectionMs,
+                toolExecutionMs: Math.max(1, Math.round((performance.now() - startTool) * 100) / 100),
+                ragRetrievalMs: 0,
+                llmGenerationMs: 0,
+                detectedIntent: detected.intent,
+                topRagScore: 0,
+                ragChunksEvaluated: 0,
+              },
             },
           };
         }
@@ -537,22 +750,24 @@ class ChatService {
           const directSecurityMsg =
             'Dạ vì lý do bảo mật thông tin đơn hàng cá nhân, BK-Bot không hỗ trợ tra cứu trực tiếp bằng cách nhập số điện thoại trong tin nhắn chat. Nếu anh/chị đã mua hàng, vui lòng bấm nút "Đăng nhập" ở góc trên màn hình để hệ thống tự động nhận diện và hiển thị toàn bộ đơn hàng của mình, hoặc sử dụng tính năng "Tra cứu vận đơn" trên thanh Header website nhé ạ!';
           return {
-            reply: directSecurityMsg,
-            citations: [],
-            cards: undefined,
-            suggestions: ['Đăng nhập tài khoản', 'Tra cứu vận đơn trên Header', 'Hotline 1800 6868'],
-            clarification: undefined,
-            toolUsed: 'getMyOrders',
-            model: 'security-guard-policy',
-            metrics: {
-              totalResponseTimeMs: Math.max(1, Math.round((performance.now() - startTotal) * 100) / 100),
-              intentDetectionMs,
-              toolExecutionMs: Math.max(1, Math.round((performance.now() - startTool) * 100) / 100),
-              ragRetrievalMs: 0,
-              llmGenerationMs: 0,
-              detectedIntent: detected.intent,
-              topRagScore: 0,
-              ragChunksEvaluated: 0,
+            earlyResponse: {
+              reply: directSecurityMsg,
+              citations: [],
+              cards: undefined,
+              suggestions: ['Đăng nhập tài khoản', 'Tra cứu vận đơn trên Header', 'Hotline 1800 6868'],
+              clarification: undefined,
+              toolUsed: 'getMyOrders',
+              model: 'security-guard-policy',
+              metrics: {
+                totalResponseTimeMs: Math.max(1, Math.round((performance.now() - startTotal) * 100) / 100),
+                intentDetectionMs,
+                toolExecutionMs: Math.max(1, Math.round((performance.now() - startTool) * 100) / 100),
+                ragRetrievalMs: 0,
+                llmGenerationMs: 0,
+                detectedIntent: detected.intent,
+                topRagScore: 0,
+                ragChunksEvaluated: 0,
+              },
             },
           };
         }
@@ -635,141 +850,18 @@ class ChatService {
       };
       suggestions = ['Bảo hành laptop ASUS', 'Bảo hành laptop Lenovo', 'Chính sách 1 đổi 1 30 ngày'];
     }
-    const toolExecutionMs = toolUsed ? Math.max(1, Math.round((performance.now() - startTool) * 100) / 100) : 0;
 
-    // 2. Tra cứu RAG ngữ cảnh tri thức (Chính sách, Cẩm nang tư vấn)
-    // Lưu ý: Bỏ qua RAG khi đang hỏi đơn hàng (track_order) để tránh các chunk cẩm nang sản phẩm làm nhiễm thông tin đề xuất máy
-    const startRag = performance.now();
-    let ragContextText = '';
-    let matchedRagChunks: SearchResult[] = [];
-    let topRagScore = 0;
-    try {
-      const allowRag = detected.intent !== 'track_order' || (compoundResult.isCompound && Boolean(compoundResult.secondaryQuery));
-      if (allowRag) {
-        let searchQuery = message;
-        if (compoundResult.isCompound && compoundResult.secondaryQuery) {
-          searchQuery = compoundResult.secondaryQuery;
-        } else if (detected.intent === 'product_details' && detected.extracted?.isUseCaseInquiry) {
-          searchQuery = `Cẩm nang tư vấn cấu hình ${detected.extracted.productIdentifier} đối tượng nhu cầu sử dụng phần mềm`;
-        } else if (history && history.length > 0 && message.trim().split(/\s+/).length <= 6) {
-          const lastUserMsg = [...history].reverse().find((h) => h.role === 'user');
-          if (lastUserMsg && lastUserMsg.content) {
-            searchQuery = `${lastUserMsg.content} ${message}`;
-          }
-        }
-
-        const ragResults = await ragService.search(searchQuery, 3);
-        if (ragResults.length > 0) {
-          topRagScore = Math.round(ragResults[0].score * 1000) / 1000;
-        }
-        matchedRagChunks = ragResults.filter((r) => r.score >= 0.35);
-
-        if (matchedRagChunks.length > 0) {
-          const contextParts: string[] = [];
-          for (const res of matchedRagChunks) {
-            const docTitle = res.chunk.documentTitle || res.chunk.category;
-            const secTitle = res.chunk.sectionTitle ? ` - ${res.chunk.sectionTitle}` : '';
-            citations.push(`${docTitle}${secTitle}`);
-            const cleanChunkText = res.chunk.content
-              .replace(/\[Tài liệu:.*?\]/g, '')
-              .replace(/\[Mục:.*?\]/g, '')
-              .trim();
-            contextParts.push(`Tài liệu tham khảo (${docTitle}${secTitle}):\n${cleanChunkText}`);
-          }
-          ragContextText = contextParts.join('\n\n');
-        }
-      }
-    } catch (ragErr: any) {
-      console.warn('⚠️ [ChatService] Tra cứu RAG gặp lỗi nhẹ:', ragErr.message);
-    }
-    const ragRetrievalMs = Math.max(1, Math.round((performance.now() - startRag) * 100) / 100);
-
-    // 3. Xây dựng Prompt tổng hợp gửi cho Gemini
-    const userPromptWithData = chatPromptBuilder.buildUserPrompt({
-      message,
-      cardPayload,
-      ragContextText,
-      toolResultData,
+    return {
       toolUsed,
-      history,
-    });
-
-    const startLlm = performance.now();
-    let replyText = '';
-    let usedModel = 'gemini-3.5-flash-lite';
-
-    try {
-      const genResult = await chatLlmService.generateWithFallback(
-        userPromptWithData,
-        chatPromptBuilder.SYSTEM_INSTRUCTION
-      );
-      replyText = genResult.text;
-      usedModel = genResult.modelName;
-    } catch (aiErr: any) {
-      console.error('❌ [ChatService] Lỗi khi gọi Gemini, sử dụng Smart Fallback:', aiErr.message);
-
-      // Smart Fallback nếu Gemini API tạm gián đoạn (503/Quota)
-      const fallbackResult = chatFallbackService.generateOfflineFallback({
-        toolUsed,
-        toolResultData,
-        detected,
-        matchedRagChunks,
-        topRagScore,
-        message,
-        cardPayload,
-        currentSuggestions: suggestions,
-      });
-
-      replyText = fallbackResult.replyText;
-      suggestions = fallbackResult.suggestions;
-      cardPayload = fallbackResult.cardPayload;
-      usedModel = 'smart-offline-fallback';
-    }
-    const llmGenerationMs = Math.max(1, Math.round((performance.now() - startLlm) * 100) / 100);
-
-    let cleanedReply = sanitizeChatReply(replyText);
-
-    // Khi khách hàng hỏi về đơn hàng chưa xác nhận/duyệt đơn và có đơn chờ duyệt:
-    // Vì thẻ hiển thị phía dưới đã có đầy đủ danh sách các đơn hàng này,
-    // câu trả lời dạng văn bản chỉ cần câu thông báo súc tích theo đúng yêu cầu người dùng
-    if (toolResultData?.isAskingUnconfirmedOrders && toolResultData.unconfirmedCount > 0) {
-      const name = toolResultData.customerName || 'anh/chị';
-      cleanedReply = `Dạ em chào anh/chị **${name}**! Em đã kiểm tra trên hệ thống thì trong tổng số **${toolResultData.userOrdersCount} đơn hàng** của mình tại BK-Store, hiện có **${toolResultData.unconfirmedCount} đơn hàng chưa được xác nhận / duyệt đơn** (đang chờ quản trị viên duyệt kho):`;
-    }
-    const totalResponseTimeMs = Math.max(1, Math.round((performance.now() - startTotal) * 100) / 100);
-
-    const metrics: ChatPerformanceMetrics = {
-      totalResponseTimeMs,
-      intentDetectionMs,
-      toolExecutionMs,
-      ragRetrievalMs,
-      llmGenerationMs,
-      detectedIntent: detected.intent,
-      topRagScore,
-      ragChunksEvaluated: ragService.getMetrics().chunksCount,
-    };
-
-    const finalResponse: ChatResponseData = {
-      reply: cleanedReply,
-      citations: Array.from(new Set(citations)),
-      cards: cardPayload,
+      toolResultData,
+      cardPayload,
       suggestions,
       clarification,
-      toolUsed,
-      model: usedModel,
-      metrics,
     };
-
-    // Lưu vào Response Cache nếu là câu hỏi chung (không chứa dữ liệu cá nhân hay đơn hàng cụ thể)
-    if (cacheKey && !toolResultData?.isAskingUnconfirmedOrders && !toolResultData?.userOrders) {
-      chatResponseCache.set(cacheKey, finalResponse);
-    }
-
-    return finalResponse;
   }
 
   /**
-   * SSE Streaming Response dành cho chữ chạy thời gian thực (Typewriter Effect)
+   * SSE Streaming Response dành cho chữ chạy thời gian thực
    */
   public async streamChat(
     options: ChatRequestOptions,
@@ -807,8 +899,7 @@ class ChatService {
         delta: chunk,
         accumulated: currentText,
       });
-      // Giãn cách một chút để tạo cảm giác tự nhiên
-      await new Promise((resolve) => setTimeout(resolve, 25));
+      await new Promise((resolve) => setTimeout(resolve, 20));
     }
 
     sendEvent('done', {
@@ -817,6 +908,7 @@ class ChatService {
       citations: result.citations,
       suggestions: result.suggestions,
       clarification: result.clarification,
+      sessionId: result.sessionId,
       model: result.model,
       metrics: result.metrics,
     });

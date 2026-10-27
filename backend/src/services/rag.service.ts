@@ -396,23 +396,63 @@ class RagService {
   }
 
   /**
-   * Tính điểm tương đồng từ khóa tối ưu cao với từ khóa đã được tiền phân tích (Pre-tokenized)
+   * Tính điểm tương đồng từ khóa nâng cao (Enhanced Lexical & Context Scoring)
+   * Kết hợp:
+   * 1. Term Match Ratio: Tỉ lệ từ khóa truy vấn xuất hiện trong nội dung
+   * 2. Exact Phrase Match: Điểm thưởng nếu chứa nguyên vẹn cụm từ tìm kiếm
+   * 3. Title & Section Bonus: Điểm thưởng nếu từ khóa xuất hiện trong tiêu đề tài liệu / tiêu đề mục
    */
-  private lexicalScorePrecomputed(qWords: string[], lowerContent: string): number {
+  private computeLexicalScore(
+    qWords: string[],
+    queryLower: string,
+    chunk: KnowledgeChunk
+  ): number {
     if (qWords.length === 0) return 0;
-    let matches = 0;
+    const contentLower = chunk.content.toLowerCase();
+    const docTitleLower = (chunk.documentTitle || '').toLowerCase();
+    const secTitleLower = (chunk.sectionTitle || '').toLowerCase();
+
+    // 1. Tỉ lệ khớp từ đơn (Term match ratio)
+    let termMatches = 0;
     for (const w of qWords) {
-      if (lowerContent.includes(w)) {
-        matches++;
+      if (contentLower.includes(w)) {
+        termMatches++;
       }
     }
-    return matches / qWords.length;
+    const termRatio = termMatches / qWords.length;
+
+    // 2. Điểm thưởng khớp cụm từ chính xác (Exact Phrase Match Bonus)
+    let phraseBonus = 0;
+    if (queryLower.length >= 6 && contentLower.includes(queryLower)) {
+      phraseBonus = 0.35;
+    } else if (qWords.length >= 2) {
+      // Thử khớp bigram 2 từ liền kề
+      const bigram = `${qWords[0]} ${qWords[1]}`;
+      if (contentLower.includes(bigram)) {
+        phraseBonus = 0.2;
+      }
+    }
+
+    // 3. Điểm thưởng tiêu đề mục & tài liệu (Title Relevance Bonus)
+    let titleBonus = 0;
+    let titleMatches = 0;
+    for (const w of qWords) {
+      if (docTitleLower.includes(w) || secTitleLower.includes(w)) {
+        titleMatches++;
+      }
+    }
+    if (titleMatches > 0) {
+      titleBonus = Math.min(0.3, (titleMatches / qWords.length) * 0.3);
+    }
+
+    // Tổng hợp điểm số từ khóa chuẩn hóa [0, 1]
+    return Math.min(1.0, termRatio * 0.5 + phraseBonus + titleBonus);
   }
 
   /**
    * TÌM KIẾM TRI THỨC NGỮ NGHĨA
    * Kiến trúc lai (Hybrid Engine):
-   * 1. Kiểm tra Cache RAG nhanh (0ms)
+   * 1. Kiểm tra Cache RAG nhanh (0ms) với chuỗi truy vấn đã chuẩn hóa
    * 2. Ưu tiên PostgreSQL + PGVector (với HNSW Index)
    * 3. Fallback mượt mà sang bộ nhớ đệm In-Memory nếu Database offline
    */
@@ -426,22 +466,26 @@ class RagService {
       return [];
     }
 
-    // 1. Kiểm tra Cache truy vấn RAG (Trả về ngay lập tức nếu câu hỏi trùng lặp - 0ms)
-    const cacheKey = `rag:${trimmedQuery.toLowerCase()}:${topK}`;
+    // 1. Chuẩn hóa chuỗi truy vấn & Kiểm tra Cache RAG nhanh (0ms)
+    const normalizedQuery = trimmedQuery
+      .toLowerCase()
+      .replace(/[\?\.!,;:\-_—]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const cacheKey = `rag:${normalizedQuery}:${topK}`;
     const cachedResults = ragQueryCache.get<SearchResult[]>(cacheKey);
     if (cachedResults) {
       return cachedResults;
     }
 
     // 2. Tiền xử lý từ khóa truy vấn
-    const qWords = trimmedQuery
-      .toLowerCase()
+    const qWords = normalizedQuery
       .replace(/[^a-z0-9à-ỹ\s]/gi, '')
       .split(/\s+/)
       .filter((w) => w.length > 1);
 
     // 3. Tính toán Vector truy vấn (kèm Cache & Tự động Failover Key nếu hết hạn ngạch)
-    let queryVector: number[] | null = queryVectorCache.get<number[]>(trimmedQuery.toLowerCase()) || null;
+    let queryVector: number[] | null = queryVectorCache.get<number[]>(normalizedQuery) || null;
 
     if (!queryVector && geminiKeyManager.getKeyCount() > 0) {
       try {
@@ -449,16 +493,16 @@ class RagService {
           const embedModel = activeGenAI.getGenerativeModel({ model: EMBED_MODEL });
           const embedPromise = embedModel.embedContent(trimmedQuery);
           const timeoutPromise = new Promise<null>((_, reject) =>
-            setTimeout(() => reject(new Error('Embedding API timeout')), 2000)
+            setTimeout(() => reject(new Error('Embedding API timeout')), 2500)
           );
           const res: any = await Promise.race([embedPromise, timeoutPromise]);
           return res?.embedding?.values || null;
         });
         if (queryVector) {
-          queryVectorCache.set(trimmedQuery.toLowerCase(), queryVector);
+          queryVectorCache.set(normalizedQuery, queryVector);
         }
       } catch (err: unknown) {
-        // Fall back mượt mà nếu hết hạn mức API hoặc mạng chậm
+        // Fall back mượt mà sang Hybrid Lexical nếu hết hạn mức API hoặc mạng chậm
       }
     }
 
@@ -505,20 +549,22 @@ class RagService {
       }
     }
 
-    // 5. Fallback: Thuật toán In-Memory tối ưu hóa cao
+    // 5. Fallback: Thuật toán In-Memory Hybrid Search tối ưu hóa cao
     const scoredResults: SearchResult[] = [];
 
     for (const chunk of this.chunks) {
-      const lowerContent = chunk.content.toLowerCase();
-      const lexical = this.lexicalScorePrecomputed(qWords, lowerContent);
+      const lexical = this.computeLexicalScore(qWords, normalizedQuery, chunk);
       let vectorSim = 0;
 
       if (queryVector && chunk.embedding && chunk.embedding.length === queryVector.length) {
         vectorSim = this.cosineSimilarity(queryVector, chunk.embedding);
       }
 
-      // Điểm số kết hợp (Hybrid Score): 70% Dense Vector + 30% Lexical
-      const finalScore = queryVector && chunk.embedding ? vectorSim * 0.7 + lexical * 0.3 : lexical;
+      // Điểm số kết hợp (Hybrid Score): 65% Dense Vector + 35% Enhanced Lexical
+      const finalScore =
+        queryVector && chunk.embedding && chunk.embedding.length === queryVector.length
+          ? vectorSim * 0.65 + lexical * 0.35
+          : lexical;
 
       scoredResults.push({
         chunk,

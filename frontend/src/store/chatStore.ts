@@ -15,6 +15,7 @@ export const DEFAULT_WELCOME_MESSAGE: ChatMessage = {
 interface ChatState {
   isOpen: boolean;
   messages: ChatMessage[];
+  sessionId?: string;
   isTyping: boolean;
   initialPrompt?: string;
   hasHydrated: boolean;
@@ -22,6 +23,7 @@ interface ChatState {
   closeChat: () => void;
   toggleChat: () => void;
   setIsOpen: (isOpen: boolean) => void;
+  setSessionId: (sessionId?: string) => void;
   setMessages: (messages: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => void;
   addMessage: (msg: ChatMessage) => void;
   setIsTyping: (isTyping: boolean) => void;
@@ -35,6 +37,7 @@ export const useChatStore = create<ChatState>()(
     (set) => ({
       isOpen: false,
       messages: [DEFAULT_WELCOME_MESSAGE],
+      sessionId: undefined,
       isTyping: false,
       initialPrompt: undefined,
       hasHydrated: false,
@@ -48,6 +51,7 @@ export const useChatStore = create<ChatState>()(
       closeChat: () => set({ isOpen: false }),
       toggleChat: () => set((state) => ({ isOpen: !state.isOpen })),
       setIsOpen: (isOpen: boolean) => set({ isOpen }),
+      setSessionId: (sessionId?: string) => set({ sessionId }),
       setMessages: (updater) => {
         set((state) => ({
           messages: typeof updater === 'function' ? updater(state.messages) : updater,
@@ -69,6 +73,7 @@ export const useChatStore = create<ChatState>()(
               timestamp: new Date().toISOString(),
             },
           ],
+          sessionId: undefined,
           initialPrompt: undefined,
         });
       },
@@ -78,6 +83,7 @@ export const useChatStore = create<ChatState>()(
       name: 'bkstore_chat_storage_v1',
       partialize: (state) => ({
         isOpen: state.isOpen,
+        sessionId: state.sessionId,
         messages: state.messages.slice(-50), // Giữ tối đa 50 tin nhắn gần nhất để bảo vệ bộ nhớ trình duyệt
       }),
       onRehydrateStorage: () => (state) => {
@@ -86,3 +92,4 @@ export const useChatStore = create<ChatState>()(
     }
   )
 );
+

@@ -8,3 +8,5 @@ export * from './chat-fallback.service';
 export * from './vietnamese-normalizer';
 export * from './dialogue-state.service';
 export * from './semantic-router.service';
+export * from './chat-session.service';
+

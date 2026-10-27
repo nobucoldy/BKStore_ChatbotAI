@@ -21,7 +21,7 @@ import {
   Star,
 } from 'lucide-react';
 import { ChatMessage, Product } from '@/types';
-import { sendChatMessage, fetchProductBySlug } from '@/lib/api';
+import { sendChatMessage, fetchProductBySlug, clearServerChatSession } from '@/lib/api';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore } from '@/store/chatStore';
@@ -66,6 +66,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   const setStoreIsTyping = useChatStore((state) => state.setIsTyping);
   const storeInitialPrompt = useChatStore((state) => state.initialPrompt);
   const setStoreInitialPrompt = useChatStore((state) => state.setInitialPrompt);
+  const storeSessionId = useChatStore((state) => state.sessionId);
+  const setStoreSessionId = useChatStore((state) => state.setSessionId);
   const clearStoreHistory = useChatStore((state) => state.clearHistory);
 
   const isOpen = propIsOpen !== undefined ? propIsOpen : storeIsOpen;
@@ -188,7 +190,12 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
         const responseData = await sendChatMessage({
           message: text.trim(),
           history: historyPayload,
+          sessionId: storeSessionId,
         });
+
+        if (responseData.sessionId && responseData.sessionId !== storeSessionId) {
+          setStoreSessionId(responseData.sessionId);
+        }
 
         // 1. Natural Thinking Delay (Labor illusion):
         // Giữ hiệu ứng đang soạn tin tối thiểu từ 550ms - 720ms để người dùng bắt nhịp tự nhiên
@@ -287,6 +294,9 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   );
 
   const handleClearHistory = () => {
+    if (storeSessionId) {
+      clearServerChatSession(storeSessionId);
+    }
     lastPropPromptRef.current = undefined;
     isStreamingRef.current = false;
     setIsStreaming(false);

@@ -6,6 +6,7 @@ export interface ChatHistoryItem {
 export interface ChatRequestOptions {
   message: string;
   history?: ChatHistoryItem[];
+  sessionId?: string;
   stream?: boolean;
   currentUser?: {
     id: string;
@@ -30,6 +31,7 @@ export interface ChatPerformanceMetrics {
 export interface ChatResponseData {
   reply: string;
   citations: string[];
+  sessionId?: string;
   cards?: {
     type: 'products' | 'order' | 'inventory' | 'reviews';
     data: any;

@@ -1328,12 +1328,14 @@ export async function searchKnowledgeDocs(query: string, limit = 3): Promise<{
 export interface ChatApiPayload {
   message: string;
   history?: Array<{ role: 'user' | 'assistant'; content: string }>;
+  sessionId?: string;
   stream?: boolean;
 }
 
 export interface ChatApiResponseData {
   reply: string;
   citations: string[];
+  sessionId?: string;
   cards?: {
     type: 'products' | 'order' | 'inventory' | 'reviews';
     data: any;
@@ -1359,6 +1361,9 @@ export async function sendChatMessage(payload: ChatApiPayload): Promise<ChatApiR
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
+  if (payload.sessionId) {
+    headers['X-Session-Id'] = payload.sessionId;
+  }
 
   const res = await fetch(`${API_BASE_URL}/chat`, {
     method: 'POST',
@@ -1372,6 +1377,17 @@ export async function sendChatMessage(payload: ChatApiPayload): Promise<ChatApiR
   const json = await res.json();
   return json.data;
 }
+
+export async function clearServerChatSession(sessionId: string): Promise<void> {
+  try {
+    await fetch(`${API_BASE_URL}/chat/session/${encodeURIComponent(sessionId)}`, {
+      method: 'DELETE',
+    });
+  } catch (e) {
+    // Non-blocking
+  }
+}
+
 
 // Fallback reviews for offline resilience
 export const FALLBACK_PRODUCT_REVIEWS: Record<string, Review[]> = {
