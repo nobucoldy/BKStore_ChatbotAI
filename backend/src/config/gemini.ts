@@ -7,7 +7,7 @@ const apiKey = process.env.GEMINI_API_KEY || '';
 
 export const getGeminiChatModel = (temperature = 0.4) => {
   return new ChatGoogleGenerativeAI({
-    model: 'gemini-3.8-flash',
+    model: 'gemini-3.5-flash-lite',
     apiKey: apiKey,
     temperature,
     maxRetries: 2,

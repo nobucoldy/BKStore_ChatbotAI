@@ -54,7 +54,7 @@ export const useChatStore = create<ChatState>()(
         }));
       },
       addMessage: (msg: ChatMessage) => {
-        set((state) => ({ messages: [...state.messages, msg] }));
+        set((state) => ({ messages: [...state.messages.slice(-49), msg] }));
       },
       setIsTyping: (isTyping: boolean) => set({ isTyping }),
       setInitialPrompt: (prompt?: string) => set({ initialPrompt: prompt }),
@@ -78,7 +78,7 @@ export const useChatStore = create<ChatState>()(
       name: 'bkstore_chat_storage_v1',
       partialize: (state) => ({
         isOpen: state.isOpen,
-        messages: state.messages,
+        messages: state.messages.slice(-50), // Giữ tối đa 50 tin nhắn gần nhất để bảo vệ bộ nhớ trình duyệt
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);

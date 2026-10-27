@@ -23,7 +23,7 @@
 ---
 
 ## 3. Các trường hợp KHÔNG ÁP DỤNG đổi trả theo nhu cầu
-1. Sản phẩm đã bị kích hoạt bảo hành điện tử (Active) đối với các thiết bị Apple (iPhone, MacBook, iPad).
+1. Sản phẩm đã bị kích hoạt bảo hành điện tử (Active) đối với các thiết bị Apple (iPhone, iPad, Apple Watch).
 2. Sản phẩm quà tặng khuyến mãi đi kèm, phụ kiện tặng thêm.
 3. Hộp máy bị rách, mất seal niêm phong, mất số IMEI/Serial trùng khớp với hóa đơn.
 4. Quá thời hạn 14 ngày kể từ ngày giao hàng thành công.

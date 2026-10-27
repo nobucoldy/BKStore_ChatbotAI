@@ -93,10 +93,9 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   const openAuthModal = useAuthStore((state) => state.openAuthModal);
 
   const quickPrompts = [
+    'Tư vấn laptop 30-50 triệu',
     'Có bao nhiêu đơn hàng của tôi chưa được duyệt?',
-    'Tư vấn laptop AI & Lập trình 30-50 triệu',
-    'MacBook Air M3 ở Cầu Giấy còn hàng không?',
-    'Đánh giá thực tế về MacBook Air M3',
+    'Chính sách bảo hành của cửa hàng thế nào?',
   ];
 
   const handleAddToCart = (e: React.MouseEvent, prod: any) => {
@@ -164,8 +163,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
       setInput('');
       setIsTyping(true);
 
-      // Build history for context using stable ref
-      const historyPayload = messagesRef.current.slice(-6).map((m) => ({
+      // Build history for context using stable ref (đồng bộ 8 lượt hội thoại gần nhất)
+      const historyPayload = messagesRef.current.slice(-8).map((m) => ({
         role: m.role,
         content: m.content,
       }));
@@ -641,6 +640,14 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                           </div>
                         ) : (
                           <>
+                            {msg.cards.data.itemsSummary && (
+                              <div className="flex justify-between items-start gap-2">
+                                <span className="shrink-0">Sản phẩm:</span>
+                                <span className="font-semibold text-slate-800 text-right truncate max-w-[200px]" title={msg.cards.data.itemsSummary}>
+                                  {msg.cards.data.itemsSummary}
+                                </span>
+                              </div>
+                            )}
                             {msg.cards.data.branchName && (
                               <div className="flex justify-between">
                                 <span>Kho xuất hàng:</span>
@@ -669,15 +676,21 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                           </div>
                         )}
 
-                        {msg.cards.data.isUserOrderSummary && (
-                          <Link
-                            href="/orders"
-                            className="flex items-center justify-center gap-1.5 w-full py-1.5 px-3 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-[10px] font-bold border border-blue-200 transition-colors mt-2"
-                          >
-                            <PackageCheck className="w-3.5 h-3.5" />
-                            <span>Xem tất cả tại mục &ldquo;Đơn hàng của tôi&rdquo;</span>
-                          </Link>
-                        )}
+                        {/* Đường dẫn mở trang "Đơn hàng của tôi" */}
+                        <Link
+                          href="/orders"
+                          className="flex items-center justify-between gap-1.5 w-full py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-bold border border-blue-200/90 transition-all mt-2.5 shadow-2xs group"
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <PackageCheck className="w-3.5 h-3.5 text-blue-600 group-hover:scale-110 transition-transform" />
+                            <span>
+                              {msg.cards.data.isUserOrderSummary
+                                ? 'Xem tất cả tại mục "Đơn hàng của tôi"'
+                                : 'Mở chi tiết tại mục "Đơn hàng của tôi"'}
+                            </span>
+                          </div>
+                          <ArrowRight className="w-3.5 h-3.5 opacity-70 group-hover:translate-x-0.5 transition-transform" />
+                        </Link>
                       </div>
                     </div>
                   )}
@@ -889,7 +902,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={isBusy}
-              placeholder="Nhập câu hỏi công nghệ hoặc mã đơn (#BK-1024)..."
+              placeholder="Hỏi về sản phẩm, tồn kho hoặc đơn hàng của bạn..."
               className="flex-1 bg-slate-100 text-xs text-slate-800 rounded-xl px-3 py-2.5 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 border border-transparent focus:border-blue-400 transition-all disabled:opacity-60"
             />
             <button

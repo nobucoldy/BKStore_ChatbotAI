@@ -4,6 +4,7 @@ import { branches as fallbackBranches, products as seedProducts, sampleOrders } 
 import { getProducts, getProductBySlug, slugify } from './product.service';
 import { getOrderByCode, getOrdersByPhone } from './order.service';
 import { getReviewsByProduct } from './review.service';
+import { UseCaseProfiler, UseCaseProfile } from './chat/use-case-profiler';
 
 /**
  * Định dạng tiền tệ VNĐ chuẩn
@@ -119,17 +120,30 @@ export const checkInventory = async (params: CheckInventoryParams): Promise<Inve
       };
     });
   } else {
-    // Fallback phân bổ đều theo seedBranches
-    branchesStock = fallbackBranches.map((b, idx) => {
-      const qty = ((idx + 2) * 3) % 10 + 2;
+    // Nếu chưa có bảng chi tiết inventories trong DB, lấy theo tổng số lượng tồn kho của sản phẩm
+    const totalKnownStock = Number(
+      (productDetail as any)?.stockQuantity ??
+      (productDetail as any)?.stock_quantity ??
+      (productDetail as any)?.stock ??
+      (matchedProduct as any).stockQuantity ??
+      (matchedProduct as any).stock ??
+      10
+    );
+    branchesStock = fallbackBranches.map((b) => {
+      const isAvailable = totalKnownStock > 0;
+      const branchQty = isAvailable ? Math.max(1, Math.floor(totalKnownStock / fallbackBranches.length)) : 0;
+      let status: 'Còn hàng' | 'Sắp hết hàng' | 'Hết hàng' = 'Còn hàng';
+      if (branchQty === 0) status = 'Hết hàng';
+      else if (branchQty <= 3) status = 'Sắp hết hàng';
+
       return {
         branchId: b.id,
         branchName: b.name,
         city: b.city,
         address: b.address,
         phone: b.phone,
-        quantity: qty,
-        status: qty <= 3 ? 'Sắp hết hàng' : 'Còn hàng',
+        quantity: branchQty,
+        status,
       };
     });
   }
@@ -428,12 +442,15 @@ export const filterProducts = async (params: FilterProductsParams): Promise<Prod
     mappedCategory = 'laptop';
   }
 
+  // Dung sai nhẹ cận trên (+2%) cho các dòng máy niêm yết bán lẻ đuôi .990.000đ (ví dụ 50.990.000đ khi tìm tới 50 triệu)
+  const effectiveMaxPrice = maxPrice ? Math.round(maxPrice * 1.02) : undefined;
+
   // Gọi getProducts từ service
   const res = await getProducts({
     category: mappedCategory,
     brand,
     minPrice,
-    maxPrice,
+    maxPrice: effectiveMaxPrice,
     search: keyword,
     limit: 15,
   });
@@ -562,7 +579,9 @@ export interface ProductDetailResult {
     images: string[];
     inStock: boolean;
     stockQuantity: number;
+    useCaseProfile?: UseCaseProfile;
   };
+  useCaseProfile?: UseCaseProfile;
   message: string;
 }
 
@@ -615,6 +634,7 @@ export const getProductDetails = async (productIdentifier: string): Promise<Prod
 
   const price = Number(prod.price);
   const origPrice = prod.originalPrice || prod.original_price ? Number(prod.originalPrice || prod.original_price) : undefined;
+  const useCaseProfile = UseCaseProfiler.inferProfileFromProduct(prod);
 
   return {
     found: true,
@@ -634,7 +654,9 @@ export const getProductDetails = async (productIdentifier: string): Promise<Prod
       images: prod.images || [prod.thumbnail],
       inStock: (prod.stockQuantity ?? prod.stock ?? 10) > 0,
       stockQuantity: prod.stockQuantity ?? prod.stock ?? 10,
+      useCaseProfile,
     },
+    useCaseProfile,
     message: `Đã lấy đầy đủ thông số kỹ thuật của "${prod.name}".`,
   };
 };
@@ -798,7 +820,7 @@ export const geminiFunctionDeclarations = [
       properties: {
         productName: {
           type: SchemaType.STRING,
-          description: 'Tên hoặc từ khóa sản phẩm khách muốn kiểm tra (ví dụ: "MacBook Air M3", "iPhone 16 Pro Max", "Logitech MX Master 3S").',
+          description: 'Tên hoặc từ khóa sản phẩm khách muốn kiểm tra (ví dụ: "ASUS Vivobook 14", "Lenovo ThinkPad E14", "iPhone 18 Pro Max").',
         },
         branchName: {
           type: SchemaType.STRING,
@@ -806,25 +828,6 @@ export const geminiFunctionDeclarations = [
         },
       },
       required: ['productName'],
-    },
-  },
-  {
-    name: 'trackOrder',
-    description:
-      'Tra cứu tiến trình vận chuyển, tình trạng đơn hàng, người nhận và danh sách sản phẩm theo mã đơn hàng BK-Store (ví dụ: #BK-1024, #BK-2048, #BK-3072).',
-    parameters: {
-      type: SchemaType.OBJECT,
-      properties: {
-        orderCode: {
-          type: SchemaType.STRING,
-          description: 'Mã đơn hàng khách cần tra cứu (ví dụ: "#BK-1024", "BK-1024", "1024").',
-        },
-        phone: {
-          type: SchemaType.STRING,
-          description: 'Số điện thoại đặt hàng của khách để đối soát bảo mật (nếu khách cung cấp).',
-        },
-      },
-      required: ['orderCode'],
     },
   },
   {
@@ -870,7 +873,7 @@ export const geminiFunctionDeclarations = [
       properties: {
         productIdentifier: {
           type: SchemaType.STRING,
-          description: 'Slug hoặc tên sản phẩm cụ thể (ví dụ: "macbook-air-m3-13-16gb-512gb", "iPhone 16 Pro Max").',
+          description: 'Slug hoặc tên sản phẩm cụ thể (ví dụ: "laptop-asus-vivobook-14-x1404va-eb355w", "iPhone 18 Pro Max").',
         },
       },
       required: ['productIdentifier'],
@@ -885,7 +888,7 @@ export const geminiFunctionDeclarations = [
       properties: {
         productName: {
           type: SchemaType.STRING,
-          description: 'Tên hoặc từ khóa sản phẩm muốn tra cứu đánh giá (ví dụ: "MacBook Air M3", "iPhone 16 Pro Max", "Sony WH-1000XM5").',
+          description: 'Tên hoặc từ khóa sản phẩm muốn tra cứu đánh giá (ví dụ: "ASUS Vivobook 14", "iPhone 18 Pro Max", "Lenovo ThinkPad").',
         },
       },
       required: ['productName'],
@@ -932,10 +935,11 @@ export const executeAiTool = async (toolName: string, toolArgs: any): Promise<an
         });
 
       case 'trackOrder':
-        return await trackOrder({
-          orderCode: toolArgs.orderCode || toolArgs.order_code,
-          phone: toolArgs.phone,
-        });
+        return {
+          found: false,
+          message:
+            'Dạ vì lý do bảo mật thông tin cá nhân, chức năng tra cứu đơn hàng bằng mã đơn và số điện thoại trong tin nhắn chat đã được tắt. Quý khách vui lòng đăng nhập tài khoản để tra cứu hoặc sử dụng tính năng "Tra cứu vận đơn" trên thanh Header website.',
+        };
 
       case 'filterProducts':
         return await filterProducts({

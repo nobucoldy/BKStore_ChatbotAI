@@ -44,9 +44,10 @@ async function testSmalltalkAndFallback() {
   console.log('✅ PASS: Greeting with task is correctly routed to task processor!');
 
   console.log('\n--- 3. TESTING SMART OFFLINE FALLBACK (SIMULATING 429 QUOTA EXCEEDED) ---');
-  // Mock generateWithFallback to simulate Gemini 429 Quota Exceeded
-  const originalGenerate = (chatService as any).generateWithFallback;
-  (chatService as any).generateWithFallback = async () => {
+  // Mock chatLlmService.generateWithFallback to simulate Gemini 429 Quota Exceeded
+  const { chatLlmService } = require('./services/chat/chat-llm.service');
+  const originalGenerate = chatLlmService.generateWithFallback;
+  chatLlmService.generateWithFallback = async () => {
     const err: any = new Error('429 Resource Exhausted: Quota exceeded for quota metric');
     err.status = 429;
     throw err;
@@ -71,7 +72,7 @@ async function testSmalltalkAndFallback() {
     }
     console.log('✅ PASS: Smart Offline Fallback handles 429 smoothly without throwing error or crashing!');
   } finally {
-    (chatService as any).generateWithFallback = originalGenerate;
+    chatLlmService.generateWithFallback = originalGenerate;
   }
 
   console.log('\n🎉 ALL INTEGRATION & FALLBACK TESTS PASSED 100%!');

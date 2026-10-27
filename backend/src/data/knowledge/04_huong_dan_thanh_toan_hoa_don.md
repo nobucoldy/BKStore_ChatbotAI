@@ -6,7 +6,7 @@ BK-Store cung cấp đa dạng các phương thức thanh toán an toàn, tiện
 ### Phương thức 1: Thanh toán tiền mặt khi nhận hàng (COD - Cash on Delivery)
 - Áp dụng cho các đơn hàng có giá trị thanh toán lên đến **30.000.000 VNĐ** trên toàn quốc.
 - Khách hàng kiểm tra đúng kiện hàng, đúng thông tin sản phẩm và thanh toán tiền mặt trực tiếp cho nhân viên giao hàng sau khi đồng kiểm.
-- Đối với đơn hàng trên 30.000.000 VNĐ (ví dụ: MacBook Pro M3 Max, Gaming cao cấp), quý khách vui lòng thanh toán chuyển khoản trước hoặc đặt cọc tối thiểu 10% giá trị đơn hàng.
+- Đối với đơn hàng trên 30.000.000 VNĐ (ví dụ: Laptop Gaming cao cấp, Flagship cao cấp), quý khách vui lòng thanh toán chuyển khoản trước hoặc đặt cọc tối thiểu 10% giá trị đơn hàng.
 
 ### Phương thức 2: Chuyển khoản ngân hàng tự động qua VietQR (Khuyên dùng)
 - **Tiện ích:** Quét mã QR thanh toán nhanh chóng qua ứng dụng ngân hàng di động (Mobile Banking) của hơn 40 ngân hàng tại Việt Nam (Vietcombank, MBBank, Techcombank, BIDV, VPBank, ACB,...).

@@ -84,7 +84,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTracking, onOpenReview }) 
             </p>
             <div className="pt-2 text-[11px] text-slate-500 space-y-1 font-mono">
               <p>• Đồ án liên ngành CNTT</p>
-              <p>• GVHD: ThS. Thầy Nguyễn Văn Sơn</p>
+              <p>• GVHD: ThS. Nguyễn Văn Sơn</p>
               <p>• SV: Nguyễn Quế Bắc & Hoàng Tuấn Kiệt</p>
             </div>
           </div>

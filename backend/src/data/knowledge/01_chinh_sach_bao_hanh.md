@@ -2,9 +2,9 @@
 
 ## 1. Thời hạn bảo hành tiêu chuẩn
 Tất cả các thiết bị công nghệ bán ra tại hệ thống BK-Store đều là hàng chính hãng 100% nguyên seal hộp và được bảo hành chính hãng theo tiêu chuẩn của nhà sản xuất:
-- **Laptop (Apple MacBook, ASUS, Dell, Lenovo, Acer):** Bảo hành chính hãng từ 12 đến 24 tháng (tùy theo từng dòng máy và hãng sản xuất).
-- **Điện thoại thông minh (Apple iPhone, Samsung Galaxy, Xiaomi):** Bảo hành chính hãng 12 tháng.
-- **Phụ kiện cao cấp (Tai nghe Sony, Apple AirPods, Bàn phím cơ Keychron, Chuột Logitech, Củ sạc Anker):** Bảo hành chính hãng từ 12 đến 18 tháng.
+- **Laptop & Máy tính xách tay:** Bảo hành chính hãng từ 12 đến 24 tháng (tùy theo từng dòng máy và hãng sản xuất).
+- **Điện thoại thông minh & Máy tính bảng:** Bảo hành chính hãng 12 tháng.
+- **Phụ kiện công nghệ:** Bảo hành chính hãng từ 12 đến 18 tháng.
 
 ---
 

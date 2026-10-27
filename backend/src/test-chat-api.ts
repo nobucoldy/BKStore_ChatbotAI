@@ -59,7 +59,7 @@ async function runChatTests() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        message: 'MacBook Air M3 ở Cầu Giấy còn hàng không shop?',
+        message: 'Laptop ASUS Vivobook 14 ở Cầu Giấy còn hàng không shop?',
       }),
     });
     const data3 = (await res3.json()) as any;
@@ -71,8 +71,8 @@ async function runChatTests() {
     console.log('Reply preview:', data3.data.reply.slice(0, 150) + '...');
     console.log('✅ [PASS] checkInventory executed and returned stock card');
 
-    // Test 4: AI Tool: Track Order
-    console.log('\n--- 4. Testing AI Tool: trackOrder ---');
+    // Test 4: AI Tool: Safe Order Lookup (Block code/phone in chat & require auth/Header)
+    console.log('\n--- 4. Testing AI Tool: getMyOrders (Block direct orderCode & phone in chat) ---');
     const res4 = await fetch(`${BASE_URL}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -81,13 +81,15 @@ async function runChatTests() {
       }),
     });
     const data4 = (await res4.json()) as any;
-    if (!data3.success || data4.data?.toolUsed !== 'trackOrder') {
-      throw new Error(`Expected toolUsed: trackOrder, got ${data4.data?.toolUsed}`);
+    if (!data4.success || data4.data?.toolUsed !== 'getMyOrders') {
+      throw new Error(`Expected toolUsed: getMyOrders, got ${data4.data?.toolUsed}`);
     }
     console.log('Tool used:', data4.data.toolUsed);
-    console.log('Cards attached:', data4.data.cards?.type);
     console.log('Reply preview:', data4.data.reply.slice(0, 150) + '...');
-    console.log('✅ [PASS] trackOrder executed and returned order tracking card');
+    if (!data4.data.reply.includes('bảo mật') && !data4.data.reply.includes('Đăng nhập') && !data4.data.reply.includes('Tra cứu vận đơn')) {
+      throw new Error('Expected security or login guidance in response to direct orderCode/phone lookup');
+    }
+    console.log('✅ [PASS] Direct orderCode/phone in chat safely blocked and guided to login/Header');
 
     // Test 5: AI Tool: Filter Products by Budget
     console.log('\n--- 5. Testing AI Tool: filterProducts ---');

@@ -68,13 +68,20 @@ class RagService {
    * Đọc thư mục data/knowledge và cắt nhỏ văn bản thành các chunks
    */
   public async loadAndChunkDocuments(): Promise<void> {
-    const knowledgeDir = path.join(__dirname, '../data/knowledge');
+    let knowledgeDir = path.join(__dirname, '../data/knowledge');
     
     try {
       await fs.access(knowledgeDir);
     } catch {
-      console.warn(`[RAG] Thư mục ${knowledgeDir} chưa tồn tại.`);
-      return;
+      // Fallback sang thư mục src khi chạy từ dist
+      const srcKnowledgeDir = path.join(__dirname, '../../src/data/knowledge');
+      try {
+        await fs.access(srcKnowledgeDir);
+        knowledgeDir = srcKnowledgeDir;
+      } catch {
+        console.warn(`[RAG] Thư mục knowledge chưa tồn tại ở cả ${knowledgeDir} và ${srcKnowledgeDir}.`);
+        return;
+      }
     }
 
     const files = await fs.readdir(knowledgeDir);
@@ -218,14 +225,21 @@ class RagService {
     if (this.isVectorizing) return;
     this.isVectorizing = true;
 
-    const cacheFile = path.join(__dirname, '../data/knowledge/.embeddings_cache.json');
+    let cacheFile = path.join(__dirname, '../data/knowledge/.embeddings_cache.json');
     let cacheMap: Record<string, number[]> = {};
 
     try {
       const rawCache = await fs.readFile(cacheFile, 'utf-8');
       cacheMap = JSON.parse(rawCache);
     } catch {
-      cacheMap = {};
+      const srcCacheFile = path.join(__dirname, '../../src/data/knowledge/.embeddings_cache.json');
+      try {
+        const rawCache = await fs.readFile(srcCacheFile, 'utf-8');
+        cacheMap = JSON.parse(rawCache);
+        cacheFile = srcCacheFile;
+      } catch {
+        cacheMap = {};
+      }
     }
 
     // Restore from cache first
