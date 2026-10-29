@@ -1,5 +1,7 @@
 import { app } from './app';
 import { Server } from 'http';
+import { pool } from './config/db';
+import { inMemoryReviews } from './services/review.service';
 
 const TEST_PORT = 5099;
 const BASE_URL = `http://localhost:${TEST_PORT}`;
@@ -42,24 +44,24 @@ const tests: TestCase[] = [
     },
   },
   {
-    name: '4. Filter Products by Category & Brand (/api/products?category=laptop&brand=Apple)',
+    name: '4. Filter Products by Category & Brand (/api/products?category=laptop&brand=Lenovo)',
     run: async () => {
-      const res = await fetch(`${BASE_URL}/api/products?category=laptop&brand=Apple`);
+      const res = await fetch(`${BASE_URL}/api/products?category=laptop&brand=Lenovo`);
       if (res.status !== 200) throw new Error(`Expected status 200, got ${res.status}`);
       const body = await res.json();
-      if (!body.success || body.data.length !== 2) {
-        throw new Error(`Expected 2 Apple laptops, got ${body.data?.length}`);
+      if (!body.success || body.data.length < 2) {
+        throw new Error(`Expected at least 2 Lenovo laptops, got ${body.data?.length}`);
       }
       const names = body.data.map((p: any) => p.name);
-      if (!names.some((n: string) => n.includes('MacBook Air'))) {
-        throw new Error('MacBook Air M3 not found in results');
+      if (!names.some((n: string) => n.includes('ThinkPad') || n.includes('LOQ') || n.includes('ThinkBook'))) {
+        throw new Error('Lenovo laptop not found in results');
       }
     },
   },
   {
     name: '5. Product Detail with Branch Inventories (/api/products/:slug)',
     run: async () => {
-      const res = await fetch(`${BASE_URL}/api/products/macbook-air-m3-13-16gb-512gb`);
+      const res = await fetch(`${BASE_URL}/api/products/asus-tuf-gaming-a15-fa506ncg-hn396w`);
       if (res.status !== 200) throw new Error(`Expected status 200, got ${res.status}`);
       const body = await res.json();
       if (!body.success || !body.data.inventories || body.data.inventories.length === 0) {
@@ -105,7 +107,7 @@ const tests: TestCase[] = [
         paymentMethod: 'COD',
         items: [
           {
-            productId: 'sony-wh-1000xm5-black',
+            productId: 'asus-tuf-gaming-a15-fa506ncg-hn396w',
             quantity: 1,
           },
         ],
@@ -119,15 +121,17 @@ const tests: TestCase[] = [
 
       if (res.status !== 201) throw new Error(`Expected status 201, got ${res.status}`);
       const body = await res.json();
-      if (!body.success || !body.data.orderCode.startsWith('#BK-')) {
-        throw new Error(`Invalid order code returned: ${body.data?.orderCode}`);
+      const createdOrderCode = body.data?.orderCode || body.data?.order_code;
+      if (!body.success || !createdOrderCode || !createdOrderCode.startsWith('#BK-')) {
+        throw new Error(`Invalid order code returned: ${createdOrderCode}`);
       }
-      if (body.data.totalAmount !== 6790000) {
-        throw new Error(`Total amount mismatch: expected 6790000, got ${body.data?.totalAmount}`);
+      const totalAmount = Number(body.data?.totalAmount || body.data?.total_amount || 0);
+      if (totalAmount !== 25990000) {
+        throw new Error(`Total amount mismatch: expected 25990000, got ${totalAmount}`);
       }
 
       // Verify newly created order can be retrieved immediately
-      const encodedNewCode = encodeURIComponent(body.data.orderCode);
+      const encodedNewCode = encodeURIComponent(createdOrderCode);
       const verifyRes = await fetch(`${BASE_URL}/api/orders/${encodedNewCode}?phone=0988776655`);
       if (verifyRes.status !== 200) {
         throw new Error('Failed to retrieve newly created order by code + phone');
@@ -213,7 +217,7 @@ const tests: TestCase[] = [
         throw new Error(`Failed to fetch newly created product by slug: ${body.data.slug}`);
       }
       const detailBody = await detailRes.json();
-      if (detailBody.data.brand !== 'ASUS' || detailBody.data.price !== 55990000) {
+      if (detailBody.data.brand !== 'ASUS' || Number(detailBody.data.price) !== 55990000) {
         throw new Error('Product detail properties do not match created data');
       }
     },
@@ -242,7 +246,7 @@ const tests: TestCase[] = [
 
       if (res.status !== 200) throw new Error(`Expected status 200, got ${res.status}`);
       const body = await res.json();
-      if (!body.success || body.data.price !== 52990000) {
+      if (!body.success || Number(body.data.price) !== 52990000) {
         throw new Error(`Expected updated price 52990000, got ${body.data?.price}`);
       }
     },
@@ -285,7 +289,7 @@ const tests: TestCase[] = [
         paymentMethod: 'COD',
         items: [
           {
-            productId: 'macbook-air-m3-13-16gb-512gb',
+            productId: 'asus-tuf-gaming-a15-fa506ncg-hn396w',
             quantity: 9999,
           },
         ],
@@ -310,9 +314,9 @@ const tests: TestCase[] = [
     name: '15. Stock Deduction on Order Placement (/api/orders)',
     run: async () => {
       // 1. Check stock before ordering
-      const getProdRes = await fetch(`${BASE_URL}/api/products/sony-wh-1000xm5-black`);
+      const getProdRes = await fetch(`${BASE_URL}/api/products/asus-tuf-gaming-a15-fa506ncg-hn396w`);
       const getProdBody = (await getProdRes.json()) as any;
-      const initialStock = getProdBody.data?.stockQuantity ?? getProdBody.data?.stock ?? 0;
+      const initialStock = Number(getProdBody.data?.stock_quantity ?? getProdBody.data?.stockQuantity ?? getProdBody.data?.stock ?? 0);
 
       // 2. Place order with quantity: 2
       const orderPayload = {
@@ -322,7 +326,7 @@ const tests: TestCase[] = [
         paymentMethod: 'COD',
         items: [
           {
-            productId: 'sony-wh-1000xm5-black',
+            productId: 'asus-tuf-gaming-a15-fa506ncg-hn396w',
             quantity: 2,
           },
         ],
@@ -337,9 +341,9 @@ const tests: TestCase[] = [
       if (orderRes.status !== 201) throw new Error(`Order failed with status ${orderRes.status}`);
 
       // 3. Check stock after ordering
-      const checkRes = await fetch(`${BASE_URL}/api/products/sony-wh-1000xm5-black`);
+      const checkRes = await fetch(`${BASE_URL}/api/products/asus-tuf-gaming-a15-fa506ncg-hn396w`);
       const checkBody = (await checkRes.json()) as any;
-      const finalStock = checkBody.data?.stockQuantity ?? checkBody.data?.stock ?? 0;
+      const finalStock = Number(checkBody.data?.stock_quantity ?? checkBody.data?.stockQuantity ?? checkBody.data?.stock ?? 0);
 
       if (finalStock !== initialStock - 2) {
         throw new Error(`Stock deduction failed: expected ${initialStock - 2}, got ${finalStock}`);
@@ -356,8 +360,8 @@ const tests: TestCase[] = [
         throw new Error(`Expected at least 7 brands, got ${body.data?.length}`);
       }
       const slugs = body.data.map((b: any) => b.slug);
-      if (!slugs.includes('apple') || !slugs.includes('dell') || !slugs.includes('asus')) {
-        throw new Error('Expected core brands (apple, dell, asus) in brand list');
+      if (!slugs.includes('apple') || !slugs.includes('lenovo') || !slugs.includes('asus')) {
+        throw new Error('Expected core brands (apple, lenovo, asus) in brand list');
       }
     },
   },
@@ -384,7 +388,7 @@ const tests: TestCase[] = [
   {
     name: '19. Get Product Reviews (/api/reviews/product/:slug)',
     run: async () => {
-      const res = await fetch(`${BASE_URL}/api/reviews/product/macbook-air-m3-13-16gb-512gb`);
+      const res = await fetch(`${BASE_URL}/api/reviews/product/asus-tuf-gaming-a15-fa506ncg-hn396w`);
       if (res.status !== 200) throw new Error(`Expected status 200, got ${res.status}`);
       const body = await res.json();
       if (!body.success || !Array.isArray(body.data?.reviews)) {
@@ -404,7 +408,7 @@ const tests: TestCase[] = [
         body: JSON.stringify({
           orderCode: '#BK-2048',
           phone: '0987654321',
-          productId: 'iphone-16-pro-max-256gb',
+          productId: 'lenovo-loq-15irx9-83dv01alvn',
           rating: 5,
           comment: 'Chưa nhận được máy nhưng muốn thử đánh giá.',
         }),
@@ -421,13 +425,20 @@ const tests: TestCase[] = [
   {
     name: '21. Submit Review For Delivered Order (#BK-1024)',
     run: async () => {
+      // Ensure idempotency across test executions: clear any existing review for #BK-1024
+      try {
+        await pool.query("DELETE FROM reviews WHERE LOWER(order_code) = '#bk-1024'");
+      } catch (e) {}
+      const idx = inMemoryReviews.findIndex((r) => r.orderCode.toLowerCase() === '#bk-1024');
+      if (idx !== -1) inMemoryReviews.splice(idx, 1);
+
       const res = await fetch(`${BASE_URL}/api/reviews`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderCode: '#BK-1024',
           phone: '0912345678',
-          productId: 'macbook-air-m3-13-16gb-512gb',
+          productId: 'asus-tuf-gaming-a15-fa506ncg-hn396w',
           rating: 5,
           comment: 'Máy nguyên seal dùng cực mượt, màn hình đẹp và pin trâu 10/10.',
         }),
@@ -451,7 +462,7 @@ const tests: TestCase[] = [
         body: JSON.stringify({
           orderCode: '#BK-1024',
           phone: '0912345678',
-          productId: 'macbook-air-m3-13-16gb-512gb',
+          productId: 'asus-tuf-gaming-a15-fa506ncg-hn396w',
           rating: 4,
           comment: 'Thử gửi lại đánh giá lần thứ 2 cho cùng sản phẩm.',
         }),

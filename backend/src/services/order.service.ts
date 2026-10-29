@@ -605,11 +605,11 @@ export const getOrdersByUserId = async (userId: string, userPhone?: string) => {
     FROM orders o
     LEFT JOIN order_items oi ON oi.order_id = o.id
     LEFT JOIN products p ON (p.id = oi.product_id OR LOWER(p.name) = LOWER(oi.product_name))
-    WHERE o.user_id::text = $1 OR o.phone IN (SELECT phone FROM users WHERE id::text = $1)
+    WHERE o.user_id::text = $1 OR ($2 != '' AND o.phone = $2) OR o.phone IN (SELECT phone FROM users WHERE id::text = $1)
     GROUP BY o.id
     ORDER BY o.created_at DESC
   `;
-  const res = await pool.query(query, [userId]);
+  const res = await pool.query(query, [userId, (userPhone || '').trim()]);
   return res.rows;
 };
 

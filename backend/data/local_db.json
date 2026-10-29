@@ -1596,7 +1596,7 @@
       "stock": 27
     }
   ],
-  "updatedAt": "2026-10-22T05:35:48.317Z",
+  "updatedAt": "2026-10-29T14:05:26.579Z",
   "orders": [
     {
       "id": "ord-1024",
@@ -1662,8 +1662,8 @@
       "note": "Thanh toán tiền mặt khi nhận hàng",
       "totalAmount": 399000,
       "paymentMethod": "COD",
-      "status": "pending",
-      "trackingInfo": "Đơn hàng đã được tiếp nhận trên hệ thống lúc 10:00 sáng. Quản trị viên đang kiểm tra tồn kho tại chi nhánh Đà Nẵng để đóng gói.",
+      "status": "cancelled",
+      "trackingInfo": "Giao thành công: Khách hàng đã nhận máy và thanh toán hoàn tất.",
       "createdAt": "2026-10-10T10:00:00.000Z",
       "items": [
         {

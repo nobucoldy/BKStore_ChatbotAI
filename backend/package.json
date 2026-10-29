@@ -10,7 +10,17 @@
     "db:migrate": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts",
     "db:setup": "npm run db:migrate && npm run db:seed",
-    "test:api": "tsx src/test-api.ts"
+    "db:migrate:prod": "node dist/db/migrate.js",
+    "db:seed:prod": "node dist/db/seed.js",
+    "db:setup:prod": "node dist/db/migrate.js && node dist/db/seed.js",
+    "test:api": "tsx src/test-api.ts",
+    "test:ai": "tsx src/test-ai-tools.ts",
+    "test:nlu": "tsx src/test-nlu-advanced.ts",
+    "test:greeting": "tsx src/test-greeting.ts",
+    "test:upgrades": "tsx src/test-new-upgrades.ts",
+    "test:ground-truth": "tsx src/test-ground-truth.ts",
+    "test:benchmark": "tsx src/test-benchmark-10k.ts",
+    "test:all": "tsx src/test-api.ts && tsx src/test-ai-tools.ts && tsx src/test-greeting.ts && tsx src/test-new-upgrades.ts && tsx src/test-benchmark-10k.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.0",

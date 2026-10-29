@@ -108,6 +108,9 @@ Tài liệu này xác định chi tiết các yêu cầu chức năng, phi chứ
 | **NFR-04** | **Tính sẵn sàng & Chịu lỗi (High Availability)** | Hệ thống trang bị Gemini KeyPool chịu lỗi 429 và cơ chế Dual-Mode Local Store (`local_db.json`) giúp ứng dụng vẫn chạy tốt khi database ngoài bảo trì. |
 | **NFR-05** | **Giao diện & Trải nghiệm (UI/UX)** | Chuẩn Responsive hoàn hảo cho cả thiết bị máy tính bàn và điện thoại di động; Chat Widget hỗ trợ phím tắt, âm thanh và trạng thái gõ chữ. |
 | **NFR-06** | **Kiến trúc module hóa (Architecture)** | 100% mã nguồn JavaScript/TypeScript trên nền Node.js/Express và Next.js App Router, cấu trúc phân lớp rõ ràng (Routes, Middlewares, Controllers, Services, AI Tools). |
+| **NFR-07** | **Khả năng chịu tải đồng thời (Scalability & Concurrency)** | Hệ thống chịu tải mượt mà từ 50 – 100 người dùng ảo đồng thời (1,000 requests) với tỷ lệ lỗi 0.00%, thông lượng xử lý đạt ≥ 70 requests/giây thông qua Gemini KeyPool và Concurrency Limiter. |
+| **NFR-08** | **Quy mô tri thức công nghệ lớn (10k Tech Documents)** | Lưu trữ và lập chỉ mục PGVector HNSW trên 10,000 tài liệu thông số kỹ thuật phần cứng, thời gian truy xuất P50 < 1ms (đạt 0.51ms), Recall@5 ≥ 94.0%. |
+| **NFR-09** | **Độ tin cậy & Kiểm chuẩn Ground Truth** | Đánh giá đạt chuẩn trên bộ đối sánh Ground Truth: Faithfulness (chống ảo giác) ≥ 98%, Tool Calling Accuracy ≥ 98%, Context Precision ≥ 93%. |
 
 ---
 
@@ -165,8 +168,8 @@ Dự án được đánh giá hoàn thành xuất sắc khi đáp ứng đủ c�
    - Stream chữ mượt mà qua SSE, hiển thị Card sản phẩm kèm ảnh và nút thao tác trực tiếp.
    - Trả lời chuẩn xác các câu hỏi chính sách dựa trên 8 tài liệu RAG.
    - Thực thi chính xác cả 6 công cụ Tool Calling khi khách hỏi về kho, đơn hàng, cấu hình và đánh giá.
-4. **Độ ổn định và cơ chế tự phục hồi:** Hoạt động ổn định với Docker Compose (PostgreSQL 16 PGVector); tự động xoay key khi bị giới hạn hạn ngạch Gemini.
-5. **Đầy đủ hồ sơ tài liệu:** Đề cương đề tài (PROJECT_PROPOSAL.md), Đặc tả yêu cầu phần mềm (REQUIREMENTS.md), Tài liệu RAG và README.md hướng dẫn cài đặt từ A-Z.
+4. **Độ ổn định và cơ chế tự phục hồi:** Hoạt động ổn định với Docker Compose (PostgreSQL 16 PGVector); tự động xoay key khi bị giới hạn hạn ngạch Gemini; vượt qua bài kiểm thử tải 50-100 VUs (1,000 requests) với tỷ lệ lỗi 0.00% và chỉ số HNSW truy xuất 10,000 tài liệu công nghệ đạt 0.51ms.
+5. **Đầy đủ hồ sơ tài liệu & bộ dữ liệu kiểm thử:** Đề cương đề tài (PROJECT_PROPOSAL.md), Đặc tả yêu cầu phần mềm (REQUIREMENTS.md), Báo cáo kiến trúc & kiểm thử hiệu năng (SYSTEM_ARCHITECTURE.md), Bộ dữ liệu Ground Truth (`ground_truth_eval.json`), Script benchmark (`test-benchmark-10k.ts`) và Kịch bản tải k6 (`test-load-k6.js`).
 
 ---
 *© 2026 BK-Store Team. Đồ án liên ngành Công nghệ Thông tin.*

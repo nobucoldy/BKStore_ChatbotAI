@@ -10,13 +10,24 @@
     "build:backend": "npm run build --prefix backend",
     "build:frontend": "npm run build --prefix frontend",
     "build": "npm run build:backend && npm run build:frontend",
-    "db:up": "docker compose up -d",
+    "docker:up": "docker compose up --build -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "docker:setup": "docker compose exec backend npm run db:setup:prod",
+    "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",
     "db:migrate": "npm run db:migrate --prefix backend",
     "db:seed": "npm run db:seed --prefix backend",
     "db:setup": "npm run db:setup --prefix backend",
-    "test:api": "npm run test:api --prefix backend"
+    "test:api": "npm run test:api --prefix backend",
+    "test:ai": "npm run test:ai --prefix backend",
+    "test:nlu": "npm run test:nlu --prefix backend",
+    "test:greeting": "npm run test:greeting --prefix backend",
+    "test:upgrades": "npm run test:upgrades --prefix backend",
+    "test:ground-truth": "npm run test:ground-truth --prefix backend",
+    "test:benchmark": "npm run test:benchmark --prefix backend",
+    "test:all": "npm run test:all --prefix backend"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

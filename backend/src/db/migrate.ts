@@ -4,7 +4,10 @@ import { pool } from '../config/db';
 
 export const runMigration = async () => {
   console.log('🚀 Starting Database Migration...');
-  const schemaPath = path.join(__dirname, 'schema.sql');
+  let schemaPath = path.join(__dirname, 'schema.sql');
+  if (!fs.existsSync(schemaPath)) {
+    schemaPath = path.join(__dirname, '../../src/db/schema.sql');
+  }
 
   if (!fs.existsSync(schemaPath)) {
     throw new Error(`Schema file not found at: ${schemaPath}`);

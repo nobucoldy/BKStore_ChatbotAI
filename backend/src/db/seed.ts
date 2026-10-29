@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs';
 import { pool } from '../config/db';
 import { categories, brands, branches, products, sampleOrders, sampleKnowledgePolicies } from './seedData';
 
@@ -7,6 +8,33 @@ export const seedDatabase = async () => {
 
   try {
     await client.query('BEGIN');
+
+    // 0. Seed Users
+    console.log('👤 Seeding Users...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id VARCHAR(50) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        phone VARCHAR(50),
+        address TEXT,
+        role VARCHAR(50) DEFAULT 'customer',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    const defaultPasswordHash = bcrypt.hashSync('123456', 10);
+    const adminPasswordHash = bcrypt.hashSync('admin123', 10);
+    await client.query(
+      `INSERT INTO users (id, name, email, password_hash, phone, address, role)
+       VALUES 
+         ('u-customer-001', 'Nguyễn Văn An', 'khachhang@bkstore.vn', $1, '0912345678', 'Số 18 Hoàng Quốc Việt, Cầu Giấy, Hà Nội', 'customer'),
+         ('u-admin-001', 'Admin Quản Trị Viên', 'admin@bkstore.vn', $2, '02438389999', '268 Cầu Giấy, Hà Nội', 'admin')
+       ON CONFLICT (email) DO UPDATE
+       SET phone = EXCLUDED.phone, role = EXCLUDED.role`,
+      [defaultPasswordHash, adminPasswordHash]
+    );
+    console.log('✅ Seeded users u-customer-001 and u-admin-001.');
 
     // 1. Seed Categories
     console.log('📦 Seeding Categories...');
@@ -129,16 +157,17 @@ export const seedDatabase = async () => {
       const orderRes = await client.query(
         `INSERT INTO orders (
           order_code, customer_name, phone, address, note,
-          total_amount, payment_method, status, tracking_info
+          total_amount, payment_method, status, tracking_info, user_id
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         ON CONFLICT (order_code) DO UPDATE
         SET 
           customer_name = EXCLUDED.customer_name,
           phone = EXCLUDED.phone,
           address = EXCLUDED.address,
           status = EXCLUDED.status,
-          tracking_info = EXCLUDED.tracking_info
+          tracking_info = EXCLUDED.tracking_info,
+          user_id = EXCLUDED.user_id
         RETURNING id`,
         [
           order.orderCode,
@@ -150,6 +179,7 @@ export const seedDatabase = async () => {
           order.paymentMethod,
           order.status,
           order.trackingInfo,
+          order.userId || (order.phone === '0912345678' ? 'u-customer-001' : null),
         ]
       );
 
